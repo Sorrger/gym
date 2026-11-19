@@ -80,10 +80,12 @@
 </template>
 
 <script setup>
+import { ask } from '../dialog'
+import { barbell } from 'ionicons/icons'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, alertController } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonToast, useIonRouter  } from '@ionic/vue'
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
@@ -141,19 +143,16 @@ async function start(day) {
   if (a && a.day === day) { open(a.id); return } // same plan: just continue it
   if (a) {
     const c = counts(a)
-    const al = await alertController.create({
-      header: `Trwa trening ${PLAN[a.day].name}`,
+    const { role } = await ask({ icon: barbell, color: COLORS[PLAN[a.day].key],
+      title: `Trwa trening ${PLAN[a.day].name}`,
       message: c.n
         ? `Masz odhaczone ${c.n}/${c.t} serii. Na pewno zakończyć go (zostanie zapisany) i zacząć ${PLAN[day].name}?`
         : `Nic jeszcze nie odhaczyłeś. Na pewno porzucić go i zacząć ${PLAN[day].name}?`,
       buttons: [
-        { text: 'Wróć do ' + PLAN[a.day].name, role: 'continue' },
-        { text: c.n ? 'Zakończ i zacznij nowy' : 'Porzuć i zacznij nowy', role: 'confirm' },
+        { text: 'Wróć do ' + PLAN[a.day].name, role: 'continue', kind: 'primary' },
+        { text: c.n ? 'Zakończ i zacznij ' + PLAN[day].name : 'Porzuć i zacznij ' + PLAN[day].name, role: 'confirm', kind: 'soft' },
         { text: 'Anuluj', role: 'cancel' }
-      ]
-    })
-    await al.present()
-    const { role } = await al.onDidDismiss()
+      ] })
     if (role === 'continue') { open(a.id); return }
     if (role !== 'confirm') return
     finishSession(a.id)

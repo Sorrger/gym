@@ -74,9 +74,10 @@
 </template>
 
 <script setup>
+import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonToast, alertController } from '@ionic/vue'
-import { shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward } from 'ionicons/icons'
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonToast  } from '@ionic/vue'
+import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward } from 'ionicons/icons'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { cloud, connect, syncNow, restoreNow, disconnect } from '../cloud'
 
@@ -131,15 +132,10 @@ const syncText = computed(() => {
 })
 
 async function askToken() {
-  const a = await alertController.create({
-    header: 'Token GitHub',
+  const { role, value: tok } = await ask({ icon: logoGithub, title: 'Token GitHub',
     message: 'Wklej token z uprawnieniem tylko do Gistów (zaczyna się od github_pat_ albo ghp_).',
-    inputs: [{ name: 't', type: 'password', placeholder: 'github_pat_…' }],
-    buttons: [{ text: 'Anuluj', role: 'cancel' }, { text: 'Połącz', role: 'ok' }]
-  })
-  await a.present()
-  const { role, data } = await a.onDidDismiss()
-  const tok = data?.values?.t?.trim()
+    input: { type: 'password', placeholder: 'github_pat_…' },
+    buttons: [{ text: 'Połącz', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel' }] })
   if (role !== 'ok' || !tok) return
   const r = await connect(tok)
   msg.value = !r.ok ? r.error
@@ -151,13 +147,10 @@ async function pullNow() {
   catch (e) { msg.value = e.message || 'Brak internetu' }
 }
 async function askDisconnect() {
-  const a = await alertController.create({
-    header: 'Odłączyć GitHub?',
+  const { role } = await ask({ icon: cloudOfflineOutline, title: 'Odłączyć GitHub?',
     message: 'Automatyczna kopia przestanie działać. Kopia na GitHubie zostaje, treningi w telefonie też.',
-    buttons: [{ text: 'Anuluj', role: 'cancel' }, { text: 'Odłącz', role: 'destructive' }]
-  })
-  await a.present()
-  if ((await a.onDidDismiss()).role === 'destructive') { await disconnect(); msg.value = 'Odłączono' }
+    buttons: [{ text: 'Odłącz', role: 'destructive', kind: 'danger' }, { text: 'Anuluj', role: 'cancel' }] })
+  if (role === 'destructive') { await disconnect(); msg.value = 'Odłączono' }
 }
 </script>
 

@@ -189,12 +189,13 @@
 </template>
 
 <script setup>
+import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
 import { musclesOf } from '../muscles'
 import { computed, ref, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
-  IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter, alertController } from '@ionic/vue'
+  IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
 import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal } from '../plan'
 import { cloud } from '../cloud'
@@ -425,13 +426,9 @@ const prs = computed(() => rows.value.filter(r => r.pr))
 const exDone = computed(() => new Set(rows.value.filter(r => r.done).map(r => r.ex)).size)
 async function askDelete() {
   const k = counts(s.value)
-  const a = await alertController.create({
-    header: 'Usunąć ten trening?',
+  const { role } = await ask({ icon: trashOutline, title: 'Usunąć ten trening?',
     message: `${plan.value.name}, ${k.n}/${k.t} serii. Tego nie da się cofnąć.`,
-    buttons: [{ text: 'Anuluj', role: 'cancel' }, { text: 'Usuń', role: 'destructive' }]
-  })
-  await a.present()
-  const { role } = await a.onDidDismiss()
+    buttons: [{ text: 'Usuń trening', role: 'destructive', kind: 'danger' }, { text: 'Anuluj', role: 'cancel' }] })
   if (role !== 'destructive') return
   const id = s.value.id
   state.flash = 'Trening usunięty'

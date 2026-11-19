@@ -64,9 +64,10 @@
 </template>
 
 <script setup>
+import { ask as askDialog } from '../dialog'
 import { computed, ref } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonItemSliding,
-  IonItemOptions, IonItemOption, IonLabel, IonNote, IonIcon, useIonRouter, alertController } from '@ionic/vue'
+  IonItemOptions, IonItemOption, IonLabel, IonNote, IonIcon, useIonRouter  } from '@ionic/vue'
 import { chevronBack, chevronForward, trashOutline } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
 import { state, doneSessions, counts, fmtDate, remove, iso } from '../store'
@@ -111,12 +112,10 @@ const dayName = d => { const s = new Date(d + 'T12:00:00').toLocaleDateString('p
 
 function open(s) { router.push('/workout/' + s.id) }
 async function ask(s) {
-  const a = await alertController.create({
-    header: 'Usunąć trening?',
+  const { role } = await askDialog({ icon: trashOutline, title: 'Usunąć trening?',
     message: `${PLAN[s.day].name}, ${fmtDate(s.date)}. Tego nie da się cofnąć.`,
-    buttons: [{ text: 'Anuluj', role: 'cancel' }, { text: 'Usuń', role: 'destructive', handler: () => remove(s.id) }]
-  })
-  await a.present()
+    buttons: [{ text: 'Usuń trening', role: 'destructive', kind: 'danger' }, { text: 'Anuluj', role: 'cancel' }] })
+  if (role === 'destructive') remove(s.id)
 }
 </script>
 

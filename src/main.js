@@ -1,3 +1,4 @@
+import './nobounce'
 import { createApp } from 'vue'
 import { IonicVue } from '@ionic/vue'
 import { createRouter, createWebHashHistory } from '@ionic/vue-router'
