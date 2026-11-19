@@ -32,6 +32,18 @@ const router = createRouter({
   ]
 })
 
+// after an update the old page may ask for files that no longer exist: reload once into the new version
+router.onError(err => {
+  if (/dynamically imported module|Importing a module script failed|Failed to fetch/i.test(String(err?.message || err))) {
+    let last = 0
+    try { last = +sessionStorage.getItem('reloadedAt') || 0 } catch {}
+    if (Date.now() - last > 10000) {
+      try { sessionStorage.setItem('reloadedAt', Date.now()) } catch {}
+      location.reload()
+    }
+  }
+})
+
 load().then(() => {
   initCloud()
   const app = createApp(App).use(IonicVue, { mode: 'ios' }).use(router)
