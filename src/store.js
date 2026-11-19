@@ -104,6 +104,21 @@ export function finishSession(id) {
 
 export function remove(id) { delete state.sessions[id]; saveNow() }
 
+// merge sessions from a backup: adds missing ones, newer versions win, nothing is deleted
+export function mergeSessions(src) {
+  let n = 0
+  Object.entries(src || {}).forEach(([k, b]) => {
+    if (k.includes('~draft') || !b?.date) return
+    const a = state.sessions[k]
+    if (!a || (b.updated || 0) > (a.updated || 0)) {
+      state.sessions[k] = { ...b, id: k, started: b.started || new Date(b.date + 'T12:00:00').getTime(), finished: b.finished ?? true }
+      n++
+    }
+  })
+  if (n) saveNow()
+  return n
+}
+
 export function lastDoneOf(day) { return sorted().find(s => s.day === day && hasData(s)) || null }
 // the plan you haven't done for the longest time
 export function suggestedDay() {

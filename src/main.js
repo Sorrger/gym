@@ -4,6 +4,7 @@ import { createRouter, createWebHashHistory } from '@ionic/vue-router'
 import App from './App.vue'
 import Tabs from './views/Tabs.vue'
 import { load } from './store'
+import { initCloud } from './cloud'
 
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'
@@ -32,6 +33,7 @@ const router = createRouter({
 })
 
 load().then(() => {
+  initCloud()
   const app = createApp(App).use(IonicVue, { mode: 'ios' }).use(router)
   router.isReady().then(() => app.mount('#app'))
 })

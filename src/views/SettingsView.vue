@@ -1,30 +1,48 @@
 <template>
   <ion-page>
-    <ion-content :scroll-y="false">
+    <ion-content>
       <div class="page">
         <header class="page-head">
           <h1>Kopia</h1>
-          <p>Twoje treningi są tylko w tym telefonie</p>
+          <p>{{ cloud.token ? 'Automatyczna kopia na GitHub włączona' : 'Twoje treningi są tylko w tym telefonie' }}</p>
         </header>
 
-        <div class="card hero">
-          <div class="shield"><ion-icon :icon="shieldCheckmark" /></div>
-          <div>
-            <b>Prywatnie i offline</b>
-            <p>Nic nie trafia do internetu. Zrób kopię co jakiś czas i zapisz ją w Plikach albo na iCloud, żeby nie stracić danych przy usunięciu aplikacji.</p>
+        <!-- automatic GitHub backup -->
+        <div class="card hero" v-if="!cloud.token">
+          <div class="shield"><ion-icon :icon="cloudUploadOutline" /></div>
+          <div class="hero-mid">
+            <b>Automatyczna kopia</b>
+            <p>Po każdej zmianie aplikacja sama wyśle kopię do tajnego Gista na twoim GitHubie. Na nowym telefonie wystarczy wkleić ten sam token.</p>
+            <button class="connect" @click="askToken" :disabled="cloud.busy">{{ cloud.busy ? 'Łączenie…' : 'Połącz z GitHub' }}</button>
+          </div>
+        </div>
+        <div class="card hero" v-else>
+          <div class="shield" :class="{ bad: cloud.error }"><ion-icon :icon="cloud.error ? cloudOfflineOutline : cloudDoneOutline" /></div>
+          <div class="hero-mid">
+            <b>GitHub · {{ cloud.login }}</b>
+            <p v-if="cloud.busy">Wysyłanie…</p>
+            <p v-else-if="cloud.error" class="err">{{ cloud.error }}{{ cloud.dirty ? ' · spróbuję ponownie' : '' }}</p>
+            <p v-else-if="cloud.dirty">Czeka na wysłanie (gdy będzie internet)</p>
+            <p v-else>Aktualna · wysłano {{ syncText }}</p>
+            <div class="mini">
+              <button @click="pushNow" :disabled="cloud.busy">Wyślij teraz</button>
+              <button @click="pullNow" :disabled="cloud.busy">Przywróć</button>
+              <button @click="askDisconnect" class="off">Odłącz</button>
+            </div>
           </div>
         </div>
 
         <div class="stat-grid">
           <div class="stat"><span>Treningi</span><b>{{ count }}</b></div>
           <div class="stat"><span>Od</span><b class="small">{{ firstDate }}</b></div>
-          <div class="stat"><span>Kopia</span><b class="small" :class="{ warn: backupOld }">{{ backupText }}</b></div>
+          <div class="stat" v-if="!cloud.token"><span>Kopia</span><b class="small" :class="{ warn: backupOld }">{{ backupText }}</b></div>
+          <div class="stat" v-else><span>Kopia</span><b class="small" :class="{ warn: cloud.error }">{{ cloud.error ? 'błąd' : cloud.dirty ? 'czeka' : 'auto' }}</b></div>
         </div>
 
         <div class="actions">
-          <button class="action press primary" @click="exportData">
+          <button class="action press" :class="{ primary: !cloud.token }" @click="exportData">
             <ion-icon :icon="shareOutline" />
-            <div><b>Zapisz kopię</b><span>Plik .json do Plików, iCloud albo AirDrop</span></div>
+            <div><b>Zapisz kopię do pliku</b><span>Plik .json do Plików, iCloud albo AirDrop</span></div>
           </button>
           <button class="action press" @click="fileInput.click()">
             <ion-icon :icon="downloadOutline" />
@@ -39,10 +57,11 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { IonPage, IonContent, IonIcon, IonToast } from '@ionic/vue'
-import { shareOutline, downloadOutline, shieldCheckmark } from 'ionicons/icons'
-import { state, iso, fmtDate, ago, doneSessions } from '../store'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { IonPage, IonContent, IonIcon, IonToast, alertController } from '@ionic/vue'
+import { shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline } from 'ionicons/icons'
+import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
+import { cloud, connect, syncNow, restoreNow, disconnect } from '../cloud'
 
 const fileInput = ref(null)
 const msg = ref('')
@@ -73,17 +92,56 @@ function importData(e) {
     try {
       const d = JSON.parse(r.result)
       if (!d?.sessions) throw 0
-      let n = 0
-      Object.entries(d.sessions).forEach(([k, b]) => {
-        if (k.includes('~draft')) return
-        const a = state.sessions[k]
-        if (!a || (b.updated || 0) > (a.updated || 0)) { state.sessions[k] = { ...b, id: k, started: b.started || new Date(b.date + 'T12:00:00').getTime(), finished: b.finished ?? true }; n++ }
-      })
+      const n = mergeSessions(d.sessions)
       msg.value = 'Wczytano ' + n + ' treningów'
     } catch { msg.value = 'To nie jest plik kopii z tej aplikacji' }
     e.target.value = ''
   }
   r.readAsText(file)
+}
+
+// "wysłano 5 min temu"
+const now = ref(Date.now()); let tick
+onMounted(() => { tick = setInterval(() => (now.value = Date.now()), 30000) })
+onUnmounted(() => clearInterval(tick))
+const syncText = computed(() => {
+  if (!cloud.lastSync) return '–'
+  const m = Math.round((now.value - cloud.lastSync) / 60000)
+  if (m < 1) return 'przed chwilą'
+  if (m < 60) return m + ' min temu'
+  const h = Math.round(m / 60)
+  return h < 24 ? h + ' godz. temu' : ago(iso(new Date(cloud.lastSync)))
+})
+
+async function askToken() {
+  const a = await alertController.create({
+    header: 'Token GitHub',
+    message: 'Wklej token z uprawnieniem tylko do Gistów (zaczyna się od github_pat_ albo ghp_).',
+    inputs: [{ name: 't', type: 'password', placeholder: 'github_pat_…' }],
+    buttons: [{ text: 'Anuluj', role: 'cancel' }, { text: 'Połącz', role: 'ok' }]
+  })
+  await a.present()
+  const { role, data } = await a.onDidDismiss()
+  const tok = data?.values?.t?.trim()
+  if (role !== 'ok' || !tok) return
+  cloud.busy = true
+  const r = await connect(tok)
+  cloud.busy = false
+  msg.value = r.ok ? (r.restored ? `Połączono · przywrócono ${r.restored} treningów` : 'Połączono · kopia wysłana') : r.error
+}
+async function pushNow() { msg.value = (await syncNow()) ? 'Kopia wysłana' : (cloud.error || 'Brak internetu') }
+async function pullNow() {
+  try { const n = await restoreNow(); msg.value = n ? `Przywrócono ${n} treningów` : 'Wszystko już jest w telefonie' }
+  catch (e) { msg.value = e.message || 'Brak internetu' }
+}
+async function askDisconnect() {
+  const a = await alertController.create({
+    header: 'Odłączyć GitHub?',
+    message: 'Automatyczna kopia przestanie działać. Kopia na GitHubie zostaje, treningi w telefonie też.',
+    buttons: [{ text: 'Anuluj', role: 'cancel' }, { text: 'Odłącz', role: 'destructive' }]
+  })
+  await a.present()
+  if ((await a.onDidDismiss()).role === 'destructive') { await disconnect(); msg.value = 'Odłączono' }
 }
 </script>
 
@@ -93,6 +151,16 @@ function importData(e) {
   background: linear-gradient(140deg, #4a66f0, #2f4bd8); box-shadow: 0 4px 12px rgba(47,75,216,.3); }
 .hero b { font-size: 17px; font-weight: 800; }
 .hero p { margin: 3px 0 0; color: var(--app-muted); font-size: 14px; line-height: 1.4; }
+.hero-mid { flex: 1; min-width: 0; }
+.hero p.err { color: #e8453c; }
+.shield.bad { background: linear-gradient(140deg, #f06a5a, #e8453c); box-shadow: 0 4px 12px rgba(232,69,60,.3); }
+.connect { margin-top: 10px; height: 42px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast); font-size: 15px; font-weight: 700; }
+.mini { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.mini button { height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--app-field); color: var(--ion-color-primary);
+  font-size: 14px; font-weight: 600; }
+.mini button.off { color: #e8453c; }
+button:disabled { opacity: .5; }
 .stat b.small { font-size: 17px; margin-top: 5px; }
 .stat b.warn { color: #e8453c; }
 .actions { display: grid; gap: 10px; margin: 0 16px; }
