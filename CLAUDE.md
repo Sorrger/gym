@@ -22,10 +22,15 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 
 ## Files
 - `src/plan.js` – the training plan (PLAN, COLORS, UNITS). Multi-part exercises (e.g. "Nauka podciągania" = Wiszenie (s) + Negatywy (reps)) via `groupsOf`/`entriesOf`; each part stored under key `"Name · Part"`.
-- `src/store.js` – sessions in IndexedDB key `sessions` (`id -> { id, date, day, ex: { key: [{ w, d }] }, started, finished, updated, cur }`). New workout pre-fills values from the newest earlier session where that exercise had any value; set count from the last session where it was ticked. Empty workouts are discarded; stale open ones (>12 h) closed or dropped.
+- `src/store.js` – sessions in IndexedDB key `sessions` (`id -> { id, date, day, ex: { key: [{ w, r?, d }] }, started, finished, updated, cur }`).
+  `w` = kg / seconds / reps depending on the part's unit, `r` = reps per set (only kg exercises, default `DEF_REPS` = 6).
+  New workout pre-fills weight AND reps from the newest earlier session where that exercise had any value; set count from the last session where it was ticked.
+  **Auto-save:** every change is written to IndexedDB immediately (sync watcher + microtask), plus on hide/pagehide – killing the app loses nothing, online or offline. Workout screen shows "Zapisano…".
+  Finishing an empty workout discards it. Open workout idle >12 h: closed (kept) if anything was ticked or edited by hand, dropped only if never touched.
+  `suggestedDay()` follows the weekly schedule `WEEKDAY_TO_DAY` (Mon Push, Tue Pull, Thu Legs, Fri Upper): today's plan ("Dziś"), else the next scheduled one ("Następny").
 - `src/cloud.js` – automatic backup to a secret GitHub Gist file `gym-backup.json` a few seconds after any change; token pasted by the user in tab "Kopia" and stored only on the phone (IndexedDB key `cloud`). Connecting finds an existing gist and merges it (= restore on a new phone).
 - `src/updater.js` + `src/sw.js` – offline cache + updates. New SW waits (no auto skipWaiting) and is activated only at app start/resume behind the update screen. Marker cache `gym-updater-v1` = one-time migration from the old SW. Do not reintroduce auto skipWaiting: swapping files under a running page broke navigation before.
-- `src/views/` – Home (Start), Workout (one exercise at a time, wheel picker, summary), Progress (+ ExerciseView chart), History (calendar), Settings ("Kopia": GitHub backup + JSON file export/import), Tabs.
+- `src/views/` – Home (Start), Workout (one exercise at a time; per set: weight ± step and reps ±1, both with a wheel picker; hang parts (unit `s`) have a "Minutnik": dial to set seconds (knob 5–120 s) → 5-4-3-2-1 → counts down to 0 with beeps → saves the seconds and ticks the set, Stop early saves the seconds held; summary), Progress (+ ExerciseView chart), History (calendar), Settings ("Kopia": GitHub backup + JSON file export/import), Tabs.
 - `src/theme.css` – design system: iOS look, violet accent `--accent`, plan colours only as identity, `.card`, `.stats`, `.ios-group`/`.row`, `.btn`, `.plan-ico`, large collapsing titles (ion-header collapse="condense").
 - `public/icon-*.png` – app icon (white biceps on violet gradient). Name "Gym" in vite.config.js manifest + index.html.
 

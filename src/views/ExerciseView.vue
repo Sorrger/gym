@@ -71,7 +71,7 @@ const pts = computed(() => {
   sorted().slice().reverse().forEach(s => {
     const done = (s.ex?.[name.value] || []).filter(x => x.d && x.w != null)
     if (!done.length) return
-    out.push({ id: s.id, date: s.date, w: Math.max(...done.map(x => x.w)), sets: done.map(x => fmtNum(x.w)).join(' · ') })
+    out.push({ id: s.id, date: s.date, w: Math.max(...done.map(x => x.w)), sets: done.map(x => fmtNum(x.w) + (x.r ? ' × ' + x.r : '')).join(' · ') })
   })
   let max = -Infinity
   out.forEach((p, k) => { p.pr = k > 0 && p.w > max; max = Math.max(max, p.w) })

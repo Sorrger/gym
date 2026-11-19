@@ -9,7 +9,7 @@
       <div class="page">
 
         <ion-segment class="seg" :value="String(day)" @ionChange="e => (ui.progressDay = +e.detail.value)">
-          <ion-segment-button v-for="(d, i) in PLAN" :key="d.key" :value="String(i)"><ion-label>{{ d.key === 'chestback' ? 'K + P' : d.name }}</ion-label></ion-segment-button>
+          <ion-segment-button v-for="(d, i) in PLAN" :key="d.key" :value="String(i)"><ion-label>{{ d.name }}</ion-label></ion-segment-button>
         </ion-segment>
 
         <div class="tiles">

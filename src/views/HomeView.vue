@@ -57,7 +57,7 @@
             :style="{ '--c': COLORS[d.key] }" @click="start(i)">
             <div class="plan-top">
               <span class="plan-ico">{{ d.abbr }}</span>
-              <span v-if="i === next && !active" class="next-pill">Następny</span>
+              <span v-if="i === next && !active" class="next-pill">{{ isToday(i) ? 'Dziś' : 'Następny' }}</span>
             </div>
             <b>{{ d.name }}</b>
             <span class="meta">{{ d.ex.length }} ćwiczeń · {{ lastText(i) }}</span>
@@ -80,7 +80,7 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, alertController } from '@ionic/vue'
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline } from 'ionicons/icons'
-import { PLAN, COLORS } from '../plan'
+import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
 import { state, activeSession, startSession, finishSession, lastDoneOf, suggestedDay, doneSessions, counts, ago, iso } from '../store'
 
@@ -127,6 +127,7 @@ function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? 
 const backupWarn = computed(() => cloud.token && cloud.dirty && cloud.error && cloud.error !== 'Brak połączenia' ||
   (cloud.token && cloud.dirty && cloud.lastSync && Date.now() - cloud.lastSync > 3 * 864e5))
 const reload = () => location.reload()
+const isToday = i => WEEKDAY_TO_DAY[new Date().getDay()] === i
 
 function open(id) { router.push('/workout/' + id) }
 

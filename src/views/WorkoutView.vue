@@ -24,6 +24,10 @@
             <div class="ex-meta">
               <span>Ćwiczenie {{ idx + 1 }} z {{ plan.ex.length }}</span>
               <span v-if="s.finished" class="edit-chip"><ion-icon :icon="createOutline" /> Edycja · {{ fmtDate(s.date) }}</span>
+              <span v-else class="saved" :class="{ cloudok: cloud.token && !cloud.dirty && !cloud.error }">
+                <ion-icon :icon="cloud.token && !cloud.dirty && !cloud.error ? cloudDoneOutline : checkmarkCircle" />
+                {{ cloud.token ? (cloud.dirty || cloud.error ? 'Zapisano · kopia gdy będzie internet' : 'Zapisano · kopia na GitHub') : 'Zapisano w telefonie' }}
+              </span>
             </div>
             <h1>{{ exName }}</h1>
             <div class="ex-sub">
@@ -42,16 +46,28 @@
                 <div class="sets">
                   <div class="set" v-for="(x, si) in sets(g.key)" :key="si" :class="{ d: x.d }">
                     <span class="idx num">{{ si + 1 }}</span>
-                    <button class="step num" @click="step(g, si, -1)" :aria-label="'Minus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="removeIcon" /></button>
-                    <button class="weight num" @click="openPicker(g, si)">
-                      <b>{{ x.w == null ? '—' : fmtNum(x.w) }}</b><small>{{ UNITS[g.unit].short }}</small>
-                    </button>
-                    <button class="step num" @click="step(g, si, 1)" :aria-label="'Plus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="add" /></button>
+                    <div class="ctl">
+                      <div class="line">
+                        <button class="step num" @click="step(g, si, -1)" :aria-label="'Minus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="removeIcon" /></button>
+                        <button class="weight num" @click="openPicker(g, si)">
+                          <b>{{ x.w == null ? '—' : fmtNum(x.w) }}</b><small>{{ UNITS[g.unit].short }}</small>
+                        </button>
+                        <button class="step num" @click="step(g, si, 1)" :aria-label="'Plus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="add" /></button>
+                      </div>
+                      <div class="line reps" v-if="g.unit === 'kg'">
+                        <button class="rstep" @click="stepReps(g, si, -1)" aria-label="Minus 1 powtórzenie"><ion-icon :icon="removeIcon" /></button>
+                        <button class="reps-val num" @click="openPicker(g, si, 'r')"><b>× {{ x.r ?? DEF_REPS }}</b><small>powt.</small></button>
+                        <button class="rstep" @click="stepReps(g, si, 1)" aria-label="Plus 1 powtórzenie"><ion-icon :icon="add" /></button>
+                      </div>
+                    </div>
                     <button class="check" @click="toggle(g, si)" :aria-pressed="x.d" aria-label="Seria zrobiona">
                       <ion-icon :icon="checkmark" />
                     </button>
                   </div>
                 </div>
+                <button v-if="g.unit === 's'" class="timer-btn" @click="openTimer(g)">
+                  <ion-icon :icon="stopwatchOutline" /> Minutnik · seria {{ nextSet(g) + 1 }}
+                </button>
                 <div class="ex-foot">
                   <button class="link" @click="addSet(g)"><ion-icon :icon="add" /> Seria</button>
                   <button class="link muted" v-if="sets(g.key).length > 1" @click="popSet(g)"><ion-icon :icon="removeIcon" /> Seria</button>
@@ -67,7 +83,7 @@
       <ion-modal :is-open="pickerOpen" :initial-breakpoint="1" :breakpoints="[0, 1]" class="wheel-sheet" :style="{ '--c': color }" @didDismiss="pickerOpen = false">
         <div class="sheet">
           <div class="sheet-head">
-            <span>{{ pickG?.label ? pickG.label + ' · ' : '' }}Seria {{ pickSet + 1 }}</span>
+            <span>{{ pickG?.label ? pickG.label + ' · ' : '' }}Seria {{ pickSet + 1 }}{{ pickField === 'r' ? ' · powt.' : '' }}</span>
             <b class="num">{{ fmtVal(pickVal, pickUnit) }}</b>
             <ion-button fill="clear" :strong="true" :style="{ '--color': color }" @click="applyPick(false)">Gotowe</ion-button>
           </div>
@@ -97,6 +113,44 @@
         <button class="nav-btn" v-else @click="finish">{{ s.finished ? 'Gotowe' : 'Zakończ trening' }}</button>
       </div>
     </ion-footer>
+
+    <!-- hang timer: set seconds on a dial, 5-4-3-2-1, then count down to 0 -->
+    <Transition name="rise">
+      <div v-if="timer" class="timer-screen">
+        <div class="tm-head">{{ timer.g.label || timer.g.name }} · seria {{ timer.si + 1 }}</div>
+
+        <div class="tm-ring" :class="['ph-' + tPhase]" ref="dialEl"
+          @pointerdown="dialDown" @pointermove="dialMove" @pointerup="dialUp" @pointercancel="dialUp">
+          <svg viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="50" class="bg" />
+            <circle cx="60" cy="60" r="50" class="fg" :style="{ strokeDashoffset: 314.16 * (1 - tRing) }" />
+            <g v-if="tPhase === 'setup'" :transform="`rotate(${tSet / DIAL_MAX * 360} 60 60)`">
+              <circle cx="110" cy="60" r="8.5" class="knob" />
+            </g>
+          </svg>
+          <div class="tm-val num">
+            <b>{{ tPhase === 'setup' ? tSet : tPhase === 'prep' ? tPrepLeft : tLeft }}</b>
+            <span>{{ tPhase === 'setup' ? 'sekund · kręć palcem' : tPhase === 'prep' ? 'przygotuj się' : tPhase === 'done' ? 'brawo!' : 'zostało sekund' }}</span>
+          </div>
+        </div>
+
+        <div class="tm-adj" v-if="tPhase === 'setup'">
+          <button @click="tSet = Math.max(DIAL_MIN, tSet - 5)">−5 s</button>
+          <button @click="tSet = Math.max(DIAL_MIN, tSet - 1)">−1</button>
+          <button @click="tSet = Math.min(DIAL_MAX, tSet + 1)">+1</button>
+          <button @click="tSet = Math.min(DIAL_MAX, tSet + 5)">+5 s</button>
+        </div>
+        <p class="tm-goal num" v-else>{{ tPhase === 'run' ? 'Wiszenie ' + tSet + ' s' : tPhase === 'done' ? 'Zapisano ' + tSet + ' s' : 'Start za chwilę' }}</p>
+
+        <div class="tm-btns">
+          <button class="tm-cancel" @click="closeTimer">Anuluj</button>
+          <button class="tm-stop" v-if="tPhase === 'setup'" @click="startTimer">Start</button>
+          <button class="tm-stop" v-else-if="tPhase === 'prep'" @click="skipPrep">Start teraz</button>
+          <button class="tm-stop" v-else-if="tPhase === 'run'" @click="stopTimer">Stop i zapisz</button>
+          <button class="tm-stop" v-else @click="closeTimer">Gotowe</button>
+        </div>
+      </div>
+    </Transition>
 
     <!-- end-of-workout screen -->
     <Transition name="rise">
@@ -130,12 +184,13 @@
 </template>
 
 <script setup>
-import { computed, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter, alertController } from '@ionic/vue'
-import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, groupsOf, entriesOf, fmtNum, fmtVal } from '../plan'
+import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline } from 'ionicons/icons'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal } from '../plan'
+import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted } from '../store'
 
 const route = useRoute()
@@ -181,7 +236,11 @@ function tEnd(e) {
 function lastText(g) {
   const p = lastFor(g.key, s.value)
   if (!p) return g.unit === 'kg' ? 'Pierwszy raz. Ustaw ciężar dla serii.' : 'Pierwszy raz. Ustaw wartość dla serii.'
-  return 'Ostatnio ' + fmtShort(p.date) + ' (' + ago(p.date) + '): ' + p.ex[g.key].filter(x => x.d && x.w != null).map(x => fmtNum(x.w)).join(' · ') + ' ' + UNITS[g.unit].short
+  const done = p.ex[g.key].filter(x => x.d && x.w != null)
+  const txt = g.unit === 'kg' && done.some(x => x.r)
+    ? done.map(x => fmtNum(x.w) + (x.r ? '×' + x.r : '')).join(' · ') + ' kg'
+    : done.map(x => fmtNum(x.w)).join(' · ') + ' ' + UNITS[g.unit].short
+  return 'Ostatnio ' + fmtShort(p.date) + ' (' + ago(p.date) + '): ' + txt
 }
 
 function toggle(g, si) {
@@ -197,13 +256,17 @@ function step(g, si, dirn) {
   const base = x.w ?? [...a].slice(0, si).reverse().find(y => y.w != null)?.w ?? 0
   x.w = Math.max(0, Math.min(u.max, Math.round((base + dirn * u.step) * 4) / 4)); touch()
 }
-function addSet(g) { const a = sets(g.key); a.push({ w: a.length ? a[a.length - 1].w : null, d: false }); touch() }
+function addSet(g) {
+  const a = sets(g.key), last = a[a.length - 1]
+  a.push(g.unit === 'kg' ? { w: last?.w ?? null, r: last?.r ?? DEF_REPS, d: false } : { w: last?.w ?? null, d: false }); touch()
+}
+function stepReps(g, si, d) { const x = sets(g.key)[si]; x.r = Math.max(1, Math.min(50, (x.r ?? DEF_REPS) + d)); touch() }
 function popSet(g) { sets(g.key).pop(); touch() }
 
 // value picker (kg with quarter steps; seconds and reps as whole numbers)
 const fracs = [0, 0.25, 0.5, 0.75]
-const pickerOpen = ref(false), pickSet = ref(0), pickInt = ref(0), pickFrac = ref(0), pickG = ref(null)
-const pickUnit = computed(() => pickG.value?.unit || 'kg')
+const pickerOpen = ref(false), pickSet = ref(0), pickInt = ref(0), pickFrac = ref(0), pickG = ref(null), pickField = ref('w')
+const pickUnit = computed(() => (pickField.value === 'r' ? 'reps' : pickG.value?.unit || 'kg'))
 const ints = computed(() => Array.from({ length: UNITS[pickUnit.value].max + 1 }, (_, i) => i))
 const quickSteps = computed(() => { const st = UNITS[pickUnit.value].step; return [-2 * st, -st, st, 2 * st] })
 const pickVal = computed(() => pickInt.value + (UNITS[pickUnit.value].frac ? pickFrac.value : 0))
@@ -212,9 +275,10 @@ function setPick(v) {
   v = Math.max(0, Math.min(u.max, u.frac ? Math.round(v * 4) / 4 : Math.round(v)))
   pickInt.value = Math.floor(v); pickFrac.value = Math.round((v - Math.floor(v)) * 4) / 4
 }
-function openPicker(g, si) {
-  pickG.value = g; pickSet.value = si
+function openPicker(g, si, field = 'w') {
+  pickG.value = g; pickSet.value = si; pickField.value = field
   const a = sets(g.key)
+  if (field === 'r') { setPick(a[si].r ?? DEF_REPS); pickerOpen.value = true; return }
   let w = a[si].w
   if (w == null) w = [...a].slice(0, si).reverse().find(x => x.w != null)?.w ?? lastFor(g.key, s.value)?.ex[g.key]?.[0]?.w ?? (g.unit === 'reps' ? 3 : 20)
   setPick(w)
@@ -223,9 +287,115 @@ function openPicker(g, si) {
 function bump(q) { setPick(pickVal.value + q) }
 function applyPick(all) {
   const v = pickVal.value
-  sets(pickG.value.key).forEach((x, i) => { if (i === pickSet.value || (all && i > pickSet.value)) x.w = v })
+  const f = pickField.value
+  sets(pickG.value.key).forEach((x, i) => { if (i === pickSet.value || (all && i > pickSet.value)) x[f] = f === 'r' ? Math.max(1, v) : v })
   touch(); pickerOpen.value = false
 }
+
+// ---------- hang timer ----------
+// setup: pick seconds on a dial (knob position = value, 0..120 s) -> prep: 5-4-3-2-1 -> run: counts down to 0 -> done: saved.
+// Stop during the run saves the seconds actually held. Based on timestamps, so it stays right if the screen sleeps.
+const PREP = 5, DIAL_MIN = 5, DIAL_MAX = 120
+const timer = ref(null) // { g, si, go (hang start), end (hang end) }
+const tPhase = ref('setup'), tSet = ref(30), tNow = ref(Date.now()), dialEl = ref(null)
+let tInt = null, audio = null, wake = null, beeped = new Set(), doneTimer = null
+const nextSet = g => { const a = sets(g.key); const i = a.findIndex(x => !x.d); return i < 0 ? a.length - 1 : i }
+const tPrepLeft = computed(() => (timer.value?.go ? Math.max(1, Math.ceil((timer.value.go - tNow.value) / 1000)) : PREP))
+const tLeft = computed(() => (timer.value?.end ? Math.max(0, Math.ceil((timer.value.end - tNow.value) / 1000)) : tSet.value))
+const tRing = computed(() => {
+  if (tPhase.value === 'setup') return tSet.value / DIAL_MAX
+  if (tPhase.value === 'prep') return (timer.value.go - tNow.value) / (PREP * 1000)
+  if (tPhase.value === 'run') return Math.max(0, (timer.value.end - tNow.value) / (tSet.value * 1000))
+  return 1
+})
+function defaultSecs(g, si) {
+  const w = sets(g.key)[si]?.w
+  if (w) return Math.min(DIAL_MAX, Math.max(DIAL_MIN, w))
+  const r = String(g.target).match(/(\d+)-(\d+)\s*s/), m = String(g.target).match(/(\d+)\s*s/)
+  return r ? +r[2] : m ? +m[1] : 30
+}
+function beep(freq = 880, ms = 140) {
+  try {
+    if (!audio) return
+    const o = audio.createOscillator(), gn = audio.createGain()
+    o.frequency.value = freq; o.connect(gn); gn.connect(audio.destination)
+    gn.gain.setValueAtTime(0.3, audio.currentTime); gn.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + ms / 1000)
+    o.start(); o.stop(audio.currentTime + ms / 1000)
+  } catch {}
+}
+const once = (k, fn) => { if (!beeped.has(k)) { beeped.add(k); fn() } }
+function tick() {
+  tNow.value = Date.now()
+  const tm = timer.value; if (!tm) return
+  if (tPhase.value === 'prep') {
+    if (tNow.value >= tm.go) { tPhase.value = 'run'; once('go', () => beep(1320, 300)) }
+    else once('p' + tPrepLeft.value, () => beep(880, 110))
+  }
+  if (tPhase.value === 'run') {
+    if (tNow.value >= tm.end) { finishHang(tSet.value); return }
+    if (tLeft.value <= 3) once('l' + tLeft.value, () => beep(1100, 90))
+  }
+}
+async function openTimer(g) {
+  // sound must be unlocked by this tap (iOS)
+  try { audio = audio || new (window.AudioContext || window.webkitAudioContext)(); await audio.resume() } catch {}
+  const si = nextSet(g)
+  timer.value = { g, si, go: 0, end: 0 }
+  tSet.value = defaultSecs(g, si)
+  tPhase.value = 'setup'
+}
+async function startTimer() {
+  try { wake = await navigator.wakeLock?.request('screen') } catch {}
+  const now = Date.now()
+  beeped = new Set()
+  timer.value.go = now + PREP * 1000
+  timer.value.end = timer.value.go + tSet.value * 1000
+  tPhase.value = 'prep'; tNow.value = now
+  clearInterval(tInt); tInt = setInterval(tick, 100); tick()
+}
+function skipPrep() {
+  const now = Date.now()
+  timer.value.go = now; timer.value.end = now + tSet.value * 1000
+  beeped.add('p1'); tick()
+}
+function finishHang(secs) {
+  const tm = timer.value; if (!tm) return
+  clearInterval(tInt); tInt = null
+  const x = sets(tm.g.key)[tm.si]
+  if (secs >= 1) {
+    x.w = Math.min(UNITS.s.max, secs); touch()
+    if (!x.d) toggle(tm.g, tm.si)
+  }
+  if (secs >= tSet.value) {
+    tPhase.value = 'done'
+    once('end', () => { beep(1320, 160); setTimeout(() => beep(1760, 320), 200) })
+    clearTimeout(doneTimer); doneTimer = setTimeout(closeTimer, 1600)
+  } else closeTimer()
+}
+function stopTimer() {
+  const tm = timer.value; if (!tm) return
+  finishHang(Math.max(0, Math.floor((Date.now() - tm.go) / 1000)))
+}
+function closeTimer() {
+  clearInterval(tInt); tInt = null; clearTimeout(doneTimer)
+  timer.value = null; tPhase.value = 'setup'
+  try { wake?.release() } catch {}
+  wake = null
+}
+// dial: the knob follows the finger; it can't jump across the top from 120 to 0 (or back)
+let dragging = false
+function dialValue(e) {
+  const r = dialEl.value.getBoundingClientRect()
+  const a = Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) // 0 at top, clockwise
+  const v = Math.round(((a + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI) * DIAL_MAX)
+  const prev = tSet.value
+  if (Math.abs(v - prev) > DIAL_MAX / 2) return prev > DIAL_MAX / 2 ? DIAL_MAX : DIAL_MIN
+  return Math.min(DIAL_MAX, Math.max(DIAL_MIN, v))
+}
+function dialDown(e) { if (tPhase.value !== 'setup') return; dragging = true; e.target.setPointerCapture?.(e.pointerId); tSet.value = dialValue(e) }
+function dialMove(e) { if (!dragging) return; e.preventDefault(); tSet.value = dialValue(e) }
+function dialUp() { dragging = false }
+onUnmounted(closeTimer)
 
 // finishing shows the summary screen; "Zapisz trening" saves and returns to the main menu
 const summary = ref(false)
@@ -286,6 +456,9 @@ function save() {
 .ex { height: 100%; display: flex; flex-direction: column; padding: 16px 16px 8px; }
 .edit-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--c);
   background: color-mix(in srgb, var(--c) 14%, transparent); border-radius: 999px; padding: 4px 10px; }
+.saved { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 500; text-transform: none; letter-spacing: 0; color: var(--app-faint); }
+.saved ion-icon { font-size: 14px; }
+.saved.cloudok { color: var(--app-ok); }
 .ex-meta { display: flex; justify-content: space-between; align-items: center; color: var(--app-muted); font-size: 13px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .3px; padding: 0 4px; }
 h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; text-wrap: balance; }
@@ -304,8 +477,52 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .multi .set { padding: 4px 0; }
 .multi .step, .multi .check { width: 40px; height: 40px; }
 .multi .weight { height: 44px; }
+.multi .line { grid-template-columns: 40px 1fr 40px; }
 .sets { background: var(--app-card); border-radius: var(--r-lg); padding: 2px 12px; box-shadow: var(--app-shadow); }
-.set { display: grid; grid-template-columns: 20px 44px 1fr 44px 46px; gap: 8px; align-items: center; padding: 8px 0; position: relative; }
+.set { display: grid; grid-template-columns: 20px 1fr 46px; gap: 8px; align-items: center; padding: 8px 0; position: relative; }
+.ctl { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.line { display: grid; grid-template-columns: 44px 1fr 44px; gap: 8px; align-items: center; }
+.line.reps { grid-template-columns: 44px 1fr 44px; }
+.rstep { width: 32px; height: 32px; justify-self: center; border: 0; border-radius: 50%; background: var(--app-field); color: var(--app-muted);
+  font-size: 17px; display: grid; place-items: center; padding: 0; transition: transform .1s; }
+.rstep:active { transform: scale(.88); }
+.reps-val { height: 34px; border: 0; border-radius: 10px; background: none; color: var(--app-muted); display: flex; align-items: baseline;
+  justify-content: center; gap: 4px; padding-top: 4px; }
+.reps-val:active { background: var(--app-field); }
+.reps-val b { font-size: 18px; font-weight: 600; color: var(--ion-text-color); }
+.reps-val small { font-size: 13px; }
+.set.d .reps-val b { color: var(--c); }
+.timer-btn { margin-top: 10px; height: 46px; border: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); font-size: 16px; font-weight: 600; }
+.timer-btn ion-icon { font-size: 20px; }
+.timer-btn:active { opacity: .7; }
+
+.timer-screen { position: absolute; inset: 0; z-index: 110; display: flex; flex-direction: column; align-items: center; background: var(--app-bg);
+  padding: calc(env(safe-area-inset-top, 0px) + 28px) 24px calc(20px + env(safe-area-inset-bottom, 0px)); }
+.tm-head { color: var(--app-muted); font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.tm-ring { position: relative; width: min(80vw, 310px); aspect-ratio: 1; margin: auto 0 0; touch-action: none; }
+.tm-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+.tm-ring circle { fill: none; stroke-width: 10; }
+.tm-ring .bg { stroke: color-mix(in srgb, var(--c) 14%, transparent); }
+.tm-ring .fg { stroke: var(--c); stroke-linecap: round; stroke-dasharray: 314.16; transition: stroke .2s; }
+.tm-ring.ph-setup .fg { transition: stroke-dashoffset .08s; }
+.tm-ring.ph-prep .fg { stroke: var(--app-faint); }
+.tm-ring.ph-done .fg { stroke: var(--app-ok); }
+.tm-ring .knob { fill: #fff; stroke: var(--c); stroke-width: 3.5; filter: drop-shadow(0 1px 3px rgba(0,0,0,.3)); }
+.tm-val { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+.tm-val b { font-size: 92px; font-weight: 700; letter-spacing: -2px; line-height: 1; }
+.tm-ring.ph-done .tm-val b { color: var(--app-ok); }
+.tm-val span { margin-top: 6px; color: var(--app-muted); font-size: 16px; }
+.tm-adj { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; margin: 22px 0 auto; }
+.tm-adj button { height: 44px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c);
+  font-size: 16px; font-weight: 600; }
+.tm-adj button:active { opacity: .6; }
+.tm-goal { min-height: 44px; margin: 22px 0 auto; font-size: 17px; font-weight: 600; color: var(--app-muted); display: grid; place-items: center; }
+.tm-btns { width: 100%; display: grid; grid-template-columns: 1fr 1.6fr; gap: 10px; }
+.tm-btns button { height: 56px; border: 0; border-radius: 16px; font-size: 17px; font-weight: 600; }
+.tm-cancel { background: var(--app-field); color: var(--ion-text-color); }
+.tm-stop { background: var(--c); color: #fff; }
+.tm-btns button:active { transform: scale(.97); }
 .set + .set::before { content: ''; position: absolute; top: 0; left: 28px; right: 0; border-top: 0.5px solid var(--app-line); }
 .idx { color: var(--app-faint); font-weight: 600; font-size: 15px; text-align: center; }
 .step { width: 44px; height: 44px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c);

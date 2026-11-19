@@ -1,6 +1,6 @@
 import { reactive, watch } from 'vue'
 import { get, set } from 'idb-keyval'
-import { PLAN, entriesOf } from './plan'
+import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -32,18 +32,28 @@ export async function load() {
   })
   closeStale()
   state.ready = true
+  saveNow() // persist what closeStale / migration changed during loading
   if (navigator.storage?.persist) navigator.storage.persist().catch(() => {})
 }
 
-let t = null
-function saveNow() { clearTimeout(t); t = null; if (state.loadError) return Promise.resolve(); return set('sessions', JSON.parse(JSON.stringify(state.sessions))).catch(console.warn) }
-watch(() => state.sessions, () => { if (state.ready) { clearTimeout(t); t = setTimeout(saveNow, 250) } }, { deep: true })
-// iOS may kill the app when it goes to background: write immediately
+// Auto-save: every change is written to the phone right away (no delay), so swiping the app away
+// a moment after a tap loses nothing. Changes made in the same tick are written once.
+let queued = false
+function saveNow() {
+  if (state.loadError) return Promise.resolve()
+  return set('sessions', JSON.parse(JSON.stringify(state.sessions))).catch(console.warn)
+}
+watch(() => state.sessions, () => {
+  if (!state.ready || queued) return
+  queued = true
+  queueMicrotask(() => { queued = false; saveNow() })
+}, { deep: true, flush: 'sync' })
+// leaving the app: write once more, just in case
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && t) saveNow()
+  if (document.visibilityState === 'hidden' && state.ready) saveNow()
   if (document.visibilityState === 'visible' && state.ready) closeStale()
 })
-window.addEventListener('pagehide', () => { if (t) saveNow() })
+window.addEventListener('pagehide', () => { if (state.ready) saveNow() })
 
 export const sorted = () => Object.values(state.sessions).sort((a, b) => b.date.localeCompare(a.date) || (b.started || 0) - (a.started || 0))
 
@@ -55,13 +65,15 @@ export function counts(s) {
 const hasData = s => Object.values(s.ex || {}).some(a => a.some(x => x.d))
 const ticked = a => (a || []).some(x => x.d && x.w != null)
 
-// a workout left open for over 12 h (forgot to tap Zakończ): keep it if anything was ticked, drop it if empty.
-// Time-based, not date-based, so a workout that runs past midnight is not closed mid-session.
+// a workout left open for over 12 h (forgot to tap Zakończ) gets closed. Time-based, not date-based,
+// so a workout that runs past midnight is not closed mid-session.
+// Kept if anything was ticked OR any value was changed by hand (so typed weights/reps are remembered for next time);
+// only a workout that was opened and never touched is dropped.
 export function closeStale() {
   const limit = Date.now() - 12 * 3600e3
   Object.values(state.sessions).forEach(s => {
     if (s.finished || (s.updated || s.started || 0) > limit) return
-    if (hasData(s)) s.finished = true
+    if (hasData(s) || (s.updated || 0) > (s.started || 0) + 1000) s.finished = true
     else delete state.sessions[s.id]
   })
 }
@@ -84,7 +96,9 @@ export function startSession(day) {
     const n = lastAny ? Math.max(1, lastAny.length) : prev ? Math.max(1, prev.length) : g.sets
     s.ex[g.key] = Array.from({ length: n }, (_, i) => {
       const w = prev ? (prev[i]?.w ?? [...prev].reverse().find(x => x.w != null)?.w ?? null) : null
-      return { w, d: false }
+      if (g.unit !== 'kg') return { w, d: false }
+      const r = prev?.[i]?.r ?? (prev ? [...prev].reverse().find(x => x.r != null)?.r : null) ?? DEF_REPS
+      return { w, r, d: false }
     })
   })
   state.sessions[s.id] = s
@@ -121,11 +135,17 @@ export function mergeSessions(src) {
 }
 
 export function lastDoneOf(day) { return sorted().find(s => s.day === day && hasData(s)) || null }
-// the plan you haven't done for the longest time
+// suggested plan follows the weekly schedule (Mon Push, Tue Pull, Thu Legs, Fri Upper):
+// today's plan on a training day, otherwise (rest day, or today's already done) the next one in the week
 export function suggestedDay() {
-  let best = 0, bestKey = Infinity
-  PLAN.forEach((_, i) => { const l = lastDoneOf(i); const k = l ? l.started : -1; if (k < bestKey) { bestKey = k; best = i } })
-  return best
+  const now = new Date(), today = iso(now)
+  const doneToday = new Set(Object.values(state.sessions).filter(s => s.date === today && hasData(s)).map(s => s.day))
+  for (let k = 0; k < 7; k++) {
+    const day = WEEKDAY_TO_DAY[(now.getDay() + k) % 7]
+    if (day == null || (k === 0 && doneToday.has(day))) continue
+    return day
+  }
+  return 0
 }
 
 export function series(name) {

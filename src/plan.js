@@ -10,12 +10,13 @@ export const PLAN = [
   { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: '', ex: [
     ['Rumuński martwy ciąg', '3 × 8-10'], ['Przysiad Zercher', '3 × 6-10'], ['Prostowanie nóg (maszyna)', '3 × 10-15'],
     ['Uginanie nóg (maszyna)', '3 × 10-15'], ['Łydki siedząc (maszyna)', '4 × 12-20']] },
-  { key: 'chestback', abbr: 'KP', short: 'Pt', name: 'Klatka + Plecy', note: 'Superserie: 1+2, 3+4, 5+6.', ex: [
+  { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6.', ex: [
     ['Podciąganie nachwytem (wspomagane)', '3 × 4-6', 'Plecy'], ['Wyciskanie sztangi nad głowę', '3 × 8-12', 'Klatka'],
     ['Seal row', '3 × 8-12', 'Plecy'], ['Wyciskanie na Smithcie na skosie', '3 × 8-12', 'Klatka'],
     ['Wyciąg górny szeroki', '3 × 10-12', 'Plecy'], ['Butterfly', '3 × 12-15', 'Klatka'], ['Triceps + biceps', '2 × 12-15 każdy', 'Ręce']] }
 ]
 export const COLORS = { push: '#ff5a4f', pull: '#2f8cff', legs: '#22b864', chestback: '#ff9500' }
+// the user's week: Mon Push, Tue Pull, Thu Legs, Fri Upper (JS getDay: 0 = Sunday)
 export const WEEKDAY_TO_DAY = { 1: 0, 2: 1, 4: 2, 5: 3 }
 export function nSets(t) { const m = t.match(/^(\d+)(?:-(\d+))?/); return m ? +(m[2] || m[1]) : 3 }
 
@@ -25,6 +26,9 @@ export const UNITS = {
   s: { step: 5, max: 300, frac: false, short: 's', best: 'Najdłuższe wiszenie (s)' },
   reps: { step: 1, max: 50, frac: false, short: 'powt.', best: 'Najwięcej powtórzeń' }
 }
+// weight exercises also log reps per set; 6 unless changed (then the last value is remembered)
+export const DEF_REPS = 6
+
 export function fmtNum(v) { return v == null ? '–' : String(+(+v).toFixed(2)).replace('.', ',') }
 export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].short }
 
