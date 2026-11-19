@@ -11,7 +11,10 @@ Read this first in every session. It is the project's memory: who the user is, h
 - URL: https://sorrger.github.io/gym/ (GitHub Pages, source = branch `main`, folder `/docs`).
 - **Ship = `npm run deploy`** (scripts/deploy.mjs): builds into `docs/`, commits, pushes `main`. Pages updates in ~1 min.
   `docs/` is build output: never edit it by hand, always rebuild.
-- In a cloud session: `npm ci` first, then edit, `npm run build` to check, `npm run deploy` to publish.
+- In a cloud session (Claude app on the phone / claude.ai/code): `npm ci` first, then edit, `npm run build` to check, `npm run deploy` to publish.
+  The live site only changes when `docs/` lands on `main`. If the session can only push to its own `claude/...` branch,
+  open a PR and tell the user in one line to tap "Merge" in the GitHub app – after merging, the app updates in ~1 min.
+- If Pages ever serves an old version after a push: `gh api -X POST repos/Sorrger/gym/pages/builds` re-triggers the build.
 - The phone gets the new version on next open/return to the app: full-screen "Aktualizacja" with a progress ring (src/updater.js), then reload.
 
 ## Stack
