@@ -6,10 +6,13 @@ export const PLAN = [
     ['Nauka podciągania', 'Wiszenie + negatywy', null, [
       { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
       { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wiosłowanie hantlem z podparciem', '3 × 8-10 / stronę'],
-    ['T-bar row', '3 × 8-10'], ['Face pully', '3-4 × 15-20'], ['Szrugsy', '3 × 10-15'], ['Spider curl', '3 × 10-12']] },
+    ['T-bar row', '3 × 8-10'], ['Face pully', '3-4 × 15-20'], ['Szrugsy', '3 × 10-15'], ['Spider curl', '3 × 10-12'],
+    ['Unoszenie nóg na poręczach (captain’s chair)', '3 × 10-15', null, 'reps'], ['Allahy (brzuch na wyciągu)', '3 × 12-15']] },
   { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: '', ex: [
     ['Rumuński martwy ciąg', '3 × 8-10'], ['Przysiad Zercher', '3 × 6-10'], ['Prostowanie nóg (maszyna)', '3 × 10-15'],
-    ['Uginanie nóg (maszyna)', '3 × 10-15'], ['Łydki siedząc (maszyna)', '4 × 12-20']] },
+    ['Uginanie nóg (maszyna)', '3 × 10-15'], ['Łydki siedząc (maszyna)', '4 × 12-20'],
+    ['Hammer press (maszyna)', '3 × 8-12'],
+    ['Unoszenie nóg na poręczach (captain’s chair)', '3 × 10-15', null, 'reps'], ['Allahy (brzuch na wyciągu)', '3 × 12-15']] },
   { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6.', ex: [
     ['Podciąganie nachwytem (wspomagane)', '3 × 4-6', 'Plecy'], ['Wyciskanie sztangi nad głowę', '3 × 8-12', 'Klatka'],
     ['Seal row', '3 × 8-12', 'Plecy'], ['Wyciskanie na Smithcie na skosie', '3 × 8-12', 'Klatka'],
@@ -33,9 +36,11 @@ export function fmtNum(v) { return v == null ? '–' : String(+(+v).toFixed(2)).
 export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].short }
 
 // An exercise may be made of parts with their own sets (e.g. Nauka podciągania = Wiszenie + Negatywy).
+// A plain exercise may name its unit instead of parts: [name, target, tag, 'reps'].
 // Each part is stored under its own key "Name · Part"; a plain exercise is stored under its name.
 export function groupsOf(ex) {
   const [name, target, , parts] = ex
+  if (typeof parts === 'string') return [{ key: name, name, label: null, unit: parts, target, sets: nSets(target) }]
   return parts
     ? parts.map(p => ({ key: name + ' · ' + p.label, name, label: p.label, unit: p.unit, target: p.target, sets: p.sets }))
     : [{ key: name, name, label: null, unit: 'kg', target, sets: nSets(target) }]
