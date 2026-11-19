@@ -15,7 +15,7 @@ export const PLAN = [
     ['Seal row', '3 × 8-12', 'Plecy'], ['Wyciskanie na Smithcie na skosie', '3 × 8-12', 'Klatka'],
     ['Wyciąg górny szeroki', '3 × 10-12', 'Plecy'], ['Butterfly', '3 × 12-15', 'Klatka'], ['Triceps + biceps', '2 × 12-15 każdy', 'Ręce']] }
 ]
-export const COLORS = { push: '#e8453c', pull: '#2f7fe0', legs: '#18a05f', chestback: '#8a4ce8' }
+export const COLORS = { push: '#ff5a4f', pull: '#2f8cff', legs: '#22b864', chestback: '#ff9500' }
 export const WEEKDAY_TO_DAY = { 1: 0, 2: 1, 4: 2, 5: 3 }
 export function nSets(t) { const m = t.match(/^(\d+)(?:-(\d+))?/); return m ? +(m[2] || m[1]) : 3 }
 

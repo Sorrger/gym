@@ -1,54 +1,71 @@
 <template>
   <ion-page>
-    <ion-content>
+    <ion-header :translucent="true" collapse="fade"><ion-toolbar><ion-title>Kopia</ion-title></ion-toolbar></ion-header>
+    <ion-content :fullscreen="true">
+      <ion-header collapse="condense">
+        <ion-toolbar><ion-title size="large">Kopia</ion-title></ion-toolbar>
+        <p class="sub">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona' : 'Twoje treningi są tylko w tym telefonie' }}</p>
+      </ion-header>
       <div class="page">
-        <header class="page-head">
-          <h1>Kopia</h1>
-          <p>{{ cloud.token ? 'Automatyczna kopia na GitHub włączona' : 'Twoje treningi są tylko w tym telefonie' }}</p>
-        </header>
 
         <!-- automatic GitHub backup -->
         <div class="card hero" v-if="!cloud.token">
-          <div class="shield"><ion-icon :icon="cloudUploadOutline" /></div>
-          <div class="hero-mid">
-            <b>Automatyczna kopia</b>
-            <p>Po każdej zmianie aplikacja sama wyśle kopię do tajnego Gista na twoim GitHubie. Na nowym telefonie wystarczy wkleić ten sam token.</p>
-            <button class="connect" @click="askToken" :disabled="cloud.connecting">{{ cloud.connecting ? 'Łączenie…' : 'Połącz z GitHub' }}</button>
-          </div>
+          <div class="hero-ico"><ion-icon :icon="cloudUploadOutline" /></div>
+          <b class="t-title">Automatyczna kopia</b>
+          <p>Po każdej zmianie aplikacja sama wyśle kopię do tajnego Gista na twoim GitHubie. Na nowym telefonie wystarczy wkleić ten sam token.</p>
+          <button class="btn block" @click="askToken" :disabled="cloud.connecting">{{ cloud.connecting ? 'Łączenie…' : 'Połącz z GitHub' }}</button>
         </div>
-        <div class="card hero" v-else>
-          <div class="shield" :class="{ bad: cloud.error }"><ion-icon :icon="cloud.error ? cloudOfflineOutline : cloudDoneOutline" /></div>
-          <div class="hero-mid">
-            <b>GitHub · {{ cloud.login }}</b>
-            <p v-if="cloud.busy">Wysyłanie…</p>
-            <p v-else-if="cloud.error" class="err">{{ cloud.error }}{{ cloud.dirty ? ' · spróbuję ponownie' : '' }}</p>
-            <p v-else-if="cloud.dirty">Czeka na wysłanie (gdy będzie internet)</p>
-            <p v-else>Aktualna · wysłano {{ syncText }}</p>
-            <div class="mini">
-              <button @click="pushNow" :disabled="cloud.busy">Wyślij teraz</button>
-              <button @click="pullNow" :disabled="cloud.busy">Przywróć</button>
-              <button @click="askDisconnect" class="off">Odłącz</button>
+        <template v-else>
+          <h3 class="section-title">GitHub</h3>
+          <div class="ios-group">
+            <div class="row">
+              <span class="sq" :style="{ '--c': cloud.error ? 'var(--app-bad)' : 'var(--app-ok)' }"><ion-icon :icon="cloud.error ? cloudOfflineOutline : cloudDoneOutline" /></span>
+              <div class="grow">
+                <b>{{ cloud.login }}</b>
+                <span v-if="cloud.busy">Wysyłanie…</span>
+                <span v-else-if="cloud.error" class="err">{{ cloud.error }}{{ cloud.dirty ? ' · spróbuję ponownie' : '' }}</span>
+                <span v-else-if="cloud.dirty">Czeka na internet</span>
+                <span v-else>Aktualna · wysłano {{ syncText }}</span>
+              </div>
             </div>
+            <button class="row" @click="pushNow" :disabled="cloud.busy">
+              <span class="sq" style="--c: var(--accent)"><ion-icon :icon="arrowUpOutline" /></span>
+              <div class="grow"><b>Wyślij teraz</b></div>
+            </button>
+            <button class="row" @click="pullNow" :disabled="cloud.busy">
+              <span class="sq" style="--c: #2f8cff"><ion-icon :icon="arrowDownOutline" /></span>
+              <div class="grow"><b>Przywróć z GitHub</b></div>
+            </button>
           </div>
+          <p class="section-foot">Kopia wysyła się sama kilka sekund po każdej zmianie. Bez internetu poczeka i wyśle się później.</p>
+        </template>
+
+        <h3 class="section-title">Dane</h3>
+        <div class="stats">
+          <div><span>Treningi</span><b>{{ count }}</b></div>
+          <div><span>Od</span><b>{{ firstDate }}</b></div>
+          <div v-if="!cloud.token"><span>Plik</span><b :class="{ down: backupOld }">{{ backupText }}</b></div>
+          <div v-else><span>Kopia</span><b :class="{ down: cloud.error }">{{ cloud.error ? 'błąd' : cloud.dirty ? 'czeka' : 'auto' }}</b></div>
         </div>
 
-        <div class="stat-grid">
-          <div class="stat"><span>Treningi</span><b>{{ count }}</b></div>
-          <div class="stat"><span>Od</span><b class="small">{{ firstDate }}</b></div>
-          <div class="stat" v-if="!cloud.token"><span>Kopia</span><b class="small" :class="{ warn: backupOld }">{{ backupText }}</b></div>
-          <div class="stat" v-else><span>Kopia</span><b class="small" :class="{ warn: cloud.error }">{{ cloud.error ? 'błąd' : cloud.dirty ? 'czeka' : 'auto' }}</b></div>
+        <div class="ios-group">
+          <button class="row" @click="exportData">
+            <span class="sq" style="--c: #22b864"><ion-icon :icon="shareOutline" /></span>
+            <div class="grow"><b>Zapisz kopię do pliku</b><span>Pliki, iCloud albo AirDrop</span></div>
+            <ion-icon :icon="chevronForward" class="chev" />
+          </button>
+          <button class="row" @click="fileInput.click()">
+            <span class="sq" style="--c: #ff9500"><ion-icon :icon="downloadOutline" /></span>
+            <div class="grow"><b>Wczytaj kopię z pliku</b><span>Dołącza treningi, niczego nie kasuje</span></div>
+            <ion-icon :icon="chevronForward" class="chev" />
+          </button>
         </div>
 
-        <div class="actions">
-          <button class="action press" :class="{ primary: !cloud.token }" @click="exportData">
-            <ion-icon :icon="shareOutline" />
-            <div><b>Zapisz kopię do pliku</b><span>Plik .json do Plików, iCloud albo AirDrop</span></div>
-          </button>
-          <button class="action press" @click="fileInput.click()">
-            <ion-icon :icon="downloadOutline" />
-            <div><b>Wczytaj kopię</b><span>Dołącza treningi z pliku, niczego nie kasuje</span></div>
-          </button>
-        </div>
+        <template v-if="cloud.token">
+          <div class="ios-group gap">
+            <button class="row danger" @click="askDisconnect"><div class="grow"><b>Odłącz GitHub</b></div></button>
+          </div>
+        </template>
         <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="importData" />
       </div>
       <ion-toast :is-open="!!msg" :message="msg" :duration="2200" position="top" @didDismiss="msg = ''" />
@@ -58,8 +75,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { IonPage, IonContent, IonIcon, IonToast, alertController } from '@ionic/vue'
-import { shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline } from 'ionicons/icons'
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonToast, alertController } from '@ionic/vue'
+import { shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward } from 'ionicons/icons'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { cloud, connect, syncNow, restoreNow, disconnect } from '../cloud'
 
@@ -145,29 +162,15 @@ async function askDisconnect() {
 </script>
 
 <style scoped>
-.hero { display: flex; gap: 14px; align-items: flex-start; }
-.shield { width: 48px; height: 48px; flex: none; border-radius: 15px; display: grid; place-items: center; font-size: 26px; color: #fff;
-  background: linear-gradient(140deg, #4a66f0, #2f4bd8); box-shadow: 0 4px 12px rgba(47,75,216,.3); }
-.hero b { font-size: 17px; font-weight: 800; }
-.hero p { margin: 3px 0 0; color: var(--app-muted); font-size: 14px; line-height: 1.4; }
-.hero-mid { flex: 1; min-width: 0; }
-.hero p.err { color: #e8453c; }
-.shield.bad { background: linear-gradient(140deg, #f06a5a, #e8453c); box-shadow: 0 4px 12px rgba(232,69,60,.3); }
-.connect { margin-top: 10px; height: 42px; padding: 0 18px; border: 0; border-radius: 12px; background: var(--ion-color-primary);
-  color: var(--ion-color-primary-contrast); font-size: 15px; font-weight: 700; }
-.mini { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
-.mini button { height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--app-field); color: var(--ion-color-primary);
-  font-size: 14px; font-weight: 600; }
-.mini button.off { color: #e8453c; }
-button:disabled { opacity: .5; }
-.stat b.small { font-size: 17px; margin-top: 5px; }
-.stat b.warn { color: #e8453c; }
-.actions { display: grid; gap: 10px; margin: 0 16px; }
-.action { display: flex; align-items: center; gap: 14px; text-align: left; border: 0; border-radius: 18px; padding: 16px;
-  background: var(--app-card); color: var(--ion-text-color); font: inherit; }
-.action ion-icon { font-size: 26px; color: var(--ion-color-primary); flex: none; }
-.action b { display: block; font-size: 17px; font-weight: 700; }
-.action span { font-size: 13px; color: var(--app-muted); }
-.action.primary { background: var(--ion-color-primary); color: var(--ion-color-primary-contrast); }
-.action.primary ion-icon, .action.primary span { color: inherit; opacity: .9; }
+.page { padding-top: 8px; }
+.hero { display: flex; flex-direction: column; align-items: center; text-align: center; padding: 22px 18px 18px; }
+.hero-ico { width: 60px; height: 60px; border-radius: 16px; display: grid; place-items: center; font-size: 32px; color: #fff; margin-bottom: 12px;
+  background: linear-gradient(150deg, var(--accent-2), var(--accent)); box-shadow: 0 8px 20px rgba(var(--accent-rgb), .35); }
+.hero p { margin: 6px 0 16px; color: var(--app-muted); font-size: 15px; line-height: 1.4; }
+.err { color: var(--app-bad) !important; }
+.ios-group.gap { margin-top: 24px; }
+.ios-group + .ios-group { margin-top: 12px; }
+.stats + .ios-group { margin-top: 0; }
+.row.danger b { color: var(--app-bad); text-align: center; }
+.row:disabled { opacity: .5; }
 </style>

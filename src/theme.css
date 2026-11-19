@@ -1,81 +1,161 @@
+/* =========================================================
+   Gym – design system (iOS look)
+   One accent (violet) for the app, plan colours only as identity.
+   ========================================================= */
 :root {
-  --ion-color-primary: #2f4bd8;
-  --ion-color-primary-rgb: 47, 75, 216;
+  --accent: #7346f5;
+  --accent-rgb: 115, 70, 245;
+  --accent-2: #9a6bff;
+  --ion-color-primary: var(--accent);
+  --ion-color-primary-rgb: var(--accent-rgb);
   --ion-color-primary-contrast: #ffffff;
   --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #2942be;
-  --ion-color-primary-tint: #445ddc;
-  --ion-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
-  --app-card: #ffffff;
-  --app-field: #f2f2f7;
-  --app-line: rgba(60, 60, 67, .14);
-  --app-muted: #8a8a8e;
-  --app-done: rgba(47, 75, 216, .09);
-  --app-ok: #30a46c;
-  --app-bg: #f2f2f7;
+  --ion-color-primary-shade: #653ed8;
+  --ion-color-primary-tint: #8159f6;
+  --ion-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, "Segoe UI", sans-serif;
+
+  --app-bg: #f2f2f7;          /* systemGroupedBackground */
+  --app-card: #ffffff;        /* secondarySystemGroupedBackground */
+  --app-card-2: #f7f7fa;
+  --app-field: rgba(118, 118, 128, .12); /* tertiarySystemFill */
+  --app-line: rgba(60, 60, 67, .16);     /* separator */
+  --app-label: #000000;
+  --app-muted: rgba(60, 60, 67, .6);     /* secondaryLabel */
+  --app-faint: rgba(60, 60, 67, .3);     /* tertiaryLabel */
+  --app-ok: #28b463;
+  --app-bad: #ff3b30;
+  --app-gold: #ffb800;
+  --app-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 6px 20px rgba(0, 0, 0, .05);
+
   --ion-background-color: #f2f2f7;
   --ion-background-color-rgb: 242, 242, 247;
+  --ion-text-color: #000000;
   --ion-item-background: #ffffff;
+  --r-lg: 22px;
+  --r-md: 16px;
+  --r-sm: 12px;
 }
 @media (prefers-color-scheme: dark) {
   :root, :root.ios, :root.md {
-    --ion-color-primary: #7d93ff;
-    --ion-color-primary-rgb: 125, 147, 255;
-    --ion-color-primary-contrast: #0d1020;
-    --ion-color-primary-contrast-rgb: 13, 16, 32;
-    --ion-color-primary-shade: #6e81e0;
-    --ion-color-primary-tint: #8a9eff;
-    --app-card: #1c1c1e;
-    --app-field: #2c2c2e;
-    --app-line: rgba(84, 84, 88, .5);
-    --app-muted: #98989f;
-    --app-done: rgba(125, 147, 255, .14);
-    --app-ok: #4cc38a;
+    --accent: #9d7dff;
+    --accent-rgb: 157, 125, 255;
+    --accent-2: #b89cff;
+    --ion-color-primary-contrast: #ffffff;
+    --ion-color-primary-shade: #8a6ee0;
+    --ion-color-primary-tint: #a78aff;
     --app-bg: #000000;
+    --app-card: #1c1c1e;
+    --app-card-2: #242427;
+    --app-field: rgba(118, 118, 128, .24);
+    --app-line: rgba(84, 84, 88, .55);
+    --app-label: #ffffff;
+    --app-muted: rgba(235, 235, 245, .6);
+    --app-faint: rgba(235, 235, 245, .3);
+    --app-ok: #34d26b;
+    --app-bad: #ff453a;
+    --app-shadow: none;
     --ion-background-color: #000000;
     --ion-background-color-rgb: 0, 0, 0;
+    --ion-text-color: #ffffff;
     --ion-item-background: #1c1c1e;
   }
 }
+
+/* ---------- feel like an app, not a web page ---------- */
+html, body { overscroll-behavior: none; -webkit-text-size-adjust: 100%; }
+* { -webkit-tap-highlight-color: transparent; }
+body, button { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+input, textarea { -webkit-user-select: text; user-select: text; }
+img { -webkit-user-drag: none; }
+button { font-family: inherit; cursor: default; }
 ion-content { --background: var(--app-bg); }
-ion-toolbar { --background: color-mix(in srgb, var(--app-bg) 82%, transparent); }
-ion-header[collapse="condense"] ion-toolbar { --background: var(--app-bg); --border-width: 0; }
+ion-content::part(scroll) { overscroll-behavior-y: auto; }
 .num { font-variant-numeric: tabular-nums; }
-ion-content::part(scroll) { overscroll-behavior: none; }
-html, body { overscroll-behavior: none; }
 
-/* ---------- shared design system ---------- */
-.page { padding: calc(env(safe-area-inset-top, 0px) + 14px) 0 28px; }
-.page-head { padding: 0 20px 16px; }
-.page-head h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.1; }
-.page-head p { margin: 3px 0 0; color: var(--app-muted); font-size: 15px; }
-.section-title { margin: 22px 20px 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--app-muted); }
-.card { background: var(--app-card); border-radius: 20px; margin: 0 16px 12px; padding: 14px; }
-.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 16px 12px; }
-.stat-grid.two { grid-template-columns: 1fr 1fr; }
-.stat { background: var(--app-card); border-radius: 16px; padding: 11px 12px; min-width: 0; }
-.stat span { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stat b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.4px; margin-top: 2px; font-variant-numeric: tabular-nums; }
-.stat b small { font-size: 13px; color: var(--app-muted); font-weight: 600; letter-spacing: 0; }
-.stat b.up { color: var(--app-ok); }
-.stat b.down { color: #e8453c; }
-.plan-ico { --s: 40px; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .3); display: grid; place-items: center; flex: none;
-  color: #fff; font-weight: 800; font-size: calc(var(--s) * .36); letter-spacing: -.3px;
-  background: linear-gradient(140deg, color-mix(in srgb, var(--c) 70%, #fff), var(--c) 75%);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--c) 28%, transparent); }
-.pr-tag { font-size: 10px; font-weight: 800; letter-spacing: .4px; background: #ffd257; color: #5a3d00; border-radius: 6px; padding: 2px 6px; }
-.press { transition: transform .12s ease; }
+/* translucent iOS bars */
+ion-toolbar { --background: color-mix(in srgb, var(--app-bg) 78%, transparent); --border-color: var(--app-line); }
+ion-header.header-translucent ion-toolbar, ion-header ion-toolbar { backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
+ion-header[collapse="condense"] ion-toolbar { --background: var(--app-bg); backdrop-filter: none; -webkit-backdrop-filter: none; --border-width: 0; }
+ion-title.title-large { font-size: 34px; font-weight: 700; letter-spacing: .2px; }
+.sub { margin: -2px 0 8px; padding: 0 20px; color: var(--app-muted); font-size: 15px; }
+ion-back-button { --color: var(--accent); }
+
+/* ---------- type scale (iOS) ---------- */
+.t-large { font-size: 34px; font-weight: 700; letter-spacing: .2px; line-height: 1.1; margin: 0; }
+.t-title { font-size: 22px; font-weight: 700; letter-spacing: -.2px; margin: 0; }
+.t-head { font-size: 17px; font-weight: 600; letter-spacing: -.2px; }
+.t-sub { font-size: 15px; color: var(--app-muted); }
+.t-foot { font-size: 13px; color: var(--app-muted); }
+
+/* ---------- layout ---------- */
+.page { padding: 4px 0 32px; }
+.page-top { padding: calc(env(safe-area-inset-top, 0px) + 12px) 0 28px; }
+.page-head { padding: 0 20px 14px; }
+.page-head h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: .2px; line-height: 1.12; }
+.page-head p { margin: 2px 0 0; color: var(--app-muted); font-size: 15px; }
+.section-title { margin: 24px 20px 8px; font-size: 13px; font-weight: 400; text-transform: uppercase; letter-spacing: .2px; color: var(--app-muted); }
+.section-foot { margin: 6px 20px 0; font-size: 13px; color: var(--app-muted); line-height: 1.35; }
+
+.card { background: var(--app-card); border-radius: var(--r-lg); margin: 0 16px 12px; padding: 16px; box-shadow: var(--app-shadow); }
+
+/* one card, several numbers separated by hairlines */
+.stats { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; background: var(--app-card); border-radius: var(--r-lg);
+  margin: 0 16px 12px; padding: 14px 0; box-shadow: var(--app-shadow); }
+.stats > div { padding: 0 14px; min-width: 0; }
+.stats > div + div { border-left: 0.5px solid var(--app-line); }
+.stats span { display: block; font-size: 13px; color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stats b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats b small { font-size: 14px; color: var(--app-muted); font-weight: 500; letter-spacing: 0; margin-left: 1px; }
+.stats b.up { color: var(--app-ok); }
+.stats b.down { color: var(--app-bad); }
+.stats.wrap2 { grid-auto-flow: row; grid-template-columns: 1fr 1fr; row-gap: 14px; }
+.stats.wrap2 > div:nth-child(odd) { border-left: 0; }
+.stats.wrap2 > div:nth-child(n+3) { border-top: 0.5px solid var(--app-line); padding-top: 12px; }
+
+/* grouped list (iOS Settings style) */
+.ios-group { background: var(--app-card); border-radius: var(--r-lg); margin: 0 16px; overflow: hidden; box-shadow: var(--app-shadow); }
+.row { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 52px; padding: 10px 16px; border: 0; background: none;
+  color: var(--ion-text-color); font: inherit; text-align: left; position: relative; }
+.row + .row::before { content: ''; position: absolute; top: 0; right: 0; left: var(--inset, 16px); border-top: 0.5px solid var(--app-line); }
+button.row:active, .row.tap:active { background: var(--app-field); }
+.row .grow { flex: 1; min-width: 0; }
+.row .grow b { display: block; font-size: 17px; font-weight: 400; letter-spacing: -.2px; }
+.row .grow span { display: block; font-size: 13px; color: var(--app-muted); margin-top: 1px; }
+.row .val { color: var(--app-muted); font-size: 17px; }
+.row .chev { color: var(--app-faint); font-size: 18px; flex: none; }
+.sq { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-size: 18px; flex: none; background: var(--c, var(--accent)); }
+
+/* plan badge */
+.plan-ico { --s: 40px; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .28); display: grid; place-items: center; flex: none;
+  color: #fff; font-weight: 700; font-size: calc(var(--s) * .38); letter-spacing: -.3px;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 72%, #fff) 0%, var(--c) 70%); }
+
+/* buttons */
+.btn { height: 50px; border: 0; border-radius: 14px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  font-size: 17px; font-weight: 600; letter-spacing: -.2px; background: var(--c, var(--accent)); color: #fff; transition: transform .12s, opacity .12s; }
+.btn:active { transform: scale(.97); opacity: .85; }
+.btn.tinted { background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); color: var(--c, var(--accent)); }
+.btn.plain { background: var(--app-field); color: var(--ion-text-color); }
+.btn.block { width: 100%; }
+.btn:disabled { opacity: .35; }
+.pill { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; border-radius: 999px; padding: 3px 9px;
+  background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); color: var(--c, var(--accent)); white-space: nowrap; }
+.pr-tag { font-size: 10px; font-weight: 700; letter-spacing: .5px; background: var(--app-gold); color: #3b2a00; border-radius: 6px; padding: 2px 6px; }
+
+.press { transition: transform .15s cubic-bezier(.2, .8, .2, 1); }
 .press:active { transform: scale(.97); }
-button { font-family: inherit; }
 
-ion-tab-bar { --background: color-mix(in srgb, var(--app-card) 80%, transparent); --border: 0.5px solid var(--app-line);
-  backdrop-filter: saturate(1.8) blur(20px); -webkit-backdrop-filter: saturate(1.8) blur(20px); }
-ion-tab-button { --color: var(--app-muted); --color-selected: var(--ion-color-primary); }
-ion-tab-button ion-label { font-size: 10.5px; font-weight: 600; margin-top: 2px; }
-ion-tab-button ion-icon { font-size: 25px; }
-ion-toast { --border-radius: 14px; --background: var(--app-card); --color: var(--ion-text-color); --box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+/* tab bar */
+ion-tab-bar { --background: color-mix(in srgb, var(--app-card) 72%, transparent); --border: 0.5px solid var(--app-line);
+  backdrop-filter: saturate(180%) blur(24px); -webkit-backdrop-filter: saturate(180%) blur(24px); padding-top: 2px; }
+ion-tab-button { --color: #999; --color-selected: var(--accent); }
+ion-tab-button ion-label { font-size: 10px; font-weight: 500; margin-top: 3px; }
+ion-tab-button ion-icon { font-size: 26px; }
 
-/* update screen (src/updater.js) */
+ion-toast { --border-radius: 14px; --background: var(--app-card-2); --color: var(--ion-text-color); --box-shadow: 0 10px 30px rgba(0,0,0,.18); font-weight: 500; }
+ion-alert { --background: color-mix(in srgb, var(--app-card) 88%, transparent); }
+
+/* ---------- update screen (src/updater.js) ---------- */
 #upd { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; background: var(--app-bg); opacity: 0; transition: opacity .2s; }
 #upd.on { opacity: 1; }
 .upd-box { width: min(280px, 80vw); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
@@ -83,10 +163,10 @@ ion-toast { --border-radius: 14px; --background: var(--app-card); --color: var(-
 .upd-ring { position: relative; width: 112px; height: 112px; margin-bottom: 14px; }
 .upd-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); animation: upd-spin 1.4s linear infinite; }
 .upd-ring circle { fill: none; stroke-width: 8; }
-.upd-ring .bg { stroke: color-mix(in srgb, var(--ion-color-primary) 16%, transparent); }
-.upd-ring .fg { stroke: var(--ion-color-primary); stroke-linecap: round; stroke-dasharray: 276.5; stroke-dashoffset: 268; transition: stroke-dashoffset .3s ease; }
-.upd-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.upd-ring .bg { stroke: color-mix(in srgb, var(--accent) 16%, transparent); }
+.upd-ring .fg { stroke: var(--accent); stroke-linecap: round; stroke-dasharray: 276.5; stroke-dashoffset: 268; transition: stroke-dashoffset .3s ease; }
+.upd-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
 @keyframes upd-spin { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
 @media (prefers-reduced-motion: reduce) { .upd-ring svg { animation: none; } }
-.upd-box b { font-size: 22px; font-weight: 800; }
-.upd-lbl { font-size: 14px; color: var(--app-muted); min-height: 20px; }
+.upd-box b { font-size: 22px; font-weight: 700; }
+.upd-lbl { font-size: 15px; color: var(--app-muted); min-height: 20px; }

@@ -1,11 +1,12 @@
 <template>
   <ion-page>
-    <ion-content>
+    <ion-header :translucent="true" collapse="fade"><ion-toolbar><ion-title>Historia</ion-title></ion-toolbar></ion-header>
+    <ion-content :fullscreen="true">
+      <ion-header collapse="condense">
+        <ion-toolbar><ion-title size="large">Historia</ion-title></ion-toolbar>
+        <p class="sub">Dni, w których byłeś na siłowni</p>
+      </ion-header>
       <div class="page">
-        <header class="page-head">
-          <h1>Historia</h1>
-          <p>Dni, w których byłeś na siłowni</p>
-        </header>
 
         <div class="card cal">
           <div class="cal-head">
@@ -27,10 +28,10 @@
           </div>
         </div>
 
-        <div class="stat-grid">
-          <div class="stat"><span>Treningi</span><b>{{ monthList.length }}</b></div>
-          <div class="stat"><span>Serie</span><b>{{ monthSets }}</b></div>
-          <div class="stat"><span>Tyg. z rzędu</span><b>{{ streak }}</b></div>
+        <div class="stats">
+          <div><span>Treningi</span><b>{{ monthList.length }}</b></div>
+          <div><span>Serie</span><b>{{ monthSets }}</b></div>
+          <div><span>Tyg. z rzędu</span><b>{{ streak }}<small v-if="streak"> 🔥</small></b></div>
         </div>
 
         <div class="list-head">
@@ -64,7 +65,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
-import { IonPage, IonContent, IonList, IonItem, IonItemSliding,
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonItemSliding,
   IonItemOptions, IonItemOption, IonLabel, IonNote, IonIcon, useIonRouter, alertController } from '@ionic/vue'
 import { chevronBack, chevronForward, trashOutline } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
@@ -120,34 +121,40 @@ async function ask(s) {
 </script>
 
 <style scoped>
-.cal { padding: 12px 12px 14px; }
-.cal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.cal-head b { font-size: 17px; font-weight: 800; }
-.nav { width: 34px; height: 34px; border: 0; border-radius: 50%; background: var(--app-field); color: var(--ion-color-primary);
-  display: grid; place-items: center; font-size: 17px; }
-.nav:disabled { opacity: .35; }
-.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 2px; justify-items: center; }
-.wd span { font-size: 11px; color: var(--app-muted); font-weight: 600; padding-bottom: 4px; }
+.cal { padding: 14px 10px 12px; }
+.cal-head { display: flex; justify-content: space-between; align-items: center; margin: 0 6px 12px; }
+.cal-head b { font-size: 17px; font-weight: 600; letter-spacing: -.2px; }
+.nav { width: 32px; height: 32px; border: 0; border-radius: 50%; background: none; color: var(--accent);
+  display: grid; place-items: center; font-size: 20px; }
+.nav:active { background: var(--app-field); }
+.nav:disabled { opacity: .3; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px 0; justify-items: center; }
+.wd span { font-size: 12px; color: var(--app-muted); font-weight: 600; padding-bottom: 4px; text-transform: uppercase; }
 .day { position: relative; width: 40px; height: 40px; border: 0; border-radius: 50%; background: none; color: var(--ion-text-color);
-  font-size: 15px; font-weight: 500; display: grid; place-items: center; }
-.day.future { color: var(--app-muted); }
-.day.today { color: var(--ion-color-primary); font-weight: 800; box-shadow: inset 0 0 0 2px var(--ion-color-primary); }
-.day.has { background: linear-gradient(140deg, color-mix(in srgb, var(--c) 70%, #fff), var(--c) 75%); color: #fff; font-weight: 800; box-shadow: none; }
-.day.sel { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--c, var(--ion-color-primary)); }
+  font-size: 17px; font-weight: 400; display: grid; place-items: center; transition: transform .1s; }
+.day:active { transform: scale(.9); }
+.day.future { color: var(--app-faint); }
+.day.today { color: var(--accent); font-weight: 700; }
+.day.has { background: var(--c); color: #fff; font-weight: 600; }
+.day.sel { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--c, var(--accent)); }
 .marks { position: absolute; bottom: 3px; display: flex; gap: 2px; }
 .marks i { width: 5px; height: 5px; border-radius: 50%; box-shadow: 0 0 0 1px #fff; }
-.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 12px; padding-top: 10px;
-  border-top: 0.5px solid var(--app-line); font-size: 12px; color: var(--app-muted); font-weight: 500; }
+.legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; margin-top: 12px; padding-top: 12px;
+  border-top: 0.5px solid var(--app-line); font-size: 12px; color: var(--app-muted); }
 .legend span { display: flex; align-items: center; gap: 5px; }
-.legend i { width: 9px; height: 9px; border-radius: 50%; }
+.legend i { width: 8px; height: 8px; border-radius: 50%; }
 
 .list-head { display: flex; justify-content: space-between; align-items: baseline; padding-right: 20px; }
-.clear { border: 0; background: none; color: var(--ion-color-primary); font-size: 14px; font-weight: 600; }
-.hist-list { margin-top: 0; border-radius: 20px; }
-.hist-list .plan-ico { --s: 38px; margin-right: 12px; }
-.hist-list h2 { font-weight: 700; }
-.trash { width: 36px; height: 36px; margin-left: 10px; border: 0; border-radius: 50%; background: rgba(232,69,60,.12); color: #e8453c;
+.clear { border: 0; background: none; color: var(--accent); font-size: 15px; }
+.hist-list { margin: 0 16px; border-radius: var(--r-lg); box-shadow: var(--app-shadow); }
+.hist-list ion-item { --padding-start: 14px; --inner-padding-end: 12px; --min-height: 62px; }
+.hist-list .plan-ico { --s: 36px; margin-right: 12px; }
+.hist-list h2 { font-weight: 600; font-size: 17px; letter-spacing: -.2px; }
+.hist-list p { font-size: 13px !important; }
+.hist-list ion-note { font-size: 15px; color: var(--app-muted); }
+.trash { width: 32px; height: 32px; margin-left: 8px; border: 0; border-radius: 50%; background: none; color: var(--app-faint);
   display: grid; place-items: center; font-size: 18px; flex: none; }
-.empty { color: var(--app-muted); text-align: center; padding: 22px; }
-.hint { text-align: center; color: var(--app-muted); font-size: 12px; margin: 4px 0 0; }
+.trash:active { background: color-mix(in srgb, var(--app-bad) 14%, transparent); color: var(--app-bad); }
+.empty { color: var(--app-muted); text-align: center; padding: 24px; }
+.hint { text-align: center; color: var(--app-muted); font-size: 13px; margin: 8px 0 0; }
 </style>

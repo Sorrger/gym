@@ -4,6 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
   base: './',
+  build: { outDir: 'docs', emptyOutDir: true }, // GitHub Pages serves main:/docs
   plugins: [
     vue(),
     VitePWA({
@@ -14,7 +15,7 @@ export default defineConfig({
       manifest: {
         name: 'Gym', short_name: 'Gym', lang: 'pl',
         display: 'standalone', start_url: './', scope: './',
-        background_color: '#f2f2f7', theme_color: '#5c76ff',
+        background_color: '#f2f2f7', theme_color: '#7346f5',
         icons: [
           { src: 'icon-192.png', sizes: '192x192', type: 'image/png' },
           { src: 'icon-512.png', sizes: '512x512', type: 'image/png' }

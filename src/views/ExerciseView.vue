@@ -1,23 +1,23 @@
 <template>
   <ion-page>
-    <ion-header>
+    <ion-header :translucent="true">
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button default-href="/tabs/progress" text="Postępy" /></ion-buttons>
         <ion-title>{{ plan?.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
-    <ion-content v-if="plan">
+    <ion-content v-if="plan" :fullscreen="true">
       <div class="hero" :style="{ '--c': color }">
         <span class="badge">{{ plan.name }} · ćwiczenie {{ (entry?.ex ?? 0) + 1 }}</span>
         <h1>{{ entry?.name }}<template v-if="entry?.label"> · {{ entry.label }}</template></h1>
         <p class="target">{{ target }}</p>
       </div>
 
-      <div class="stat-grid two">
-        <div class="stat"><span>Rekord</span><b class="num">{{ pts.length ? fmtNum(best) : '–' }}<small v-if="pts.length"> {{ UNITS[unit].short }}</small></b></div>
-        <div class="stat"><span>Ostatnio</span><b class="num">{{ pts.length ? fmtNum(last) : '–' }}<small v-if="pts.length"> {{ UNITS[unit].short }}</small></b></div>
-        <div class="stat"><span>Od startu</span><b class="num" :class="{ up: diff > 0, down: diff < 0 }">{{ pts.length > 1 ? (diff > 0 ? '+' : diff < 0 ? '−' : '') + fmtNum(Math.abs(diff)) : '–' }}<small v-if="pts.length > 1"> {{ UNITS[unit].short }}</small></b></div>
-        <div class="stat"><span>Treningów</span><b class="num">{{ pts.length }}</b></div>
+      <div class="stats wrap2">
+        <div><span>Rekord</span><b class="num">{{ pts.length ? fmtNum(best) : '–' }}<small v-if="pts.length"> {{ UNITS[unit].short }}</small></b></div>
+        <div><span>Ostatnio</span><b class="num">{{ pts.length ? fmtNum(last) : '–' }}<small v-if="pts.length"> {{ UNITS[unit].short }}</small></b></div>
+        <div><span>Od startu</span><b class="num" :class="{ up: diff > 0, down: diff < 0 }">{{ pts.length > 1 ? (diff > 0 ? '+' : diff < 0 ? '−' : '') + fmtNum(Math.abs(diff)) : '–' }}<small v-if="pts.length > 1"> {{ UNITS[unit].short }}</small></b></div>
+        <div><span>Treningów</span><b class="num">{{ pts.length }}</b></div>
       </div>
 
       <div class="card chart-card">
@@ -116,24 +116,26 @@ onBeforeUnmount(() => chart?.destroy())
 </script>
 
 <style scoped>
-.hero { margin: 12px 16px; padding: 18px; border-radius: 22px; color: #fff; box-shadow: 0 10px 24px color-mix(in srgb, var(--c) 30%, transparent);
-  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 80%, #fff), var(--c) 60%, color-mix(in srgb, var(--c) 75%, #000)); }
-.badge { font-size: 12px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase; opacity: .85; }
-.hero h1 { margin: 6px 0 2px; font-size: 26px; font-weight: 800; line-height: 1.15; text-wrap: balance; }
-.target { margin: 0; opacity: .9; font-weight: 600; }
-
-
+.hero { margin: calc(env(safe-area-inset-top, 0px) + 56px) 16px 12px; padding: 18px; border-radius: var(--r-lg); color: #fff;
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--c) 28%, transparent);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 78%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 80%, #000)); }
+.badge { font-size: 13px; font-weight: 600; opacity: .85; }
+.hero h1 { margin: 4px 0 2px; font-size: 26px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; text-wrap: balance; }
+.target { margin: 0; opacity: .9; font-weight: 500; font-size: 17px; }
+.stats b.up { color: var(--app-ok); }
+.stats b.down { color: var(--app-bad); }
 .card { padding-bottom: 8px; }
-.card-title { font-size: 13px; color: var(--app-muted); margin-bottom: 8px; }
-.chart-wrap { position: relative; height: 240px; }
+.card-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; letter-spacing: -.2px; }
+.chart-wrap { position: relative; height: 230px; }
 .empty { color: var(--app-muted); text-align: center; padding: 28px 8px; line-height: 1.4; }
-.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-top: 0.5px solid var(--app-line); }
+.row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 0; border-top: 0.5px solid var(--app-line); min-height: 0; }
 .card-title + .row { border-top: 0; }
+.row::before { display: none; }
 .r-left { display: flex; flex-direction: column; min-width: 0; }
-.r-left b { font-size: 15px; }
+.r-left b { font-size: 15px; font-weight: 600; }
 .r-left span { font-size: 13px; color: var(--app-muted); }
-.r-right { display: flex; align-items: center; gap: 3px; flex: none; }
-.r-right b { font-size: 20px; font-weight: 800; }
+.r-right { display: flex; align-items: center; gap: 4px; flex: none; }
+.r-right b { font-size: 20px; font-weight: 700; }
 .r-right small { color: var(--app-muted); }
-.unused-pr { align-self: center; margin-right: 6px; font-size: 10px; font-weight: 800; letter-spacing: .4px; background: #ffd257; color: #5a3d00; border-radius: 6px; padding: 2px 6px; }
+.r-right .pr-tag { margin-right: 4px; }
 </style>
