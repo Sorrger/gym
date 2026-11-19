@@ -74,3 +74,19 @@ ion-tab-button { --color: var(--app-muted); --color-selected: var(--ion-color-pr
 ion-tab-button ion-label { font-size: 10.5px; font-weight: 600; margin-top: 2px; }
 ion-tab-button ion-icon { font-size: 25px; }
 ion-toast { --border-radius: 14px; --background: var(--app-card); --color: var(--ion-text-color); --box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+
+/* update screen (src/updater.js) */
+#upd { position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center; background: var(--app-bg); opacity: 0; transition: opacity .2s; }
+#upd.on { opacity: 1; }
+.upd-box { width: min(280px, 80vw); display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center;
+  font-family: var(--ion-font-family); color: var(--ion-text-color, #000); }
+.upd-ring { position: relative; width: 112px; height: 112px; margin-bottom: 14px; }
+.upd-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); animation: upd-spin 1.4s linear infinite; }
+.upd-ring circle { fill: none; stroke-width: 8; }
+.upd-ring .bg { stroke: color-mix(in srgb, var(--ion-color-primary) 16%, transparent); }
+.upd-ring .fg { stroke: var(--ion-color-primary); stroke-linecap: round; stroke-dasharray: 276.5; stroke-dashoffset: 268; transition: stroke-dashoffset .3s ease; }
+.upd-pct { position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+@keyframes upd-spin { from { transform: rotate(-90deg); } to { transform: rotate(270deg); } }
+@media (prefers-reduced-motion: reduce) { .upd-ring svg { animation: none; } }
+.upd-box b { font-size: 22px; font-weight: 800; }
+.upd-lbl { font-size: 14px; color: var(--app-muted); min-height: 20px; }

@@ -5,6 +5,7 @@ import App from './App.vue'
 import Tabs from './views/Tabs.vue'
 import { load } from './store'
 import { initCloud } from './cloud'
+import { initUpdater } from './updater'
 
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'
@@ -43,6 +44,8 @@ router.onError(err => {
     }
   }
 })
+
+initUpdater()
 
 load().then(() => {
   initCloud()

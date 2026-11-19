@@ -7,9 +7,10 @@ export default defineConfig({
   plugins: [
     vue(),
     VitePWA({
-      registerType: 'autoUpdate',
+      strategies: 'injectManifest', srcDir: 'src', filename: 'sw.js',
+      injectRegister: false, // registered by src/updater.js (update screen)
       includeAssets: ['icon-180.png'],
-      workbox: { globPatterns: ['**/*.{js,css,html,png,svg,woff2}'], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
+      injectManifest: { globPatterns: ['**/*.{js,css,html,png,svg,woff2}'], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
       manifest: {
         name: 'Gym', short_name: 'Gym', lang: 'pl',
         display: 'standalone', start_url: './', scope: './',
