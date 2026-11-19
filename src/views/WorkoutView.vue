@@ -140,7 +140,14 @@ import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, 
 const route = useRoute()
 const router = useIonRouter()
 const s = computed(() => state.sessions[route.params.id])
-watchEffect(() => { if (state.ready && route.params.id && !s.value && route.path.startsWith('/workout')) router.navigate('/tabs/home', 'back', 'replace') })
+// workout gone (deleted, or auto-closed after 12 h): leave once, after Ionic has finished setting up this page,
+// navigating during page setup corrupts the router and can freeze the tab bar
+let leaving = false
+watchEffect(() => {
+  if (leaving || !state.ready || !route.params.id || s.value || !route.path.startsWith('/workout')) return
+  leaving = true
+  setTimeout(() => router.navigate('/tabs/home', 'back', 'replace'), 300)
+})
 const plan = computed(() => (s.value ? PLAN[s.value.day] : null))
 const color = computed(() => COLORS[plan.value?.key] || '#2f4bd8')
 const progPct = computed(() => { const k = counts(s.value); return k.t ? k.n / k.t * 100 : 0 })

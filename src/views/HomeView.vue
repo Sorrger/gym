@@ -7,6 +7,15 @@
           <h1>{{ greeting }}</h1>
         </header>
 
+        <div v-if="state.loadError" class="card warn" @click="reload">
+          <b>Nie udało się wczytać treningów</b>
+          <span>Nic nie zostało usunięte ani nadpisane. Dotknij, żeby spróbować ponownie.</span>
+        </div>
+        <div v-else-if="backupWarn" class="card warn" @click="router.push('/tabs/settings')">
+          <b>Kopia na GitHub nie działa</b>
+          <span>{{ cloud.error || 'Nie wysłano od kilku dni' }} · dotknij, żeby sprawdzić</span>
+        </div>
+
         <!-- this week -->
         <div class="card week">
           <div class="week-head">
@@ -65,6 +74,7 @@ import { computed } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, alertController } from '@ionic/vue'
 import { play } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
+import { cloud } from '../cloud'
 import { state, activeSession, startSession, finishSession, lastDoneOf, suggestedDay, doneSessions, counts, ago, iso } from '../store'
 
 const router = useIonRouter()
@@ -96,6 +106,11 @@ const weekCount = computed(() => { const from = week.value[0].date; return done.
 const monthCount = computed(() => { const p = iso(new Date()).slice(0, 7); return done.value.filter(s => s.date.startsWith(p)).length })
 
 function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? 'Ostatnio ' + ago(l.date) : 'Jeszcze nie robiony' }
+
+// warn only when the backup has been failing for a while, not after one missed upload at the gym
+const backupWarn = computed(() => cloud.token && cloud.dirty && cloud.error && cloud.error !== 'Brak połączenia' ||
+  (cloud.token && cloud.dirty && cloud.lastSync && Date.now() - cloud.lastSync > 3 * 864e5))
+const reload = () => location.reload()
 
 function open(id) { router.push('/workout/' + id) }
 
@@ -171,5 +186,8 @@ async function start(day) {
 .meta.last { padding-top: 2px; }
 .pill { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .4px; background: var(--c); color: #fff; border-radius: 999px; padding: 3px 8px; }
 
+.warn { display: flex; flex-direction: column; gap: 2px; background: rgba(232,69,60,.12); color: #e8453c; cursor: pointer; }
+.warn b { font-size: 15px; font-weight: 800; }
+.warn span { font-size: 13px; }
 .foot { margin-top: auto; padding-top: 12px; margin-bottom: 0; }
 </style>

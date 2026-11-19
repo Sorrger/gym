@@ -13,7 +13,7 @@
           <div class="hero-mid">
             <b>Automatyczna kopia</b>
             <p>Po każdej zmianie aplikacja sama wyśle kopię do tajnego Gista na twoim GitHubie. Na nowym telefonie wystarczy wkleić ten sam token.</p>
-            <button class="connect" @click="askToken" :disabled="cloud.busy">{{ cloud.busy ? 'Łączenie…' : 'Połącz z GitHub' }}</button>
+            <button class="connect" @click="askToken" :disabled="cloud.connecting">{{ cloud.connecting ? 'Łączenie…' : 'Połącz z GitHub' }}</button>
           </div>
         </div>
         <div class="card hero" v-else>
@@ -124,10 +124,9 @@ async function askToken() {
   const { role, data } = await a.onDidDismiss()
   const tok = data?.values?.t?.trim()
   if (role !== 'ok' || !tok) return
-  cloud.busy = true
   const r = await connect(tok)
-  cloud.busy = false
-  msg.value = r.ok ? (r.restored ? `Połączono · przywrócono ${r.restored} treningów` : 'Połączono · kopia wysłana') : r.error
+  msg.value = !r.ok ? r.error
+    : (r.restored ? `Połączono · przywrócono ${r.restored} treningów` : 'Połączono') + (r.sent ? ' · kopia wysłana' : ' · wyślę, gdy będzie internet')
 }
 async function pushNow() { msg.value = (await syncNow()) ? 'Kopia wysłana' : (cloud.error || 'Brak internetu') }
 async function pullNow() {

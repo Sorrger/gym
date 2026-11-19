@@ -14,14 +14,15 @@ export function ago(date) {
 }
 
 // sessions: id -> { id, date, day, ex: { name: [{ w, d }] }, started, finished, updated }
-export const state = reactive({ sessions: {}, ready: false, flash: '' })
+export const state = reactive({ sessions: {}, ready: false, flash: '', loadError: false })
 export const ui = reactive({ progressDay: 0 })
 
 export async function load() {
-  try {
-    const s = await get('sessions')
-    if (s) state.sessions = s
-  } catch (e) { console.warn(e) }
+  // if storage can't be read, do NOT continue with an empty list: the first save would wipe the real data
+  for (let k = 0; k < 3; k++) {
+    try { const s = await get('sessions'); if (s) state.sessions = s; state.loadError = false; break }
+    catch (e) { console.warn(e); state.loadError = true; await new Promise(r => setTimeout(r, 300)) }
+  }
   // older versions keyed sessions by "date_day" and had no id/started/finished
   Object.entries(state.sessions).forEach(([k, s]) => {
     if (k.includes('~draft')) { delete state.sessions[k]; return }
@@ -35,7 +36,7 @@ export async function load() {
 }
 
 let t = null
-function saveNow() { clearTimeout(t); t = null; return set('sessions', JSON.parse(JSON.stringify(state.sessions))).catch(console.warn) }
+function saveNow() { clearTimeout(t); t = null; if (state.loadError) return Promise.resolve(); return set('sessions', JSON.parse(JSON.stringify(state.sessions))).catch(console.warn) }
 watch(() => state.sessions, () => { if (state.ready) { clearTimeout(t); t = setTimeout(saveNow, 250) } }, { deep: true })
 // iOS may kill the app when it goes to background: write immediately
 document.addEventListener('visibilitychange', () => {
