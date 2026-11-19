@@ -29,10 +29,15 @@
                 {{ cloud.token ? (cloud.dirty || cloud.error ? 'Zapisano · kopia gdy będzie internet' : 'Zapisano · kopia na GitHub') : 'Zapisano w telefonie' }}
               </span>
             </div>
-            <h1>{{ exName }}</h1>
-            <div class="ex-sub">
-              <span class="target">{{ exTarget }}</span>
-              <span v-if="exTag" class="tag">{{ exTag }}</span>
+            <div class="ex-title">
+              <div class="ex-tt">
+                <h1>{{ exName }}</h1>
+                <div class="ex-sub">
+                  <span class="target">{{ exTarget }}</span>
+                  <span v-if="exTag" class="tag">{{ exTag }}</span>
+                </div>
+              </div>
+              <div class="ex-body"><BodyMap v-bind="exMuscles" /></div>
             </div>
             <div class="groups" :class="{ multi: groups.length > 1 }">
               <div class="group" v-for="g in groups" :key="g.key">
@@ -184,6 +189,8 @@
 </template>
 
 <script setup>
+import BodyMap from './BodyMap.vue'
+import { musclesOf } from '../muscles'
 import { computed, ref, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
@@ -212,6 +219,7 @@ const idx = computed(() => Math.min(s.value?.cur || 0, plan.value.ex.length - 1)
 const exName = computed(() => plan.value.ex[idx.value][0])
 const exTarget = computed(() => plan.value.ex[idx.value][1])
 const exTag = computed(() => plan.value.ex[idx.value][2])
+const exMuscles = computed(() => musclesOf(exName.value))
 const groups = computed(() => groupsOf(plan.value.ex[idx.value]))
 function sets(key) {
   if (!s.value.ex[key]) s.value.ex[key] = [{ w: null, d: false }]
@@ -462,7 +470,10 @@ function save() {
 .ex-meta { display: flex; justify-content: space-between; align-items: center; color: var(--app-muted); font-size: 13px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .3px; padding: 0 4px; }
 h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; text-wrap: balance; }
-.ex-sub { display: flex; gap: 8px; align-items: center; padding: 0 4px; }
+.ex-title { display: flex; gap: 8px; align-items: center; }
+.ex-tt { flex: 1; min-width: 0; }
+.ex-body { flex: none; height: 112px; }
+.ex-sub { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 4px; }
 .target { color: var(--c); font-weight: 600; font-size: 17px; }
 .tag { font-size: 12px; font-weight: 600; color: var(--app-muted); background: var(--app-field); border-radius: 6px; padding: 2px 7px; }
 .last { display: flex; gap: 6px; align-items: center; color: var(--app-muted); font-size: 13px; padding: 0 4px; }

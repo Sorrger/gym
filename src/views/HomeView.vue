@@ -56,8 +56,11 @@
           <button v-for="(d, i) in PLAN" :key="d.key" class="plan press" :class="{ next: i === next && !active }"
             :style="{ '--c': COLORS[d.key] }" @click="start(i)">
             <div class="plan-top">
-              <span class="plan-ico">{{ d.abbr }}</span>
-              <span v-if="i === next && !active" class="next-pill">{{ isToday(i) ? 'Dziś' : 'Następny' }}</span>
+              <div class="plan-l">
+                <span class="plan-ico">{{ d.abbr }}</span>
+                <span v-if="i === next && !active" class="next-pill">{{ isToday(i) ? 'Dziś' : 'Następny' }}</span>
+              </div>
+              <div class="plan-body"><BodyMap v-bind="dayMuscles(i)" /></div>
             </div>
             <b>{{ d.name }}</b>
             <span class="meta">{{ d.ex.length }} ćwiczeń · {{ lastText(i) }}</span>
@@ -77,6 +80,8 @@
 </template>
 
 <script setup>
+import BodyMap from './BodyMap.vue'
+import { dayMuscles } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, alertController } from '@ionic/vue'
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline } from 'ionicons/icons'
@@ -205,6 +210,8 @@ async function start(day) {
 .plan.next { box-shadow: inset 0 0 0 2px var(--c), var(--app-shadow); }
 .plan-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: auto; padding-bottom: 12px; }
 .plan .plan-ico { --s: 42px; }
+.plan-l { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
+.plan-body { height: 78px; margin: -4px -4px 0 0; pointer-events: none; }
 .plan b { font-size: 17px; font-weight: 600; letter-spacing: -.2px; line-height: 1.2; }
 .meta { font-size: 13px; color: var(--app-muted); }
 .next-pill { background: var(--c); color: #fff; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 3px 8px; }

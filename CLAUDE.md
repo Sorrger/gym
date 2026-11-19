@@ -22,7 +22,9 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 
 ## Files
 - `src/plan.js` – the training plan (PLAN, COLORS, UNITS). Multi-part exercises (e.g. "Nauka podciągania" = Wiszenie (s) + Negatywy (reps)) via `groupsOf`/`entriesOf`; each part stored under key `"Name · Part"`. A plain exercise can set its unit as 4th element instead of parts (`[name, target, null, 'reps']`, e.g. captain's chair).
-  Abs added at the end of Pull and Nogi: captain's chair (reps) + Allahy (kg); Nogi also has Hammer press (maszyna).
+  Abs: Pull ends with captain's chair (reps) + Allahy; Nogi ends with Pallof press (user called it "hammer press": sideways to the cable, press out, hold 2 s, per side) + captain's chair + Allahy.
+- `src/muscles.js` – MUSCLES: exercise name → [main, helping] muscle ids; `dayMuscles(day)`. **Add an entry for every new exercise.**
+  `src/views/BodyMap.vue` – offline SVG front+back figure, main muscles in plan colour (`--c`), helping ones faded. Shown next to the exercise title (Workout) and on the plan cards (Home).
 - `src/store.js` – sessions in IndexedDB key `sessions` (`id -> { id, date, day, ex: { key: [{ w, r?, d }] }, started, finished, updated, cur }`).
   `w` = kg / seconds / reps depending on the part's unit, `r` = reps per set (only kg exercises, default `DEF_REPS` = 6).
   New workout pre-fills weight AND reps from the newest earlier session where that exercise had any value; set count from the last session where it was ticked.
