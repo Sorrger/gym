@@ -1,0 +1,27 @@
+{
+  "name": "silownia",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "deploy": "vite build && gh-pages -d dist --nojekyll"
+  },
+  "dependencies": {
+    "@ionic/vue": "^9.0.12",
+    "@ionic/vue-router": "^9.0.12",
+    "chart.js": "^4.6.1",
+    "idb-keyval": "^6.3.0",
+    "ionicons": "^8.1.0",
+    "vue": "^3.5.45",
+    "vue-router": "^5.5.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.11",
+    "gh-pages": "^6.3.0",
+    "vite": "^8.3.8",
+    "vite-plugin-pwa": "^2.0.0"
+  }
+}

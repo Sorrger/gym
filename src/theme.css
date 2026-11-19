@@ -1,0 +1,76 @@
+:root {
+  --ion-color-primary: #2f4bd8;
+  --ion-color-primary-rgb: 47, 75, 216;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #2942be;
+  --ion-color-primary-tint: #445ddc;
+  --ion-font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  --app-card: #ffffff;
+  --app-field: #f2f2f7;
+  --app-line: rgba(60, 60, 67, .14);
+  --app-muted: #8a8a8e;
+  --app-done: rgba(47, 75, 216, .09);
+  --app-ok: #30a46c;
+  --app-bg: #f2f2f7;
+  --ion-background-color: #f2f2f7;
+  --ion-background-color-rgb: 242, 242, 247;
+  --ion-item-background: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root, :root.ios, :root.md {
+    --ion-color-primary: #7d93ff;
+    --ion-color-primary-rgb: 125, 147, 255;
+    --ion-color-primary-contrast: #0d1020;
+    --ion-color-primary-contrast-rgb: 13, 16, 32;
+    --ion-color-primary-shade: #6e81e0;
+    --ion-color-primary-tint: #8a9eff;
+    --app-card: #1c1c1e;
+    --app-field: #2c2c2e;
+    --app-line: rgba(84, 84, 88, .5);
+    --app-muted: #98989f;
+    --app-done: rgba(125, 147, 255, .14);
+    --app-ok: #4cc38a;
+    --app-bg: #000000;
+    --ion-background-color: #000000;
+    --ion-background-color-rgb: 0, 0, 0;
+    --ion-item-background: #1c1c1e;
+  }
+}
+ion-content { --background: var(--app-bg); }
+ion-toolbar { --background: color-mix(in srgb, var(--app-bg) 82%, transparent); }
+ion-header[collapse="condense"] ion-toolbar { --background: var(--app-bg); --border-width: 0; }
+.num { font-variant-numeric: tabular-nums; }
+ion-content::part(scroll) { overscroll-behavior: none; }
+html, body { overscroll-behavior: none; }
+
+/* ---------- shared design system ---------- */
+.page { padding: calc(env(safe-area-inset-top, 0px) + 14px) 0 28px; }
+.page-head { padding: 0 20px 16px; }
+.page-head h1 { margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -.6px; line-height: 1.1; }
+.page-head p { margin: 3px 0 0; color: var(--app-muted); font-size: 15px; }
+.section-title { margin: 22px 20px 10px; font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; color: var(--app-muted); }
+.card { background: var(--app-card); border-radius: 20px; margin: 0 16px 12px; padding: 14px; }
+.stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 0 16px 12px; }
+.stat-grid.two { grid-template-columns: 1fr 1fr; }
+.stat { background: var(--app-card); border-radius: 16px; padding: 11px 12px; min-width: 0; }
+.stat span { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .5px; color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stat b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -.4px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.stat b small { font-size: 13px; color: var(--app-muted); font-weight: 600; letter-spacing: 0; }
+.stat b.up { color: var(--app-ok); }
+.stat b.down { color: #e8453c; }
+.plan-ico { --s: 40px; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .3); display: grid; place-items: center; flex: none;
+  color: #fff; font-weight: 800; font-size: calc(var(--s) * .36); letter-spacing: -.3px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--c) 70%, #fff), var(--c) 75%);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--c) 28%, transparent); }
+.pr-tag { font-size: 10px; font-weight: 800; letter-spacing: .4px; background: #ffd257; color: #5a3d00; border-radius: 6px; padding: 2px 6px; }
+.press { transition: transform .12s ease; }
+.press:active { transform: scale(.97); }
+button { font-family: inherit; }
+
+ion-tab-bar { --background: color-mix(in srgb, var(--app-card) 80%, transparent); --border: 0.5px solid var(--app-line);
+  backdrop-filter: saturate(1.8) blur(20px); -webkit-backdrop-filter: saturate(1.8) blur(20px); }
+ion-tab-button { --color: var(--app-muted); --color-selected: var(--ion-color-primary); }
+ion-tab-button ion-label { font-size: 10.5px; font-weight: 600; margin-top: 2px; }
+ion-tab-button ion-icon { font-size: 25px; }
+ion-toast { --border-radius: 14px; --background: var(--app-card); --color: var(--ion-text-color); --box-shadow: 0 10px 30px rgba(0,0,0,.18); }
