@@ -32,8 +32,13 @@ export const MUSCLES = {
   'Triceps + biceps na wyciągu': [['triceps', 'biceps'], ['forearms']],
 
   'Unoszenie nóg w podporze na poręczach': [['abs'], ['obliques']],
+  // exercises no longer in the plan – kept so their old workouts still count in the muscle stats
+  'Szrugsy': [['traps'], ['forearms']],
+  'Spider curl': [['biceps'], ['forearms']],
+  'Triceps na wyciągu (opcjonalnie)': [['triceps'], ['forearms']],
+
   'Allahy – spięcia brzucha na wyciągu': [['abs'], ['obliques']],
-  'Pallof press na wyciągu': [['obliques', 'abs'], ['shoulders']]
+  'Pallof press na wyciągu': [['obliques', 'abs'], []]
 }
 
 export const MUSCLE_NAMES = { chest: 'Klatka', shoulders: 'Barki', reardelts: 'Tył barków', biceps: 'Biceps', triceps: 'Triceps', forearms: 'Przedramiona',

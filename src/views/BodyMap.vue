@@ -10,6 +10,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { MUSCLE_NAMES } from '../muscles'
 
 const props = defineProps({ main: { type: Array, default: () => [] }, help: { type: Array, default: () => [] }, labels: Boolean })
 
@@ -55,11 +56,8 @@ const BACK = [
 ]
 const VIEWS = [{ id: 'f', name: 'Przód', regions: FRONT }, { id: 'b', name: 'Tył', regions: BACK }]
 
-const NAMES = { chest: 'klatka', shoulders: 'barki', biceps: 'biceps', forearms: 'przedramiona', abs: 'brzuch', obliques: 'skośne brzucha',
-  quads: 'czworogłowe', calves: 'łydki', traps: 'kaptury', reardelts: 'tył barków', upperback: 'górne plecy', lats: 'najszersze',
-  triceps: 'triceps', lowerback: 'dolne plecy', glutes: 'pośladki', hamstrings: 'dwugłowe' }
-const ariaText = computed(() => 'Mięśnie: ' + props.main.map(m => NAMES[m]).join(', ') +
-  (props.help.length ? '; pomocniczo: ' + props.help.map(m => NAMES[m]).join(', ') : ''))
+const ariaText = computed(() => 'Mięśnie: ' + props.main.map(m => MUSCLE_NAMES[m].toLowerCase()).join(', ') +
+  (props.help.length ? '; pomocniczo: ' + props.help.map(m => MUSCLE_NAMES[m].toLowerCase()).join(', ') : ''))
 
 const cls = m => props.main.includes(m) ? 'mus main' : props.help.includes(m) ? 'mus help' : 'mus'
 </script>

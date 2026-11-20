@@ -5,7 +5,7 @@
 // 4. writes the exercise list into the Strava activity description
 // 5. saves everything to strava.json in the gist; the app shows it
 import { PLAN, groupsOf, UNITS, migrateNames } from '../src/plan.js'
-import { musclesOf } from '../src/muscles.js'
+import { musclesOf, MUSCLE_NAMES } from '../src/muscles.js'
 const { GIST_TOKEN, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET } = process.env
 if (!GIST_TOKEN || !STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET) { console.log('Strava secrets not set – nothing to do'); process.exit(0) }
 
@@ -49,9 +49,7 @@ async function oauth(body) {
 }
 
 const UNIT = Object.fromEntries(PLAN.flatMap(d => d.ex.flatMap(e => groupsOf(e).map(g => [g.key, g.unit]))))
-const PL = { chest: 'klatka', shoulders: 'barki', biceps: 'biceps', forearms: 'przedramiona', abs: 'brzuch', obliques: 'skośne brzucha',
-  quads: 'czworogłowe uda', calves: 'łydki', traps: 'kaptury', reardelts: 'tył barków', upperback: 'górne plecy', lats: 'najszersze grzbietu',
-  triceps: 'triceps', lowerback: 'dolne plecy', glutes: 'pośladki', hamstrings: 'dwugłowe uda' }
+const PL = Object.fromEntries(Object.entries(MUSCLE_NAMES).map(([k, v]) => [k, v.toLowerCase()]))
 // default names from Strava / Garmin ("Night Weight Training", "Siła", "Trening siłowy"…) may be replaced; a name the user typed stays
 const DEFAULT_NAME = /^((morning|lunch|afternoon|evening|night)\s+)?(weight training|workout|strength( training)?|si[łl]a|trening( si[łl]owy)?|[a-ząćęłńóśźż ]*trening si[łl]owy)$/i
 const fmt = v => String(+(+v).toFixed(2)).replace('.', ',')
