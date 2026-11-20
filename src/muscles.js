@@ -8,6 +8,7 @@ export const MUSCLES = {
   'Wyciskanie hantli na ławce skośnej': [['chest'], ['shoulders', 'triceps']],
   'Rozpiętki na bramie': [['chest'], ['shoulders']],
   'Unoszenie hantli bokiem': [['shoulders'], ['traps', 'reardelts']],
+  // removed from Upper (Nov 2026) – kept so old workouts still count
   'Unoszenie ramienia bokiem na wyciągu': [['shoulders'], ['traps']],
   'Wyciskanie francuskie leżąc': [['triceps'], []],
   'Prostowanie ramion na wyciągu nad głową': [['triceps'], []],
