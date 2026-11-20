@@ -282,9 +282,11 @@ function lastText(g) {
 function toggle(g, si) {
   const x = sets(g.key)[si]
   x.d = !x.d; touch()
-  if (x.d && isComplete(idx.value) && idx.value < plan.value.ex.length - 1) {
-    const at = idx.value
-    setTimeout(() => { if (idx.value === at && !summary.value && isComplete(at)) go(at + 1) }, 650)
+  // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine)
+  if (x.d && isComplete(idx.value)) {
+    const at = idx.value, n = plan.value.ex.length
+    const to = [...Array(n - 1)].map((_, k) => (at + 1 + k) % n).find(i => !isComplete(i))
+    if (to != null) setTimeout(() => { if (idx.value === at && !summary.value && isComplete(at)) go(to) }, 650)
   }
 }
 function step(g, si, dirn) {
