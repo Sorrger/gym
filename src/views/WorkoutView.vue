@@ -128,12 +128,12 @@
       <div v-if="timer" class="timer-screen">
         <div class="tm-head">{{ timer.g.label || timer.g.name }} · seria {{ timer.si + 1 }}</div>
 
-        <div class="tm-ring" :class="['ph-' + tPhase]" ref="dialEl"
+        <div class="tm-ring" :class="['ph-' + tPhase, { dragging: tDial != null }]" ref="dialEl"
           @pointerdown="dialDown" @pointermove="dialMove" @pointerup="dialUp" @pointercancel="dialUp">
           <svg viewBox="0 0 120 120" aria-hidden="true">
             <circle cx="60" cy="60" r="50" class="bg" />
             <circle cx="60" cy="60" r="50" class="fg" :style="{ strokeDashoffset: 314.16 * (1 - tRing) }" />
-            <g v-if="tPhase === 'setup'" :transform="`rotate(${tSet / DIAL_MAX * 360} 60 60)`">
+            <g v-if="tPhase === 'setup'" class="knob-g" :style="{ transform: `rotate(${(tDial ?? tSet) / DIAL_MAX * 360}deg)` }">
               <circle cx="110" cy="60" r="8.5" class="knob" />
             </g>
           </svg>
@@ -334,12 +334,14 @@ function applyPick(all) {
 const PREP = 5, DIAL_MIN = 5, DIAL_MAX = 120
 const timer = ref(null) // { g, si, go (hang start), end (hang end) }
 const tPhase = ref('setup'), tSet = ref(30), tNow = ref(Date.now()), dialEl = ref(null)
+const tDial = ref(null) // exact (fractional) dial position while the finger moves – ring and knob follow it smoothly
+let tRaf = 0
 let tInt = null, audio = null, wake = null, beeped = new Set(), doneTimer = null
 const nextSet = g => { const a = sets(g.key); const i = a.findIndex(x => !x.d); return i < 0 ? a.length - 1 : i }
 const tPrepLeft = computed(() => (timer.value?.go ? Math.max(1, Math.ceil((timer.value.go - tNow.value) / 1000)) : PREP))
 const tLeft = computed(() => (timer.value?.end ? Math.max(0, Math.ceil((timer.value.end - tNow.value) / 1000)) : tSet.value))
 const tRing = computed(() => {
-  if (tPhase.value === 'setup') return tSet.value / DIAL_MAX
+  if (tPhase.value === 'setup') return (tDial.value ?? tSet.value) / DIAL_MAX
   if (tPhase.value === 'prep') return (timer.value.go - tNow.value) / (PREP * 1000)
   if (tPhase.value === 'run') return Math.max(0, (timer.value.end - tNow.value) / (tSet.value * 1000))
   return 1
@@ -388,6 +390,9 @@ async function startTimer() {
   timer.value.end = timer.value.go + tSet.value * 1000
   tPhase.value = 'prep'; tNow.value = now
   clearInterval(tInt); tInt = setInterval(tick, 100); tick()
+  cancelAnimationFrame(tRaf)
+  const frame = () => { if (!timer.value || tPhase.value === 'setup' || tPhase.value === 'done') return; tNow.value = Date.now(); tRaf = requestAnimationFrame(frame) }
+  tRaf = requestAnimationFrame(frame)
 }
 function skipPrep() {
   const now = Date.now()
@@ -396,7 +401,7 @@ function skipPrep() {
 }
 function finishHang(secs) {
   const tm = timer.value; if (!tm) return
-  clearInterval(tInt); tInt = null
+  clearInterval(tInt); tInt = null; cancelAnimationFrame(tRaf)
   const x = sets(tm.g.key)[tm.si]
   if (secs >= 1) {
     x.w = Math.min(UNITS.s.max, secs); touch()
@@ -413,24 +418,25 @@ function stopTimer() {
   finishHang(Math.max(0, Math.floor((Date.now() - tm.go) / 1000)))
 }
 function closeTimer() {
-  clearInterval(tInt); tInt = null; clearTimeout(doneTimer)
+  clearInterval(tInt); tInt = null; clearTimeout(doneTimer); cancelAnimationFrame(tRaf); tDial.value = null
   timer.value = null; tPhase.value = 'setup'
   try { wake?.release() } catch {}
   wake = null
 }
 // dial: the knob follows the finger; it can't jump across the top from 120 to 0 (or back)
 let dragging = false
-function dialValue(e) {
+function dialRaw(e) { // exact position 0..DIAL_MAX (fractional); can't jump across the top
   const r = dialEl.value.getBoundingClientRect()
   const a = Math.atan2(e.clientX - (r.left + r.width / 2), -(e.clientY - (r.top + r.height / 2))) // 0 at top, clockwise
-  const v = Math.round(((a + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI) * DIAL_MAX)
-  const prev = tSet.value
+  const v = ((a + 2 * Math.PI) % (2 * Math.PI)) / (2 * Math.PI) * DIAL_MAX
+  const prev = tDial.value ?? tSet.value
   if (Math.abs(v - prev) > DIAL_MAX / 2) return prev > DIAL_MAX / 2 ? DIAL_MAX : DIAL_MIN
   return Math.min(DIAL_MAX, Math.max(DIAL_MIN, v))
 }
-function dialDown(e) { if (tPhase.value !== 'setup') return; dragging = true; e.target.setPointerCapture?.(e.pointerId); tSet.value = dialValue(e) }
-function dialMove(e) { if (!dragging) return; e.preventDefault(); tSet.value = dialValue(e) }
-function dialUp() { dragging = false }
+function dialSet(e) { const v = dialRaw(e); tDial.value = v; tSet.value = Math.round(v) }
+function dialDown(e) { if (tPhase.value !== 'setup') return; dragging = true; e.target.setPointerCapture?.(e.pointerId); dialSet(e) }
+function dialMove(e) { if (!dragging) return; e.preventDefault(); dialSet(e) }
+function dialUp() { dragging = false; tDial.value = null } // knob settles on the whole second
 onUnmounted(closeTimer)
 
 // finishing shows the summary screen; "Zapisz trening" saves and returns to the main menu
@@ -557,7 +563,9 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .tm-ring circle { fill: none; stroke-width: 10; }
 .tm-ring .bg { stroke: color-mix(in srgb, var(--c) 14%, transparent); }
 .tm-ring .fg { stroke: var(--c); stroke-linecap: round; stroke-dasharray: 314.16; transition: stroke .2s; }
-.tm-ring.ph-setup .fg { transition: stroke-dashoffset .08s; }
+.tm-ring.ph-setup .fg { transition: stroke-dashoffset .25s cubic-bezier(.2,.8,.2,1); }
+.tm-ring.dragging .fg, .tm-ring.dragging .knob-g { transition: none !important; }
+.tm-ring .knob-g { transform-origin: 60px 60px; transform-box: view-box; transition: transform .25s cubic-bezier(.2,.8,.2,1); }
 .tm-ring.ph-prep .fg { stroke: var(--app-faint); }
 .tm-ring.ph-done .fg { stroke: var(--app-ok); }
 .tm-ring .knob { fill: #fff; stroke: var(--c); stroke-width: 3.5; filter: drop-shadow(0 1px 3px rgba(0,0,0,.3)); }
