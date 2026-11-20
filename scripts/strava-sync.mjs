@@ -85,8 +85,8 @@ function describe(s, all = []) {
     blocks.get(g.name).push((g.label ? g.label.toLowerCase() + ': ' : '') + setsText(done, g.unit))
   }
   if (!n) return ''
-  const head = [`${MARK} · ${plan?.name || 'Trening'}`,
-    `${n} ${plural(n, 'seria', 'serie', 'serii')} · ${blocks.size} ${plural(blocks.size, 'ćwiczenie', 'ćwiczenia', 'ćwiczeń')}` + (vol ? ` · ${vol >= 1000 ? fmt(Math.round(vol / 100) / 10) + ' t' : Math.round(vol) + ' kg'} objętości` : ''),
+  // the title already says the plan; Strava shows only ~3 lines before "Read more", so the summary goes first
+  const head = [`${MARK} · ${n} ${plural(n, 'seria', 'serie', 'serii')} · ${blocks.size} ${plural(blocks.size, 'ćwiczenie', 'ćwiczenia', 'ćwiczeń')}` + (vol ? ` · ${vol >= 1000 ? fmt(Math.round(vol / 100) / 10) + ' t' : Math.round(vol) + ' kg'} objętości` : ''),
     `💪 ${[...main].map((x, i) => (i ? MUSCLE_NAMES[x].toLowerCase() : MUSCLE_NAMES[x])).join(', ')}`]
   if (prs.length) head.push(`🏆 ${plural(prs.length, 'Rekord', 'Rekordy', 'Rekordów')}: ${prs.join(', ')}`)
   const body = [...blocks].map(([name, ls], i) => `${i + 1}. ${name}\n` + ls.map(l => '    ' + l).join('\n'))
