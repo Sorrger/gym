@@ -139,3 +139,18 @@ export function muscleWeek(days = null) {
 }
 
 export const fmtTon = v => (v >= 10000 ? (Math.round(v / 100) / 10).toFixed(1).replace('.', ',') + ' t' : Math.round(v).toLocaleString('pl-PL') + ' kg')
+
+// sets per muscle in one week of the plan (same weighting as muscleSets: main 1, helping ½)
+export function planMuscleSets() {
+  const out = {}
+  PLAN.forEach((_, d) => {
+    const perEx = {}
+    entriesOf(d).forEach(g => (perEx[g.name] = Math.max(perEx[g.name] || 0, g.sets || 0)))
+    for (const [base, n] of Object.entries(perEx)) {
+      const m = musclesOf(base)
+      m.main.forEach(x => (out[x] = (out[x] || 0) + n))
+      m.help.forEach(x => (out[x] = (out[x] || 0) + n / 2))
+    }
+  })
+  return out
+}

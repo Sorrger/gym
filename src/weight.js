@@ -34,14 +34,17 @@ export function parseList(text) {
 }
 
 function merge(remote) {
-  let changed = false
+  let changed = 0
   for (const [date, e] of Object.entries(remote || {})) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || !e || (!e.del && !(e.kg > 0))) continue
     const l = wstate.entries[date]
-    if (!l || (e?.t || 0) > (l.t || 0)) { wstate.entries[date] = e; changed = true }
+    if (!l || (e.t || 0) > (l.t || 0)) { wstate.entries[date] = e; changed++ }
   }
   if (changed) save()
   return changed
 }
+// from a backup file (Kopia → Wczytaj z pliku)
+export function importWeights(remote) { const n = merge(remote); if (n) schedulePush(); return n }
 export async function push() {
   if (!cloud.token || !cloud.gistId || !navigator.onLine) return
   try {

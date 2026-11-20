@@ -67,10 +67,10 @@
         <h3 class="section-title">Balans ciała</h3>
         <div class="card radar-card">
           <svg class="radar" viewBox="0 0 320 290" role="img" :aria-label="'Balans: ' + radar.axes.map(a => a.name + ' ' + fmtSets(a.v)).join(', ')">
-            <path v-for="r in [0.25, 0.5, 0.75, 1]" :key="r" :d="radar.ring(r)" class="grid" :class="{ ten: r === 0.7 }" />
-            <path :d="radar.ring(0.7)" class="grid ten" />
+            <path v-for="r in [0.25, 0.5, 0.75, 1]" :key="r" :d="radar.ring(r)" class="grid" />
             <line v-for="(a, i) in radar.axes" :key="'l' + i" :x1="CX" :y1="CY" :x2="a.ex" :y2="a.ey" class="spoke" />
             <path :d="radar.shape" class="shape" />
+            <path :d="radar.planShape" class="grid ten" />
             <circle v-for="(a, i) in radar.axes" :key="'p' + i" :cx="a.px" :cy="a.py" r="5" class="pt" :class="a.level" />
             <g v-for="(a, i) in radar.axes" :key="'t' + i">
               <text :x="a.lx" :y="a.ly" :text-anchor="a.anchor" class="ax-name">{{ a.name }}</text>
@@ -78,11 +78,11 @@
             </g>
           </svg>
           <div class="verdict">
-            <div class="v-score" :class="{ early: radar.early }"><b class="num">{{ radar.early ? '…' : radar.balance + '%' }}</b><small>balans</small></div>
+            <div class="v-score" :class="{ early: radar.early }"><b class="num">{{ radar.early ? '…' : radar.balance + '%' }}</b><small>wg planu</small></div>
             <p>{{ radar.text }}</p>
           </div>
         </div>
-        <p class="section-foot">Wszystkie serie w wybranym okresie, dla każdej grupy. Brzeg wykresu = najmocniej trenowana grupa, przerywana linia = 70% tego. Balans 100% = wszystkie grupy trenowane tak samo mocno.</p>
+        <p class="section-foot">Wszystkie serie w wybranym okresie, dla każdej grupy. Brzeg wykresu = najmocniej trenowana grupa. Przerywana linia = jak rozkłada serie Twój plan (nogi mniej – celowo). Wynik 100% = trenujesz dokładnie tak, jak zakłada plan.</p>
 
       </div>
     </ion-content>
@@ -95,7 +95,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSegme
 import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
 import { state, ui, ago } from '../store'
-import { overview, planSummary, muscleWeek, muscleSets, plansDone } from '../stats'
+import { overview, planSummary, muscleWeek, muscleSets, plansDone, planMuscleSets } from '../stats'
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
 
@@ -123,6 +123,7 @@ const GROUPS = [
   ['Klatka', ['chest']], ['Plecy', ['lats', 'upperback']], ['Barki', ['shoulders', 'reardelts']],
   ['Ręce', ['biceps', 'triceps']], ['Nogi', ['quads', 'hamstrings', 'glutes']], ['Brzuch', ['abs']]
 ]
+const planSets = planMuscleSets()
 const radar = computed(() => {
   const n = GROUPS.length
   const pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [CX + Math.cos(a) * r, CY + Math.sin(a) * r] }
@@ -137,16 +138,21 @@ const radar = computed(() => {
       level: rel >= 0.7 ? 'ok' : rel >= 0.4 ? 'mid' : 'low' }
   })
   const shape = axes.map((a, i) => (i ? 'L' : 'M') + a.px.toFixed(1) + ' ' + a.py.toFixed(1)).join(' ') + ' Z'
-  const min = Math.min(...raw)
-  const balance = max > 0 ? Math.round(min / max * 100) : 0
-  const weak = axes.filter(a => a.rel < 0.7).sort((a, b) => a.rel - b.rel)
+  // compare with what the plan itself asks for (legs/abs are smaller on purpose – not a weakness)
+  const plan = GROUPS.map(([, ids]) => ids.reduce((a, id) => a + (planSets[id] || 0), 0) / ids.length)
+  const pmax = Math.max(...plan) || 1
+  const planShape = plan.map((v, i) => pt(i, R * Math.max(v / pmax, 0.04))).map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)).join(' ') + ' Z'
+  const ratio = raw.map((v, i) => (plan[i] ? v / plan[i] : 1)), rmax = Math.max(...ratio) || 1
+  axes.forEach((a, i) => { a.fit = ratio[i] / rmax; a.level = a.fit >= 0.7 ? 'ok' : a.fit >= 0.4 ? 'mid' : 'low' })
+  const balance = max > 0 ? Math.round(Math.min(...ratio) / rmax * 100) : 0
+  const weak = axes.filter(a => a.fit < 0.7).sort((a, b) => a.fit - b.fit)
   const strong = axes.slice().sort((a, b) => b.v - a.v)[0]
   let text
   if (!max) text = 'Jeszcze brak treningów – wykres pojawi się po pierwszym.'
   else if (done.value < PLAN.length) text = `${period.value ? 'W tym okresie zrobiłeś' : 'Zrobiłeś'} ${done.value} z ${PLAN.length} treningów planu (${PLAN.map(p => p.name).join(', ')}). Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans.`
-  else if (!weak.length) text = 'Wszystkie grupy są trenowane podobnie mocno. Tak trzymaj!'
-  else text = `Najwięcej pracy: ${strong.name} (${fmtSets(strong.v)} serii). Odstają: ${weak.map(a => a.name + ' ' + Math.round(a.rel * 100) + '%').join(', ')} tego, co ${strong.name.toLowerCase()}.`
-  return { axes, shape, ring, balance, text, early: done.value < PLAN.length }
+  else if (!weak.length) text = `Trenujesz zgodnie z planem. Najwięcej pracy: ${strong.name.toLowerCase()} – tak jak chcesz. Nogi mniej, bo tak jest zaplanowane.`
+  else text = `Mniej niż zakłada plan: ${weak.map(a => a.name + ' ' + Math.round(a.fit * 100) + '%').join(', ')}. Pewnie pomijasz tam serie albo ćwiczenia.`
+  return { axes, shape, planShape, ring, balance, text, early: done.value < PLAN.length }
 })
 const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 </script>
