@@ -372,6 +372,12 @@ function tick() {
   if (tPhase.value === 'run') {
     if (tNow.value >= tm.end) { finishHang(tSet.value); return }
     if (tLeft.value <= 3) once('l' + tLeft.value, () => beep(1100, 90))
+    // every 10 s of hanging: a low "ding" – 1 at 10 s, 2 at 20 s, 3 at 30 s… (count without looking); not during the last 3 s
+    const held = Math.floor((tNow.value - tm.go) / 1000)
+    if (held > 0 && held % 10 === 0 && tLeft.value > 3) once('h' + held, () => {
+      const n = Math.min(5, held / 10)
+      for (let i = 0; i < n; i++) setTimeout(() => beep(660, 160), i * 230)
+    })
   }
 }
 async function openTimer(g) {
