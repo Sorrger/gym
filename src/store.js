@@ -1,6 +1,6 @@
 import { reactive, watch } from 'vue'
 import { get, set } from 'idb-keyval'
-import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY } from './plan'
+import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -97,7 +97,7 @@ export function startSession(day) {
     s.ex[g.key] = Array.from({ length: n }, (_, i) => {
       const w = prev ? (prev[i]?.w ?? [...prev].reverse().find(x => x.w != null)?.w ?? null) : null
       if (g.unit !== 'kg') return { w, d: false }
-      const r = prev?.[i]?.r ?? (prev ? [...prev].reverse().find(x => x.r != null)?.r : null) ?? DEF_REPS
+      const r = prev?.[i]?.r ?? (prev ? [...prev].reverse().find(x => x.r != null)?.r : null) ?? rangeOf(g.target)?.lo ?? DEF_REPS
       return { w, r, d: false }
     })
   })

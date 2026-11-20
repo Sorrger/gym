@@ -48,6 +48,10 @@
                   <ion-icon :icon="timeOutline" />
                   {{ lastText(g) }}
                 </div>
+                <button v-if="sugOf(g)" class="tip-chip press" :class="sugOf(g).kind" @click="showTip(sugList())">
+                  <ion-icon :icon="sugOf(g).kind === 'down' ? trendingDown : sugOf(g).kind === 'up' ? trendingUp : bulbOutline" />
+                  <span>{{ sugOf(g).kind === 'up' ? 'Dodaj' : sugOf(g).kind === 'down' ? 'Lżej' : 'Cel' }}: <b>{{ sugOf(g).short }}</b></span>
+                </button>
                 <div class="sets">
                   <div class="set" v-for="(x, si) in sets(g.key)" :key="si" :class="{ d: x.d }">
                     <span class="idx num">{{ si + 1 }}</span>
@@ -193,13 +197,14 @@
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
 import { stravaFor, svText } from '../strava'
+import { suggest, applySuggestion } from '../coach'
 import { musclesOf } from '../muscles'
-import { computed, ref, watchEffect, onUnmounted } from 'vue'
+import { computed, ref, watch, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
-import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal } from '../plan'
+import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline } from 'ionicons/icons'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted } from '../store'
 
@@ -245,9 +250,28 @@ function tEnd(e) {
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(idx.value + (dx < 0 ? 1 : -1))
 }
 
+// progression hint: shown in a dialog the first time an exercise is opened in a workout (nothing ticked yet), and as a chip
+const sugs = computed(() => { void state.sessions; return s.value ? groups.value.map(g => ({ g, sug: suggest(g, s.value) })) : [] })
+const sugOf = g => { const x = sugs.value.find(y => y.g.key === g.key)?.sug; return x && x.kind !== 'first' ? x : null }
+const sugList = () => sugs.value.filter(x => x.sug && x.sug.kind !== 'first')
+const tipsShown = new Set()
+async function showTip(list) {
+  if (!list.length) return
+  const multi = list.length > 1
+  const main = list.find(x => x.sug.kind === 'up') || list.find(x => x.sug.kind === 'down') || list[0]
+  const can = list.some(x => x.sug.sets)
+  const { role } = await ask({ icon: main.sug.kind === 'up' ? trendingUp : main.sug.kind === 'down' ? trendingDown : bulbOutline, color: color.value,
+    title: multi ? 'Podpowiedź na dziś' : main.sug.title,
+    message: list.map(x => (multi ? x.g.label + ': ' : '') + x.sug.text).join('\n\n'),
+    buttons: can ? [{ text: multi ? 'Ustaw w seriach' : 'Ustaw: ' + main.sug.short, role: 'apply', kind: 'primary' }, { text: 'Zostaw jak jest', role: 'cancel' }]
+      : [{ text: 'OK', role: 'cancel', kind: 'primary' }] })
+  if (role === 'apply') { list.forEach(x => applySuggestion(sets(x.g.key), x.sug, x.g.unit)); touch() }
+}
+
 function lastText(g) {
   const p = lastFor(g.key, s.value)
-  if (!p) return g.unit === 'kg' ? 'Pierwszy raz. Ustaw ciężar dla serii.' : 'Pierwszy raz. Ustaw wartość dla serii.'
+  const rg = rangeOf(g.target)
+  if (!p) return g.unit === 'kg' ? (rg ? `Pierwszy raz. Dobierz ciężar na ${rg.lo}-${rg.hi} powtórzeń.` : 'Pierwszy raz. Ustaw ciężar dla serii.') : 'Pierwszy raz. Ustaw wartość dla serii.'
   const done = p.ex[g.key].filter(x => x.d && x.w != null)
   const txt = g.unit === 'kg' && done.some(x => x.r)
     ? done.map(x => fmtNum(x.w) + (x.r ? '×' + x.r : '')).join(' · ') + ' kg'
@@ -411,6 +435,16 @@ onUnmounted(closeTimer)
 
 // finishing shows the summary screen; "Zapisz trening" saves and returns to the main menu
 const summary = ref(false)
+watch(() => [s.value?.id, idx.value, summary.value], () => {
+  const sess = s.value
+  if (!sess || sess.finished || summary.value) return
+  const k = sess.id + ':' + idx.value
+  if (tipsShown.has(k)) return
+  tipsShown.add(k)
+  if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) return
+  const list = sugList()
+  if (list.length) setTimeout(() => { if (s.value?.id === sess.id && idx.value === +k.split(':')[1]) showTip(list) }, 450)
+}, { immediate: true })
 function finish() {
   if (s.value.finished) { router.back(); return }
   summary.value = true
@@ -477,6 +511,11 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .target { color: var(--c); font-weight: 600; font-size: 17px; }
 .tag { font-size: 12px; font-weight: 600; color: var(--app-muted); background: var(--app-field); border-radius: 6px; padding: 2px 7px; }
 .last { display: flex; gap: 6px; align-items: center; color: var(--app-muted); font-size: 13px; padding: 0 4px; }
+.tip-chip { align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; margin: 6px 4px 0; padding: 5px 11px; border: 0; border-radius: 999px;
+  font: inherit; font-size: 13px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.tip-chip b { font-weight: 700; }
+.tip-chip ion-icon { font-size: 15px; }
+.tip-chip.down { color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 12%, transparent); }
 .last ion-icon { flex: none; font-size: 15px; }
 
 .groups { min-height: 0; overflow-y: auto; overscroll-behavior: contain; flex: 0 1 auto; margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }

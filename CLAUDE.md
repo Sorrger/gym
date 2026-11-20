@@ -23,6 +23,10 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 ## Files
 - `src/plan.js` – the training plan (PLAN, COLORS, UNITS). Multi-part exercises (e.g. "Nauka podciągania" = Wiszenie (s) + Negatywy (reps)) via `groupsOf`/`entriesOf`; each part stored under key `"Name · Part"`. A plain exercise can set its unit as 4th element instead of parts (`[name, target, null, 'reps']`, e.g. captain's chair).
   Abs: Pull ends with captain's chair (reps) + Allahy; Nogi ends with Pallof press (user called it "hammer press": sideways to the cable, press out, hold 2 s, per side) + captain's chair + Allahy.
+- **Progression (double progression)** – `src/coach.js` `suggest(group, session)`; rep range comes from the target (`rangeOf('3 × 6-8')`), per-exercise kg step in `INC` (default 2,5), `ASSISTED` (less kg = harder), `HARDER` texts for bodyweight/time parts – all in plan.js.
+  All planned sets at the top of the range → +INC and start at the bottom; else same weight, +1 rep per set; two workouts in a row below the bottom → ~10 % lighter.
+  Workout screen: dialog the first time an exercise is opened in a workout (nothing ticked) with "Ustaw: …" (fills unticked sets), plus a chip under "Ostatnio…" that reopens it.
+  Ranges chosen with the user: heavy compounds 6-8 (bench, Zercher, OHP, assisted pull-ups), rows/pulldowns/incline/RDL 8-10, machines/isolation 10-12, laterals/flyes/calves 12-15, face pulls 15-20.
 - `src/muscles.js` – MUSCLES: exercise name → [main, helping] muscle ids; `dayMuscles(day)`. **Add an entry for every new exercise.**
   `src/views/BodyMap.vue` – offline SVG front+back figure, main muscles in plan colour (`--c`), helping ones faded. Shown next to the exercise title (Workout) and on the plan cards (Home).
 - `src/store.js` – sessions in IndexedDB key `sessions` (`id -> { id, date, day, ex: { key: [{ w, r?, d }] }, started, finished, updated, cur }`).

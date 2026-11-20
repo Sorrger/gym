@@ -41,7 +41,7 @@ watch(() => dialog.open, async v => { if (v && o.value?.input) { await nextTick(
   color: var(--dc); background: color-mix(in srgb, var(--dc) 15%, transparent); }
 .dlg-ico.danger { color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 14%, transparent); }
 h2 { margin: 0 8px; font-size: 21px; font-weight: 700; letter-spacing: -.3px; line-height: 1.2; }
-p { margin: 8px 8px 0; color: var(--app-muted); font-size: 15px; line-height: 1.4; }
+p { margin: 8px 8px 0; color: var(--app-muted); font-size: 15px; line-height: 1.4; white-space: pre-line; }
 .dlg-in { width: 100%; margin-top: 16px; height: 48px; border: 0; border-radius: 14px; background: var(--app-field); color: inherit;
   padding: 0 14px; font: inherit; font-size: 16px; outline: none; }
 .dlg-in:focus { box-shadow: inset 0 0 0 2px var(--dc); }
