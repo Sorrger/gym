@@ -19,7 +19,7 @@
               <ion-icon :icon="chevronForward" class="chev" />
             </div>
             <div class="t-val num" v-if="t.pts.length">
-              <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}</small>
+              <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
               <span class="delta" v-if="t.pts.length > 1" :class="t.diff > 0 ? 'up' : t.diff < 0 ? 'down' : 'flat'">
                 {{ t.diff > 0 ? '+' : t.diff < 0 ? '−' : '±' }}{{ fmtNum(Math.abs(t.diff)) }}
               </span>
@@ -59,7 +59,7 @@ const tiles = computed(() => {
   return entriesOf(day.value).map(g => {
     const pts = series(g.key)
     const ws = pts.map(p => p.w)
-    const t = { ...g, pts, last: ws[ws.length - 1], best: ws.length ? Math.max(...ws) : null, diff: ws.length ? ws[ws.length - 1] - ws[0] : 0 }
+    const t = { ...g, pts, last: ws[ws.length - 1], lastR: pts.length ? pts[pts.length - 1].r : null, best: ws.length ? Math.max(...ws) : null, diff: ws.length ? ws[ws.length - 1] - ws[0] : 0 }
     if (pts.length > 1) {
       const lo = Math.min(...ws), hi = Math.max(...ws), span = hi - lo || 1
       const xy = ws.map((w, i) => [i * 100 / (ws.length - 1), 28 - ((w - lo) / span) * 24])
@@ -76,8 +76,9 @@ function open(i) { router.push(`/exercise/${day.value}/${i}`) }
 
 <style scoped>
 .seg { margin: 4px 16px 16px; width: auto; --background: var(--app-field); }
-.seg ion-segment-button { --indicator-color: var(--app-card); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
+.seg ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
 
+@media (prefers-color-scheme: dark) { .seg { --seg-on: #636366; } }
 .tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px; }
 .tile { position: relative; text-align: left; border: 0; border-radius: var(--r-lg); background: var(--app-card); padding: 14px 14px 12px;
   color: var(--ion-text-color); font: inherit; display: flex; flex-direction: column; min-height: 172px; overflow: hidden; box-shadow: var(--app-shadow);

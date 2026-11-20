@@ -70,5 +70,10 @@ const cls = m => props.main.includes(m) ? 'mus main' : props.help.includes(m) ? 
 .mus { fill: color-mix(in srgb, var(--ion-text-color, #000) 9%, transparent); transition: fill .25s; }
 .mus.help { fill: color-mix(in srgb, var(--c, #8a5cf6) 38%, transparent); }
 .mus.main { fill: var(--c, #8a5cf6); }
+@media (prefers-color-scheme: dark) {
+  .base { fill: color-mix(in srgb, var(--ion-text-color, #fff) 13%, transparent); }
+  .mus { fill: color-mix(in srgb, var(--ion-text-color, #fff) 19%, transparent); }
+  .mus.help { fill: color-mix(in srgb, var(--c, #8a5cf6) 50%, transparent); }
+}
 .lbl { font-size: 11px; font-weight: 600; text-anchor: middle; fill: var(--app-muted, #888); }
 </style>

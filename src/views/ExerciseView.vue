@@ -35,7 +35,7 @@
           </div>
           <div class="r-right num">
             <span v-if="r.pr" class="pr-tag">REKORD</span>
-            <b>{{ fmtNum(r.w) }}</b><small>{{ UNITS[unit].short }}</small>
+            <b>{{ fmtNum(r.w) }}</b><small>{{ UNITS[unit].short }}<template v-if="r.r"> × {{ r.r }}</template></small>
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@ onBeforeUnmount(() => chart?.destroy())
 </script>
 
 <style scoped>
-.hero { margin: calc(env(safe-area-inset-top, 0px) + 56px) 16px 12px; padding: 18px; border-radius: var(--r-lg); color: #fff;
+.hero { margin: 12px 16px 12px; padding: 18px; border-radius: var(--r-lg); color: #fff;
   box-shadow: 0 10px 26px color-mix(in srgb, var(--c) 28%, transparent);
   background: linear-gradient(145deg, color-mix(in srgb, var(--c) 78%, #fff), var(--c) 55%, color-mix(in srgb, var(--c) 80%, #000)); }
 .badge { font-size: 13px; font-weight: 600; opacity: .85; }

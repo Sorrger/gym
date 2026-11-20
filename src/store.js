@@ -154,7 +154,9 @@ export function series(name) {
   return sorted().slice().reverse().map(s => {
     const done = (s.ex?.[name] || []).filter(x => x.d && x.w != null)
     if (!done.length) return null
-    return { id: s.id, date: s.date, w: Math.max(...done.map(x => x.w)) }
+    const w = Math.max(...done.map(x => x.w))
+    const r = Math.max(0, ...done.filter(x => x.w === w).map(x => x.r || 0)) || null // reps of the heaviest set (kg exercises)
+    return { id: s.id, date: s.date, w, r }
   }).filter(Boolean)
 }
 
