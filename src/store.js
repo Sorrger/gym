@@ -1,6 +1,6 @@
 import { reactive, watch } from 'vue'
 import { get, set } from 'idb-keyval'
-import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf } from './plan'
+import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -29,6 +29,7 @@ export async function load() {
     s.id = k
     if (!s.started) s.started = new Date(s.date + 'T12:00:00').getTime()
     if (s.finished == null) s.finished = s.date < iso(new Date())
+    migrateNames(s)
   })
   closeStale()
   state.ready = true
@@ -126,6 +127,7 @@ export function mergeSessions(src) {
     if (k.includes('~draft') || !b?.date) return
     const a = state.sessions[k]
     if (!a || (b.updated || 0) > (a.updated || 0)) {
+      migrateNames(b)
       state.sessions[k] = { ...b, id: k, started: b.started || new Date(b.date + 'T12:00:00').getTime(), finished: b.finished ?? true }
       n++
     }

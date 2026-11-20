@@ -4,7 +4,7 @@
 // 3. pulls recent strength activities (heart rate, kcal, time), matches them to workouts by time
 // 4. writes the exercise list into the Strava activity description
 // 5. saves everything to strava.json in the gist; the app shows it
-import { PLAN, groupsOf, UNITS } from '../src/plan.js'
+import { PLAN, groupsOf, UNITS, migrateNames } from '../src/plan.js'
 import { musclesOf } from '../src/muscles.js'
 const { GIST_TOKEN, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET } = process.env
 if (!GIST_TOKEN || !STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET) { console.log('Strava secrets not set – nothing to do'); process.exit(0) }
@@ -86,6 +86,7 @@ const mergeDesc = (old, ours) => {
 const gistId = await findGist()
 const g = await gh('/gists/' + gistId)
 const backup = await fileOf(g, BACKUP)
+Object.values(backup?.sessions || {}).forEach(migrateNames) // old exercise names → current ones
 let auth = (await fileOf(g, AUTH)) || {}
 const prev = (await fileOf(g, OUT)) || {}
 // nothing to do on days without training: no Strava calls at all (only the gist is read)

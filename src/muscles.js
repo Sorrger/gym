@@ -4,36 +4,36 @@ import { PLAN } from './plan.js'
 // front: chest, shoulders, biceps, forearms, abs, obliques, quads, shins
 // back:  traps, reardelts, upperback, lats, triceps, lowerback, glutes, hamstrings, calves
 export const MUSCLES = {
-  'Wyciskanie płasko': [['chest'], ['shoulders', 'triceps']],
-  'Wyciskanie hantli na skosie dodatnim': [['chest', 'shoulders'], ['triceps']],
+  'Wyciskanie sztangi na ławce płaskiej': [['chest'], ['shoulders', 'triceps']],
+  'Wyciskanie hantli na ławce skośnej': [['chest', 'shoulders'], ['triceps']],
   'Rozpiętki na bramie': [['chest'], ['shoulders']],
-  'Wznosy bokiem (hantle)': [['shoulders'], ['traps', 'reardelts']],
-  'Francuskie': [['triceps'], []],
-  'Triceps na wyciągu (opcjonalnie)': [['triceps'], ['forearms']],
+  'Unoszenie hantli bokiem': [['shoulders'], ['traps', 'reardelts']],
+  'Wyciskanie francuskie leżąc': [['triceps'], []],
+  'Prostowanie ramion na wyciągu nad głową': [['triceps'], []],
 
   'Nauka podciągania': [['lats', 'biceps'], ['upperback', 'forearms', 'abs']],
-  'Wiosłowanie hantlem z podparciem': [['lats', 'upperback'], ['biceps', 'reardelts']],
-  'T-bar row': [['upperback', 'lats'], ['biceps', 'reardelts', 'lowerback']],
-  'Face pully': [['reardelts', 'upperback'], ['traps']],
-  'Uginanie na ławce skośnej (hantle)': [['biceps'], ['forearms']],
+  'Wiosłowanie hantlem jednorącz z podparciem': [['lats', 'upperback'], ['biceps', 'reardelts']],
+  'Wiosłowanie sztangą T (T-bar)': [['upperback', 'lats'], ['biceps', 'reardelts', 'lowerback']],
+  'Face pull na wyciągu': [['reardelts', 'upperback'], ['traps']],
+  'Uginanie ramion z hantlami na ławce skośnej': [['biceps'], ['forearms']],
 
-  'Rumuński martwy ciąg': [['hamstrings', 'glutes'], ['lowerback', 'forearms']],
-  'Przysiad Zercher': [['quads', 'glutes'], ['abs', 'upperback', 'biceps']],
-  'Prostowanie nóg (maszyna)': [['quads'], []],
-  'Uginanie nóg (maszyna)': [['hamstrings'], ['calves']],
-  'Łydki siedząc (maszyna)': [['calves'], []],
+  'Martwy ciąg rumuński': [['hamstrings', 'glutes'], ['lowerback', 'forearms']],
+  'Przysiad Zerchera': [['quads', 'glutes'], ['abs', 'upperback', 'biceps']],
+  'Prostowanie nóg na maszynie': [['quads'], []],
+  'Uginanie nóg na maszynie': [['hamstrings'], ['calves']],
+  'Wspięcia na palce siedząc': [['calves'], []],
 
   'Podciąganie nachwytem (wspomagane)': [['lats'], ['biceps', 'upperback']],
-  'Wyciskanie sztangi nad głowę': [['shoulders'], ['triceps', 'traps']],
-  'Seal row': [['upperback', 'lats'], ['reardelts', 'biceps']],
-  'Wyciskanie na Smithcie na skosie': [['chest', 'shoulders'], ['triceps']],
-  'Wyciąg górny szeroki': [['lats'], ['biceps', 'upperback']],
-  'Butterfly': [['chest'], []],
-  'Triceps + biceps': [['triceps', 'biceps'], ['forearms']],
+  'Wyciskanie sztangi siedząc z oparciem': [['shoulders'], ['triceps', 'traps']],
+  'Seal row – wiosłowanie leżąc na ławce': [['upperback', 'lats'], ['reardelts', 'biceps']],
+  'Wyciskanie na skosie na Smithie': [['chest', 'shoulders'], ['triceps']],
+  'Ściąganie drążka szerokim chwytem': [['lats'], ['biceps', 'upperback']],
+  'Rozpiętki na maszynie (butterfly)': [['chest'], []],
+  'Triceps + biceps na wyciągu': [['triceps', 'biceps'], ['forearms']],
 
-  'Unoszenie nóg na poręczach (captain’s chair)': [['abs'], ['obliques', 'forearms']],
-  'Allahy (brzuch na wyciągu)': [['abs'], ['obliques']],
-  'Pallof press (wyciąg, bokiem)': [['obliques', 'abs'], ['shoulders']]
+  'Unoszenie nóg w podporze na poręczach': [['abs'], ['obliques', 'forearms']],
+  'Allahy – spięcia brzucha na wyciągu': [['abs'], ['obliques']],
+  'Pallof press na wyciągu': [['obliques', 'abs'], ['shoulders']]
 }
 
 export function musclesOf(name) {
