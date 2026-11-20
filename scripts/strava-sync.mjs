@@ -88,6 +88,9 @@ const g = await gh('/gists/' + gistId)
 const backup = await fileOf(g, BACKUP)
 let auth = (await fileOf(g, AUTH)) || {}
 const prev = (await fileOf(g, OUT)) || {}
+// nothing to do on days without training: no Strava calls at all (only the gist is read)
+const recent = Object.values(backup?.sessions || {}).some(x => (x.updated || x.started || 0) > Date.now() - 36 * 3600e3)
+if (!auth.code && auth.refresh_token && !recent && !process.env.FORCE) { console.log('No workout in the last 36 h – skipping Strava'); process.exit(0) }
 const out = { at: new Date().toISOString(), athlete: prev.athlete || null, acts: prev.acts || {}, authError: '' }
 const files = {}
 
