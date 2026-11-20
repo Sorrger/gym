@@ -29,6 +29,7 @@ export const MUSCLES = {
   'Wyciskanie na skosie na Smithie': [['chest'], ['shoulders', 'triceps']],
   'Ściąganie drążka szerokim chwytem': [['lats'], ['biceps', 'upperback']],
   'Rozpiętki na maszynie (butterfly)': [['chest'], []],
+  'Odwrotne rozpiętki na maszynie (reverse butterfly)': [['reardelts'], ['upperback']],
   'Triceps + biceps na wyciągu': [['triceps', 'biceps'], ['forearms']],
 
   'Unoszenie nóg w podporze na poręczach': [['abs'], ['obliques']],
