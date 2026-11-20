@@ -39,7 +39,7 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - **Strava** (heart rate from the Garmin watch; Garmin auto-uploads to Strava). `src/strava.js` (app) + `scripts/strava-sync.mjs` run by `.github/workflows/strava.yml` every 10 min (+ manual "Run workflow").
   Repo secrets: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `GIST_TOKEN` (gist scope). All data goes through the backup gist: app writes `strava-auth.json` `{code}` after the Strava login
   (`?code=` on return; in Safari it shows "Kopiuj kod" → user pastes in Kopia → Strava → Wklej kod); the Action swaps it for a refresh token (kept in that file), pulls strength activities
-  (avg/max HR, kcal, time, HR stream), matches them to workouts by start time (±90 min / overlap), writes the exercise list into the Strava description (block starting `🏋️ Gym`), saves `strava.json`.
+  (avg/max HR, kcal, time, HR stream), matches them to workouts by start time (±90 min / overlap), writes the exercise list + worked muscles ("💪 Partie") into the Strava description (block starting `🏋️ Gym`) and renames default-named activities to "<Plan> · Gym 🏋️" (Strava API cannot write its native exercise log / muscle map – as of Nov 2026), saves `strava.json`.
   App shows `svText()` in History rows and on the summary screen. The app never sees the Strava secret. Test the script with a mocked fetch (no network to Strava from the sandbox).
 - `src/theme.css` – design system: iOS look, violet accent `--accent`, plan colours only as identity, `.card`, `.stats`, `.ios-group`/`.row`, `.btn`, `.plan-ico`, large collapsing titles (ion-header collapse="condense").
 - `public/icon-*.png` – app icon (white biceps on violet gradient). Name "Gym" in vite.config.js manifest + index.html.

@@ -5,6 +5,7 @@
 // 4. writes the exercise list into the Strava activity description
 // 5. saves everything to strava.json in the gist; the app shows it
 import { PLAN, groupsOf, UNITS } from '../src/plan.js'
+import { musclesOf } from '../src/muscles.js'
 const { GIST_TOKEN, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET } = process.env
 if (!GIST_TOKEN || !STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET) { console.log('Strava secrets not set – nothing to do'); process.exit(0) }
 
@@ -48,6 +49,11 @@ async function oauth(body) {
 }
 
 const UNIT = Object.fromEntries(PLAN.flatMap(d => d.ex.flatMap(e => groupsOf(e).map(g => [g.key, g.unit]))))
+const PL = { chest: 'klatka', shoulders: 'barki', biceps: 'biceps', forearms: 'przedramiona', abs: 'brzuch', obliques: 'skośne brzucha',
+  quads: 'czworogłowe uda', calves: 'łydki', traps: 'kaptury', reardelts: 'tył barków', upperback: 'górne plecy', lats: 'najszersze grzbietu',
+  triceps: 'triceps', lowerback: 'dolne plecy', glutes: 'pośladki', hamstrings: 'dwugłowe uda' }
+// default names from Strava / Garmin ("Night Weight Training", "Siła", "Trening siłowy"…) may be replaced; a name the user typed stays
+const DEFAULT_NAME = /^((morning|lunch|afternoon|evening|night)\s+)?(weight training|workout|strength( training)?|si[łl]a|trening( si[łl]owy)?|[a-ząćęłńóśźż ]*trening si[łl]owy)$/i
 const fmt = v => String(+(+v).toFixed(2)).replace('.', ',')
 function describe(s) {
   const lines = []
@@ -61,7 +67,14 @@ function describe(s) {
     lines.push(`• ${key}: ${parts.join(', ')}${unit === 'kg' ? ' kg' : ''}`)
   }
   const plan = PLAN[s.day]?.name || ''
-  return n ? `${MARK} ${plan} – ${n} ${n === 1 ? 'seria' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'serie' : 'serii'}\n${lines.join('\n')}` : ''
+  const main = new Set(), help = new Set()
+  for (const key of Object.keys(s.ex || {})) {
+    if (!(s.ex[key] || []).some(x => x.d)) continue
+    const m = musclesOf(key.split(' · ')[0]); m.main.forEach(x => main.add(x)); m.help.forEach(x => help.add(x))
+  }
+  main.forEach(x => help.delete(x))
+  const parts = [...main].map(x => PL[x]).join(', ') + (help.size ? ` (pomocniczo: ${[...help].map(x => PL[x]).join(', ')})` : '')
+  return n ? `${MARK} ${plan} – ${n} ${n === 1 ? 'seria' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'serie' : 'serii'}\n💪 Partie: ${parts}\n\n${lines.join('\n')}` : ''
 }
 const mergeDesc = (old, ours) => {
   old = old || ''
@@ -124,12 +137,19 @@ try {
     }
     if (best) {
       const text = describe(best)
-      if (text && text !== act.written) {
+      const title = `${PLAN[best.day]?.name || 'Trening'} · Gym 🏋️`
+      const rename = a.name !== title && (DEFAULT_NAME.test(a.name.trim()) || a.name === old.title)
+      if ((text && text !== act.written) || rename) {
         const d = await sv('/activities/' + a.id)
-        await sv('/activities/' + a.id, { method: 'PUT', body: JSON.stringify({ description: mergeDesc(d.description, text) }) })
-        act.written = text
-        console.log('Wrote exercises to activity', a.id)
+        const body = {}
+        if (text && text !== act.written) body.description = mergeDesc(d.description, text)
+        if (rename) body.name = title
+        await sv('/activities/' + a.id, { method: 'PUT', body: JSON.stringify(body) })
+        if (body.description) act.written = text
+        if (rename) { act.title = title; act.name = title }
+        console.log('Updated activity', a.id, Object.keys(body).join('+'))
       }
+      if (old.title) act.title = act.title || old.title
     }
     out.acts[a.id] = act
   }
