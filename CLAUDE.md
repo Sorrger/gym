@@ -60,6 +60,9 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - Before deploying UI/logic changes: `npm run build`, then `npx vite preview` and click through: start workout, ±, picker, tick sets, finish/summary/save, history, progress, Kopia tab, tab bar navigation.
 - Earlier sessions used Playwright (playwright-core + headless Edge, iPhone viewport, mocked api.github.com) – 34 checks incl. offline reload, backup upload/restore, update flow. Recreate similar checks when making bigger changes.
 
+- Nov 2026 review (6 rounds): seed realistic sessions straight into IndexedDB (`keyval-store`/`keyval`, key `sessions`) with Playwright, screenshot every tab light+dark, run the workout flow (dialog → Ustaw → tick → auto-next → summary → save), hang timer, edit from History, offline reload. All passed after fixes.
+- **User said: do not change the training plan anymore unless asked.**
+
 ## Ideas the user floated (not done)
 - Shrugs removed from Pull (Nov 2026, user). iOS Live Activity / Dynamic Island workout status: impossible for a PWA (needs a native app + Mac) – told the user.
 - Garmin Connect direct link (unofficial login) – user said no; Strava instead.
