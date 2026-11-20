@@ -84,14 +84,14 @@ const rows = computed(() => list.value.map((p, k) => ({ ...p, d: k ? +(p.kg - li
 const sign = v => { const r = Math.round(v * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) }
 const dayName = s => new Date(s + 'T12:00').toLocaleDateString('pl-PL', { weekday: 'long' })
 
-// healthy cut while lifting: about 0.5–1 % of body weight per week
+// goal: slow cut that keeps (and still builds) muscle – about 0.2–0.7 % of body weight per week
 const verdict = computed(() => {
   if (wk.value == null) return list.value.length ? { ico: '📈', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 3 pomiarach z ostatnich 3 tygodni. Najlepiej waż się 3–4× w tygodniu.' } : null
   const pct = (wk.value / (avg7.value || 1)) * 100
-  if (pct < -1.1) return { ico: '⚠️', cls: 'warn', title: 'Za szybko w dół', text: 'Ponad 1 % wagi tygodniowo – łatwo stracić mięśnie i siłę. Rozważ trochę więcej jedzenia.' }
-  if (pct <= -0.4) return { ico: '✅', cls: 'good', title: 'Dobre tempo', text: 'Chudniesz w zdrowym tempie (ok. 0,5–1 % wagi na tydzień). Trzymaj tak.' }
-  if (pct < -0.1) return { ico: '🐢', cls: '', title: 'Powoli w dół', text: 'Spada, ale wolno. Jeśli chcesz szybciej: więcej kroków albo ok. 200 kcal mniej.' }
-  if (pct <= 0.15) return { ico: '⏸️', cls: '', title: 'Waga stoi', text: 'Tempo prawie zero. Przy treningu siłowym to może być rekompozycja – patrz też na siłę w Postępach.' }
+  if (pct < -1) return { ico: '⚠️', cls: 'warn', title: 'Za szybko w dół', text: 'Ponad 1 % wagi na tydzień – duże ryzyko utraty mięśni i siły. Dorzuć trochę jedzenia.' }
+  if (pct < -0.7) return { ico: '⚡', cls: 'warn', title: 'Dość szybko', text: 'Szybciej niż trzeba, żeby budować mięśnie. Pilnuj białka i siły – jeśli ciężary spadają, zjedz trochę więcej.' }
+  if (pct <= -0.2) return { ico: '✅', cls: 'good', title: 'Idealne tempo', text: 'Powoli w dół – tłuszcz schodzi, a mięśnie dalej mogą rosnąć. Trzymaj kalorie, białko i progres na treningu.' }
+  if (pct <= 0.15) return { ico: '⏸️', cls: '', title: 'Waga stoi', text: 'Jeśli siła rośnie, to może być rekompozycja. Jeśli stoi dłużej niż 3 tygodnie – ok. 100–200 kcal mniej albo więcej kroków.' }
   return { ico: '⬆️', cls: 'warn', title: 'Waga rośnie', text: 'Średnia idzie w górę. Sprawdź, czy kalorie się zgadzają.' }
 })
 
