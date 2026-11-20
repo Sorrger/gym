@@ -1,0 +1,23 @@
+name: Strava sync
+on:
+  schedule:
+    - cron: '*/10 4-22 * * *'   # every 10 min, 5:00–23:59 Polish time
+  workflow_dispatch:
+concurrency: { group: strava, cancel-in-progress: false }
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            scripts
+            src
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node scripts/strava-sync.mjs
+        env:
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
+          STRAVA_CLIENT_SECRET: ${{ secrets.STRAVA_CLIENT_SECRET }}

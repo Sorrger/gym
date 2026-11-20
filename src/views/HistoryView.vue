@@ -45,6 +45,7 @@
               <ion-label>
                 <h2>{{ PLAN[s.day].name }}</h2>
                 <p class="num">{{ dayName(s.date) }}, {{ fmtDate(s.date) }}<span v-if="!s.finished"> · w toku</span></p>
+                <p v-if="stravaFor(s.id)" class="sv num"><ion-icon :icon="heart" /> {{ svText(stravaFor(s.id)) }}</p>
               </ion-label>
               <ion-note slot="end" class="num">{{ counts(s).n }}/{{ counts(s).t }}</ion-note>
               <button slot="end" class="trash press" @click.stop="ask(s)" :aria-label="'Usuń trening ' + PLAN[s.day].name"><ion-icon :icon="trashOutline" /></button>
@@ -68,7 +69,8 @@ import { ask as askDialog } from '../dialog'
 import { computed, ref } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonItemSliding,
   IonItemOptions, IonItemOption, IonLabel, IonNote, IonIcon, useIonRouter  } from '@ionic/vue'
-import { chevronBack, chevronForward, trashOutline } from 'ionicons/icons'
+import { chevronBack, chevronForward, trashOutline, heart } from 'ionicons/icons'
+import { stravaFor, svText } from '../strava'
 import { PLAN, COLORS } from '../plan'
 import { state, doneSessions, counts, fmtDate, remove, iso } from '../store'
 
@@ -120,6 +122,8 @@ async function ask(s) {
 </script>
 
 <style scoped>
+.sv { color: #fc4c02 !important; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+.sv ion-icon { font-size: 12px; }
 .cal { padding: 14px 10px 12px; }
 .cal-head { display: flex; justify-content: space-between; align-items: center; margin: 0 6px 12px; }
 .cal-head b { font-size: 17px; font-weight: 600; letter-spacing: -.2px; }

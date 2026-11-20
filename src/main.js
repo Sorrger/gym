@@ -6,6 +6,7 @@ import App from './App.vue'
 import Tabs from './views/Tabs.vue'
 import { load } from './store'
 import { initCloud } from './cloud'
+import { initStrava } from './strava'
 import { initUpdater } from './updater'
 
 import '@ionic/vue/css/core.css'
@@ -50,6 +51,7 @@ initUpdater()
 
 load().then(() => {
   initCloud()
+  initStrava()
   const app = createApp(App).use(IonicVue, { mode: 'ios' }).use(router)
   router.isReady().then(() => app.mount('#app'))
 })

@@ -164,6 +164,7 @@
           <div class="done-badge"><ion-icon :icon="trophy" /></div>
           <h1>{{ c.n ? 'Trening zrobiony!' : 'Nic nie odhaczone' }}</h1>
           <p>{{ plan.name }} · {{ niceDate }}</p>
+          <p v-if="sv" class="done-sv num"><ion-icon :icon="heart" /> {{ svText(sv) }}</p>
           <div class="done-stats">
             <div><b class="num">{{ c.n }}<small>/{{ c.t }}</small></b><span>serii</span></div>
             <div><b class="num">{{ exDone }}<small>/{{ plan.ex.length }}</small></b><span>ćwiczeń</span></div>
@@ -191,12 +192,13 @@
 <script setup>
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
+import { stravaFor, svText } from '../strava'
 import { musclesOf } from '../muscles'
 import { computed, ref, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
-import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline } from 'ionicons/icons'
+import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted } from '../store'
@@ -220,6 +222,7 @@ const idx = computed(() => Math.min(s.value?.cur || 0, plan.value.ex.length - 1)
 const exName = computed(() => plan.value.ex[idx.value][0])
 const exTarget = computed(() => plan.value.ex[idx.value][1])
 const exTag = computed(() => plan.value.ex[idx.value][2])
+const sv = computed(() => s.value && stravaFor(s.value.id))
 const exMuscles = computed(() => musclesOf(exName.value))
 const groups = computed(() => groupsOf(plan.value.ex[idx.value]))
 function sets(key) {
@@ -559,6 +562,7 @@ ion-footer { background: color-mix(in srgb, var(--app-bg) 80%, transparent); bac
 .nav-btn.ghost { background: color-mix(in srgb, var(--c) 13%, transparent); color: var(--c); font-size: 22px; }
 .nav-btn:disabled { opacity: .35; }
 
+.done-sv { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,.18); border-radius: 999px; padding: 4px 12px; font-weight: 600; margin-top: 8px !important; }
 .done-screen { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; color: #fff;
   background: linear-gradient(170deg, color-mix(in srgb, var(--c) 72%, #fff) 0%, var(--c) 42%, color-mix(in srgb, var(--c) 60%, #000) 100%); }
 .done-hero { flex: none; text-align: center; padding: calc(env(safe-area-inset-top, 0px) + 32px) 20px 6px; }

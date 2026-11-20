@@ -36,6 +36,19 @@ async function findGist() {
   return ''
 }
 
+// other files in the same gist (Strava link + data written by the GitHub Action)
+export async function readGistFile(name) {
+  if (!cloud.token || !cloud.gistId) return null
+  const g = await api('/gists/' + cloud.gistId)
+  const f = g.files?.[name]
+  if (!f) return null
+  return JSON.parse(f.truncated ? await (await fetch(f.raw_url)).text() : f.content)
+}
+export async function writeGistFile(name, data) {
+  if (!cloud.token || !cloud.gistId) throw new Error('Najpierw połącz kopię z GitHub')
+  await api('/gists/' + cloud.gistId, { method: 'PATCH', body: JSON.stringify({ files: { [name]: { content: JSON.stringify(data, null, 1) } } }) })
+}
+
 async function readGist() {
   const g = await api('/gists/' + cloud.gistId)
   const f = g.files?.[FILE]

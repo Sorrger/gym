@@ -36,6 +36,11 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - `src/views/` – Home (Start), Workout (one exercise at a time; per set: weight ± step and reps ±1, both with a wheel picker; hang parts (unit `s`) have a "Minutnik": dial to set seconds (knob 5–120 s) → 5-4-3-2-1 → counts down to 0 with beeps → saves the seconds and ticks the set, Stop early saves the seconds held; summary), Progress (+ ExerciseView chart), History (calendar), Settings ("Kopia": GitHub backup + JSON file export/import), Tabs.
 - `src/dialog.js` + `src/views/AppDialog.vue` – custom confirm dialog (bottom card, icon, big stacked buttons, blur). Use `ask({ icon, color, title, message, input?, buttons:[{text, role, kind:'primary'|'danger'|'soft'|'plain'}] })` → `{ role, value }`. Do not use Ionic alertController.
 - `src/nobounce.js` – blocks iOS touch-drag/rubber-band unless the touch is inside something that can really scroll (overlays and short screens don't move).
+- **Strava** (heart rate from the Garmin watch; Garmin auto-uploads to Strava). `src/strava.js` (app) + `scripts/strava-sync.mjs` run by `.github/workflows/strava.yml` every 10 min (+ manual "Run workflow").
+  Repo secrets: `STRAVA_CLIENT_ID`, `STRAVA_CLIENT_SECRET`, `GIST_TOKEN` (gist scope). All data goes through the backup gist: app writes `strava-auth.json` `{code}` after the Strava login
+  (`?code=` on return; in Safari it shows "Kopiuj kod" → user pastes in Kopia → Strava → Wklej kod); the Action swaps it for a refresh token (kept in that file), pulls strength activities
+  (avg/max HR, kcal, time, HR stream), matches them to workouts by start time (±90 min / overlap), writes the exercise list into the Strava description (block starting `🏋️ Gym`), saves `strava.json`.
+  App shows `svText()` in History rows and on the summary screen. The app never sees the Strava secret. Test the script with a mocked fetch (no network to Strava from the sandbox).
 - `src/theme.css` – design system: iOS look, violet accent `--accent`, plan colours only as identity, `.card`, `.stats`, `.ios-group`/`.row`, `.btn`, `.plan-ico`, large collapsing titles (ion-header collapse="condense").
 - `public/icon-*.png` – app icon (white biceps on violet gradient). Name "Gym" in vite.config.js manifest + index.html.
 
@@ -50,4 +55,6 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - Earlier sessions used Playwright (playwright-core + headless Edge, iPhone viewport, mocked api.github.com) – 34 checks incl. offline reload, backup upload/restore, update flow. Recreate similar checks when making bigger changes.
 
 ## Ideas the user floated (not done)
+- Garmin Connect direct link (unofficial login) – user said no; Strava instead.
+- HR chart per workout (data `hrs` already in strava.json).
 - Pull-up part reps-only without weight; hang timer only for that exercise.

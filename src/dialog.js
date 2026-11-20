@@ -8,7 +8,7 @@ export const dialog = reactive({ open: false, opts: null, value: '', _res: null 
 export function ask(opts) {
   if (dialog._res) dialog._res({ role: 'cancel' })
   dialog.opts = opts
-  dialog.value = ''
+  dialog.value = opts.input?.value || ''
   dialog.open = true
   return new Promise(res => { dialog._res = res })
 }
