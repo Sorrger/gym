@@ -40,7 +40,7 @@ export function suggest(g, session) {
     }
     const target = Array.from({ length: n }, (_, i) => Math.min(hi, Math.max(lo, (vals[i] ?? vals[vals.length - 1]) + plus)))
     return { kind: 'same', title: 'Więcej niż ostatnio', short: target.join(', ') + ' ' + unit,
-      text: `Ostatnio: ${vals.join(', ')} ${unit}. Dziś celuj w ${target.join(', ')} ${unit}.`, sets: target.map(w => ({ w })) }
+      text: `Ostatnio: ${vals.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'} Dziś celuj w ${target.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}`, sets: target.map(w => ({ w })) }
   }
 
   const inc = INC[g.name] || 2.5, assist = ASSISTED.has(g.name)

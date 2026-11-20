@@ -14,7 +14,9 @@ export const PLAN = [
     ['Pallof press na wyciągu', '3 × 10-12 / stronę, 2 s pauza'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
   { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6. Odwrotne rozpiętki zaraz po butterfly – ta sama maszyna. Na koniec unoszenie bokiem na wyciągu.', ex: [
-    ['Podciąganie nachwytem (wspomagane)', '3 × 6-8', 'Plecy'], ['Wyciskanie sztangi siedząc z oparciem', '3 × 6-8', 'Barki'],
+    ['Nauka podciągania', 'Wiszenie + negatywy', 'Plecy', [
+      { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
+      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wyciskanie sztangi siedząc z oparciem', '3 × 6-8', 'Barki'],
     ['Seal row – wiosłowanie leżąc na ławce', '3 × 8-10', 'Plecy'], ['Wyciskanie na skosie na Smithie', '3 × 8-10', 'Klatka'],
     ['Ściąganie drążka szerokim chwytem', '3 × 8-10', 'Plecy'], ['Rozpiętki na maszynie (butterfly)', '3 × 10-15', 'Klatka'],
     ['Odwrotne rozpiętki na maszynie (reverse butterfly)', '3 × 12-15', 'Tył barków'], ['Triceps + biceps na wyciągu', '2 × 12-15 każdy', 'Ręce'], ['Unoszenie ramienia bokiem na wyciągu', '3 × 10-15 / stronę', 'Boki barków']] }
