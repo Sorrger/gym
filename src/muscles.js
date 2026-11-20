@@ -16,7 +16,7 @@ export const MUSCLES = {
   'T-bar row': [['upperback', 'lats'], ['biceps', 'reardelts', 'lowerback']],
   'Face pully': [['reardelts', 'upperback'], ['traps']],
   'Szrugsy': [['traps'], ['forearms']],
-  'Spider curl': [['biceps'], ['forearms']],
+  'Uginanie na ławce skośnej (hantle)': [['biceps'], ['forearms']],
 
   'Rumuński martwy ciąg': [['hamstrings', 'glutes'], ['lowerback', 'forearms']],
   'Przysiad Zercher': [['quads', 'glutes'], ['abs', 'upperback', 'biceps']],
