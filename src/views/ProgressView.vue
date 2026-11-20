@@ -62,9 +62,8 @@
         <h3 class="section-title">Balans ciała</h3>
         <div class="card radar-card">
           <svg class="radar" viewBox="0 0 320 290" role="img" :aria-label="'Balans: ' + radar.axes.map(a => a.name + ' ' + fmtSets(a.v)).join(', ')">
-            <!-- 10–20 sets/week = the good zone -->
-            <path :d="radar.ring(20) + ' ' + radar.ring(10)" class="zone" fill-rule="evenodd" />
-            <path v-for="r in [5, 10, 15, 20]" :key="r" :d="radar.ring(r)" class="grid" :class="{ ten: r === 10 }" />
+            <path v-for="r in [0.25, 0.5, 0.75, 1]" :key="r" :d="radar.ring(r)" class="grid" :class="{ ten: r === 0.7 }" />
+            <path :d="radar.ring(0.7)" class="grid ten" />
             <line v-for="(a, i) in radar.axes" :key="'l' + i" :x1="CX" :y1="CY" :x2="a.ex" :y2="a.ey" class="spoke" />
             <path :d="radar.shape" class="shape" />
             <circle v-for="(a, i) in radar.axes" :key="'p' + i" :cx="a.px" :cy="a.py" r="5" class="pt" :class="a.level" />
@@ -74,11 +73,11 @@
             </g>
           </svg>
           <div class="verdict">
-            <div class="v-score"><b class="num">{{ radar.balance }}%</b><small>balans</small></div>
+            <div class="v-score" :class="{ early: radar.early }"><b class="num">{{ radar.early ? '…' : radar.balance + '%' }}</b><small>balans</small></div>
             <p>{{ radar.text }}</p>
           </div>
         </div>
-        <p class="section-foot">Serie na tydzień dla każdej grupy. Zielony pierścień = 10–20 serii, czyli zakres, który według badań daje najwięcej. Balans 100% = wszystkie grupy trenowane tak samo mocno.</p>
+        <p class="section-foot">Wszystkie serie od początku, dla każdej grupy. Brzeg wykresu = najmocniej trenowana grupa, przerywana linia = 70% tego. Balans 100% = wszystkie grupy trenowane tak samo mocno.</p>
 
       </div>
     </ion-content>
@@ -91,7 +90,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, useIonRo
 import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
 import { state, ago } from '../store'
-import { overview, planSummary, muscleWeek } from '../stats'
+import { overview, planSummary, muscleWeek, muscleSets, plansDone } from '../stats'
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
 
@@ -99,6 +98,8 @@ const router = useIonRouter()
 const ov = computed(() => { void state.sessions; return overview(28) })
 const plans = computed(() => { void state.sessions; return PLAN.map((p, i) => ({ ...p, s: planSummary(i) })) })
 const avgGain = computed(() => { const g = plans.value.map(p => p.s.gain).filter(x => x != null); return g.length ? Math.round(g.reduce((a, b) => a + b, 0) / g.length) : null })
+const all = computed(() => { void state.sessions; return muscleSets(null) })
+const done = computed(() => { void state.sessions; return plansDone() })
 const mw = computed(() => { void state.sessions; return muscleWeek(28) })
 
 const ORDER = ['chest', 'shoulders', 'reardelts', 'triceps', 'biceps', 'lats', 'upperback', 'quads', 'hamstrings', 'glutes', 'calves', 'abs', 'obliques']
@@ -109,7 +110,7 @@ const muscleRows = computed(() => ORDER.map(id => {
 }))
 const mapMain = computed(() => Object.keys(mw.value).filter(k => mw.value[k] >= 10))
 const mapHelp = computed(() => Object.keys(mw.value).filter(k => mw.value[k] >= 4 && mw.value[k] < 10))
-// radar: 6 body groups, scale 0..20 sets/week
+// radar: 6 body groups, all workouts so far, scaled to the most trained group (= outer ring)
 const CX = 160, CY = 145, R = 100
 const GROUPS = [
   ['Klatka', ['chest']], ['Plecy', ['lats', 'upperback']], ['Barki', ['shoulders', 'reardelts']],
@@ -118,23 +119,27 @@ const GROUPS = [
 const radar = computed(() => {
   const n = GROUPS.length
   const pt = (i, r) => { const a = -Math.PI / 2 + i * 2 * Math.PI / n; return [CX + Math.cos(a) * r, CY + Math.sin(a) * r] }
-  const ring = sets => GROUPS.map((_, i) => pt(i, R * sets / 20)).map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)).join(' ') + ' Z'
-  const axes = GROUPS.map(([name, ids], i) => {
-    const v = ids.reduce((a, id) => a + (mw.value[id] || 0), 0) / ids.length
-    const [px, py] = pt(i, R * Math.min(v, 20) / 20), [ex, ey] = pt(i, R), [lx, ly] = pt(i, R + 22)
+  const raw = GROUPS.map(([, ids]) => ids.reduce((a, id) => a + (all.value[id] || 0), 0) / ids.length)
+  const max = Math.max(...raw)
+  const ring = pct => GROUPS.map((_, i) => pt(i, R * pct)).map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)).join(' ') + ' Z'
+  const axes = GROUPS.map(([name], i) => {
+    const v = raw[i], rel = max ? v / max : 0
+    const [px, py] = pt(i, R * Math.max(rel, 0.04)), [ex, ey] = pt(i, R), [lx, ly] = pt(i, R + 22)
     const anchor = Math.abs(lx - CX) < 8 ? 'middle' : lx > CX ? 'start' : 'end'
-    return { name, v, px, py, ex, ey, lx, ly: ly < CY - 40 ? ly - 8 : ly > CY + 40 ? ly + 4 : ly - 4, anchor, level: v >= 10 ? 'ok' : v >= 5 ? 'mid' : 'low' }
+    return { name, v, rel, px, py, ex, ey, lx, ly: ly < CY - 40 ? ly - 8 : ly > CY + 40 ? ly + 4 : ly - 4, anchor,
+      level: rel >= 0.7 ? 'ok' : rel >= 0.4 ? 'mid' : 'low' }
   })
   const shape = axes.map((a, i) => (i ? 'L' : 'M') + a.px.toFixed(1) + ' ' + a.py.toFixed(1)).join(' ') + ' Z'
-  const vals = axes.map(a => a.v), max = Math.max(...vals), min = Math.min(...vals)
+  const min = Math.min(...raw)
   const balance = max > 0 ? Math.round(min / max * 100) : 0
-  const weak = axes.filter(a => a.v < 10).sort((a, b) => a.v - b.v)
+  const weak = axes.filter(a => a.rel < 0.7).sort((a, b) => a.rel - b.rel)
   const strong = axes.slice().sort((a, b) => b.v - a.v)[0]
   let text
-  if (!max) text = 'Brak treningów w ostatnich 4 tygodniach.'
-  else if (!weak.length) text = 'Wszystkie grupy są w dobrym zakresie (10+ serii na tydzień). Tak trzymaj!'
-  else text = `Najwięcej pracy: ${strong.name} (${fmtSets(strong.v)} serii). Poniżej 10 serii: ${weak.map(a => a.name + ' ' + fmtSets(a.v)).join(', ')}. Najbardziej odstają ${weak[0].name} – brakuje im ${fmtSets(Math.max(0, 10 - weak[0].v))} serii tygodniowo.`
-  return { axes, shape, ring, balance, text }
+  if (!max) text = 'Jeszcze brak treningów – wykres pojawi się po pierwszym.'
+  else if (done.value < PLAN.length) text = `Zrobiłeś ${done.value} z ${PLAN.length} treningów planu (${PLAN.map(p => p.name).join(', ')}). Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans.`
+  else if (!weak.length) text = 'Wszystkie grupy są trenowane podobnie mocno. Tak trzymaj!'
+  else text = `Najwięcej pracy: ${strong.name} (${fmtSets(strong.v)} serii). Odstają: ${weak.map(a => a.name + ' ' + Math.round(a.rel * 100) + '%').join(', ')} tego, co ${strong.name.toLowerCase()}.`
+  return { axes, shape, ring, balance, text, early: done.value < PLAN.length }
 })
 const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 </script>
@@ -186,7 +191,7 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .radar { width: 100%; height: auto; display: block; overflow: visible; }
 .radar .zone { fill: color-mix(in srgb, var(--app-ok) 12%, transparent); }
 .radar .grid { fill: none; stroke: var(--app-line); stroke-width: 1; }
-.radar .grid.ten { stroke: color-mix(in srgb, var(--app-ok) 55%, transparent); stroke-dasharray: 4 4; stroke-width: 1.4; }
+.radar .grid.ten { stroke: color-mix(in srgb, var(--accent) 45%, transparent); stroke-dasharray: 4 4; stroke-width: 1.4; }
 .radar .spoke { stroke: var(--app-line); stroke-width: 1; }
 .radar .shape { fill: color-mix(in srgb, var(--accent) 22%, transparent); stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; }
 .radar .pt { stroke: var(--app-card); stroke-width: 2; }
@@ -198,6 +203,7 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .verdict { display: flex; gap: 14px; align-items: center; margin: 4px 8px 0; padding-top: 12px; border-top: 1px solid var(--app-line); }
 .v-score { display: flex; flex-direction: column; align-items: center; flex: none; min-width: 64px; }
 .v-score b { font-size: 26px; font-weight: 700; letter-spacing: -.5px; color: var(--accent); }
+.v-score.early b { color: var(--app-faint); }
 .v-score small { font-size: 11px; color: var(--app-muted); }
 .verdict p { margin: 0; font-size: 14px; line-height: 1.4; color: var(--app-muted); }
 </style>

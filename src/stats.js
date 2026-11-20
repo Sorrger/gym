@@ -88,7 +88,28 @@ export function overview(days = 28) {
   return { workouts: list.length, sets: list.reduce((a, s) => a + setsOf(s), 0), vol: list.reduce((a, s) => a + volumeOf(s), 0), prs: prCount(null, days) }
 }
 
-// sets per muscle per week (main = 1, helping = ½), averaged over the last 4 weeks
+// sets per muscle (main = 1, helping = ½): all time when days = null
+export function muscleSets(days = null) {
+  const cut = days ? daysAgoIso(days) : '', out = {}
+  for (const s of sorted()) {
+    if (s.date < cut) continue
+    const perEx = {}
+    for (const [k, arr] of Object.entries(s.ex || {})) {
+      const base = k.split(' · ')[0], n = arr.filter(x => x.d).length
+      perEx[base] = Math.max(perEx[base] || 0, n)
+    }
+    for (const [base, n] of Object.entries(perEx)) {
+      const m = musclesOf(base)
+      m.main.forEach(x => (out[x] = (out[x] || 0) + n))
+      m.help.forEach(x => (out[x] = (out[x] || 0) + n / 2))
+    }
+  }
+  return out
+}
+// distinct plans (Push, Pull…) trained at least once, all time
+export const plansDone = () => new Set(sorted().filter(ticked).map(s => s.day)).size
+
+// sets per muscle per week, averaged over the last 4 weeks
 export function muscleWeek(days = 28) {
   const cut = daysAgoIso(days), out = {}
   for (const s of sorted()) {
