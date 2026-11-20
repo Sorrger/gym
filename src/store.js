@@ -15,7 +15,7 @@ export function ago(date) {
 
 // sessions: id -> { id, date, day, ex: { name: [{ w, d }] }, started, finished, updated }
 export const state = reactive({ sessions: {}, ready: false, flash: '', loadError: false })
-export const ui = reactive({ progressDay: 0 })
+export const ui = reactive({ progressDay: 0, period: null }) // period: days for the Progress tab, null = all time
 
 export async function load() {
   // if storage can't be read, do NOT continue with an empty list: the first save would wipe the real data

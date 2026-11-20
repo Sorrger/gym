@@ -16,11 +16,28 @@ export function volumeOf(s) {
 export const setsOf = s => Object.values(s.ex || {}).reduce((a, arr) => a + arr.filter(x => x.d).length, 0)
 
 // exercises (of one plan, or all) whose best in the last `days` beat everything before
+// new records in a period (days = null → all time): every workout where an exercise beat all its earlier workouts
+export function prEvents(day = null, days = null) {
+  const cut = days ? daysAgoIso(days) : ''
+  const plans = day == null ? PLAN.map((_, i) => i) : [day]
+  let n = 0
+  for (const d of plans) for (const g of entriesOf(d)) {
+    const as = ASSISTED.has(g.name)
+    let best = null
+    for (const p of series(g.key)) {
+      const better = best != null && (as ? p.w < best : p.w > best)
+      if (better && p.date >= cut) n++
+      if (best == null || better) best = p.w
+    }
+  }
+  return n
+}
+// kept for the plan page (30 days): exercises whose best in the window beat everything before
 export function prCount(day = null, days = 30) {
   const cut = daysAgoIso(days)
-  const days_ = day == null ? PLAN.map((_, i) => i) : [day]
+  const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
-  for (const d of days_) for (const g of entriesOf(d)) {
+  for (const d of plans) for (const g of entriesOf(d)) {
     const pts = series(g.key), old = pts.filter(p => p.date < cut), rec = pts.filter(p => p.date >= cut)
     if (!old.length || !rec.length) continue
     const as = ASSISTED.has(g.name)
@@ -82,10 +99,11 @@ export function planSummary(day) {
 }
 
 // last 4 weeks, all plans
-export function overview(days = 28) {
-  const cut = daysAgoIso(days)
+// period stats, days = null → all time
+export function overview(days = null) {
+  const cut = days ? daysAgoIso(days) : ''
   const list = sorted().filter(s => s.date >= cut && ticked(s))
-  return { workouts: list.length, sets: list.reduce((a, s) => a + setsOf(s), 0), vol: list.reduce((a, s) => a + volumeOf(s), 0), prs: prCount(null, days) }
+  return { workouts: list.length, sets: list.reduce((a, s) => a + setsOf(s), 0), vol: list.reduce((a, s) => a + volumeOf(s), 0), prs: prEvents(null, days) }
 }
 
 // sets per muscle (main = 1, helping = ½): all time when days = null
@@ -107,28 +125,16 @@ export function muscleSets(days = null) {
   return out
 }
 // distinct plans (Push, Pull…) trained at least once, all time
-export const plansDone = () => new Set(sorted().filter(ticked).map(s => s.day)).size
+export const plansDone = (days = null) => { const cut = days ? daysAgoIso(days) : ''; return new Set(sorted().filter(s => s.date >= cut && ticked(s)).map(s => s.day)).size }
 
 // sets per muscle per week, averaged over the last 4 weeks
-export function muscleWeek(days = 28) {
-  const cut = daysAgoIso(days), out = {}
-  for (const s of sorted()) {
-    if (s.date < cut) continue
-    const perEx = {}
-    for (const [k, arr] of Object.entries(s.ex || {})) {
-      const base = k.split(' · ')[0], n = arr.filter(x => x.d).length
-      perEx[base] = Math.max(perEx[base] || 0, n) // multi-part exercises count once
-    }
-    for (const [base, n] of Object.entries(perEx)) {
-      const m = musclesOf(base)
-      m.main.forEach(x => (out[x] = (out[x] || 0) + n))
-      m.help.forEach(x => (out[x] = (out[x] || 0) + n / 2))
-    }
-  }
+// sets per muscle per week in a period (days = null → all time)
+export function muscleWeek(days = null) {
+  const out = muscleSets(days)
   // average over the weeks actually trained (a new user with 2 weeks of data is not divided by 4)
   const first = sorted().filter(ticked).map(s => s.date).sort()[0]
   const span = first ? Math.ceil((Date.now() - new Date(first + 'T00:00').getTime()) / 864e5 + 1) : days
-  const weeks = Math.max(1, Math.min(days, span) / 7)
+  const weeks = Math.max(1, (days ? Math.min(days, span) : span) / 7)
   return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, Math.round(v / weeks * 10) / 10]))
 }
 

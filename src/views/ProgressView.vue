@@ -4,9 +4,14 @@
     <ion-content :fullscreen="true">
       <ion-header collapse="condense">
         <ion-toolbar><ion-title size="large">Postępy</ion-title></ion-toolbar>
-        <p class="sub">Ostatnie 4 tygodnie</p>
+        <p class="sub">{{ periodLabel }}</p>
       </ion-header>
       <div class="page">
+        <ion-segment class="period" :value="String(ui.period ?? 'all')" @ionChange="e => (ui.period = e.detail.value === 'all' ? null : +e.detail.value)">
+          <ion-segment-button value="28"><ion-label>4 tygodnie</ion-label></ion-segment-button>
+          <ion-segment-button value="91"><ion-label>3 miesiące</ion-label></ion-segment-button>
+          <ion-segment-button value="all"><ion-label>Całość</ion-label></ion-segment-button>
+        </ion-segment>
 
         <!-- all plans together -->
         <div class="card stats4 num">
@@ -57,7 +62,7 @@
             </div>
           </div>
         </div>
-        <p class="section-foot">Średnio na tydzień z 4 tygodni. Główna praca mięśnia = 1 seria, pomocnicza = ½. Badania: najwięcej daje ok. 10–20 serii na partię tygodniowo, pole w tle to ten zakres.</p>
+        <p class="section-foot">Średnio na tydzień w wybranym okresie. Główna praca mięśnia = 1 seria, pomocnicza = ½. Badania: najwięcej daje ok. 10–20 serii na partię tygodniowo, pole w tle to ten zakres.</p>
 
         <h3 class="section-title">Balans ciała</h3>
         <div class="card radar-card">
@@ -77,7 +82,7 @@
             <p>{{ radar.text }}</p>
           </div>
         </div>
-        <p class="section-foot">Wszystkie serie od początku, dla każdej grupy. Brzeg wykresu = najmocniej trenowana grupa, przerywana linia = 70% tego. Balans 100% = wszystkie grupy trenowane tak samo mocno.</p>
+        <p class="section-foot">Wszystkie serie w wybranym okresie, dla każdej grupy. Brzeg wykresu = najmocniej trenowana grupa, przerywana linia = 70% tego. Balans 100% = wszystkie grupy trenowane tak samo mocno.</p>
 
       </div>
     </ion-content>
@@ -86,21 +91,23 @@
 
 <script setup>
 import { computed } from 'vue'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonRouter } from '@ionic/vue'
 import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
-import { state, ago } from '../store'
+import { state, ui, ago } from '../store'
 import { overview, planSummary, muscleWeek, muscleSets, plansDone } from '../stats'
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
 
 const router = useIonRouter()
-const ov = computed(() => { void state.sessions; return overview(28) })
+const period = computed(() => ui.period) // days or null = all time
+const periodLabel = computed(() => (period.value === 28 ? 'Ostatnie 4 tygodnie' : period.value === 91 ? 'Ostatnie 3 miesiące' : 'Od początku'))
+const ov = computed(() => { void state.sessions; return overview(period.value) })
 const plans = computed(() => { void state.sessions; return PLAN.map((p, i) => ({ ...p, s: planSummary(i) })) })
 const avgGain = computed(() => { const g = plans.value.map(p => p.s.gain).filter(x => x != null); return g.length ? Math.round(g.reduce((a, b) => a + b, 0) / g.length) : null })
-const all = computed(() => { void state.sessions; return muscleSets(null) })
-const done = computed(() => { void state.sessions; return plansDone() })
-const mw = computed(() => { void state.sessions; return muscleWeek(28) })
+const all = computed(() => { void state.sessions; return muscleSets(period.value) })
+const done = computed(() => { void state.sessions; return plansDone(period.value) })
+const mw = computed(() => { void state.sessions; return muscleWeek(period.value) })
 
 const ORDER = ['chest', 'shoulders', 'reardelts', 'triceps', 'biceps', 'lats', 'upperback', 'quads', 'hamstrings', 'glutes', 'calves', 'abs', 'obliques']
 const SCALE = 24 // bar = 0..24 sets/week; the 10–20 zone is drawn behind
@@ -136,7 +143,7 @@ const radar = computed(() => {
   const strong = axes.slice().sort((a, b) => b.v - a.v)[0]
   let text
   if (!max) text = 'Jeszcze brak treningów – wykres pojawi się po pierwszym.'
-  else if (done.value < PLAN.length) text = `Zrobiłeś ${done.value} z ${PLAN.length} treningów planu (${PLAN.map(p => p.name).join(', ')}). Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans.`
+  else if (done.value < PLAN.length) text = `${period.value ? 'W tym okresie zrobiłeś' : 'Zrobiłeś'} ${done.value} z ${PLAN.length} treningów planu (${PLAN.map(p => p.name).join(', ')}). Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans.`
   else if (!weak.length) text = 'Wszystkie grupy są trenowane podobnie mocno. Tak trzymaj!'
   else text = `Najwięcej pracy: ${strong.name} (${fmtSets(strong.v)} serii). Odstają: ${weak.map(a => a.name + ' ' + Math.round(a.rel * 100) + '%').join(', ')} tego, co ${strong.name.toLowerCase()}.`
   return { axes, shape, ring, balance, text, early: done.value < PLAN.length }
@@ -145,6 +152,9 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 </script>
 
 <style scoped>
+.period { margin: 4px 16px 14px; width: auto; --background: var(--app-field); }
+.period ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
+@media (prefers-color-scheme: dark) { .period { --seg-on: #636366; } }
 .stats4 { margin: 0 16px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 14px 6px; }
 .stats4 div { display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--app-line); }
 .stats4 div:first-child { border-left: 0; }
