@@ -16,7 +16,7 @@
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
-      <div v-if="s && plan" class="page" :style="{ '--c': color }">
+      <div v-if="s && plan" class="page pad-b" :style="{ '--c': color }">
 
         <div class="hero card">
           <span class="plan-ico big">{{ plan.abbr }}</span>
@@ -62,8 +62,6 @@
           </div>
         </div>
 
-        <button class="btn block edit-btn press" @click="edit"><ion-icon :icon="createOutline" /> Edytuj trening</button>
-        <button class="btn block del-btn press" @click="del"><ion-icon :icon="trashOutline" /> Usuń trening</button>
       </div>
       <div v-else class="page"><div class="card empty">Nie ma takiego treningu.</div></div>
     </ion-content>
@@ -236,4 +234,5 @@ onBeforeUnmount(() => chart?.destroy())
 .rb.tint { background: color-mix(in srgb, var(--c) 18%, var(--app-card)); color: var(--c); }
 .rb.danger { background: color-mix(in srgb, var(--app-bad) 14%, var(--app-card)); color: var(--app-bad); }
 .empty { color: var(--app-muted); text-align: center; padding: 28px; }
+.pad-b { padding-bottom: 28px; }
 </style>

@@ -80,8 +80,6 @@
 </template>
 
 <script setup>
-import { ask } from '../dialog'
-import { barbell } from 'ionicons/icons'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
@@ -89,7 +87,7 @@ import { IonPage, IonContent, IonIcon, IonToast, useIonRouter  } from '@ionic/vu
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
-import { state, activeSession, startSession, finishSession, lastDoneOf, suggestedDay, doneSessions, counts, ago, iso } from '../store'
+import { state, activeSession, lastDoneOf, suggestedDay, doneSessions, counts, ago, iso } from '../store'
 
 const router = useIonRouter()
 const active = computed(() => { void state.sessions; return activeSession() })
@@ -138,28 +136,8 @@ const isToday = i => WEEKDAY_TO_DAY[new Date().getDay()] === i
 
 function open(id) { router.push('/workout/' + id) }
 
-async function start(day) {
-  const a = active.value
-  if (a && a.day === day) { open(a.id); return } // same plan: just continue it
-  if (a) {
-    const c = counts(a)
-    const { role } = await ask({ icon: barbell, color: COLORS[PLAN[a.day].key],
-      title: `Trwa trening ${PLAN[a.day].name}`,
-      message: c.n
-        ? `Masz odhaczone ${c.n}/${c.t} serii. Na pewno zakończyć go (zostanie zapisany) i zacząć ${PLAN[day].name}?`
-        : `Nic jeszcze nie odhaczyłeś. Na pewno porzucić go i zacząć ${PLAN[day].name}?`,
-      buttons: [
-        { text: 'Wróć do ' + PLAN[a.day].name, role: 'continue', kind: 'primary' },
-        { text: c.n ? 'Zakończ i zacznij ' + PLAN[day].name : 'Porzuć i zacznij ' + PLAN[day].name, role: 'confirm', kind: 'soft' },
-        { text: 'Anuluj', role: 'cancel' }
-      ] })
-    if (role === 'continue') { open(a.id); return }
-    if (role !== 'confirm') return
-    finishSession(a.id)
-  }
-  const s = startSession(day)
-  open(s.id)
-}
+// tapping a plan opens its preview (exercises, last results) – the workout starts from there
+function start(day) { router.push('/plan/' + day) }
 </script>
 
 <style scoped>

@@ -27,6 +27,7 @@ const router = createRouter({
     { path: '/progress/:day', component: () => import('./views/PlanProgressView.vue') },
     { path: '/exercise/:day/:i', component: () => import('./views/ExerciseView.vue') },
     { path: '/workout/:id', component: () => import('./views/WorkoutView.vue') },
+    { path: '/plan/:day', component: () => import('./views/PlanView.vue') },
     { path: '/session/:id', component: () => import('./views/SessionView.vue') },
     { path: '/tabs/', component: Tabs, children: [
       { path: '', redirect: '/tabs/home' },

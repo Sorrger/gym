@@ -48,7 +48,6 @@
                 <p v-if="stravaFor(s.id)" class="sv num"><ion-icon :icon="heart" /> {{ svText(stravaFor(s.id)) }}</p>
               </ion-label>
               <ion-note slot="end" class="num">{{ counts(s).n }}/{{ counts(s).t }}</ion-note>
-              <button slot="end" class="trash press" @click.stop="ask(s)" :aria-label="'Usuń trening ' + PLAN[s.day].name"><ion-icon :icon="trashOutline" /></button>
             </ion-item>
             <ion-item-options side="end">
               <ion-item-option color="danger" @click="ask(s)">Usuń</ion-item-option>
@@ -58,7 +57,7 @@
         <div v-else class="card empty">
           {{ selected ? 'Tego dnia nie było treningu.' : 'W tym miesiącu nie ma jeszcze treningów.' }}
         </div>
-        <p class="hint" v-if="shown.length">Kliknij trening, żeby zobaczyć szczegóły i tętno – tam też go poprawisz</p>
+        <p class="hint" v-if="shown.length">Stuknij trening: szczegóły, tętno, edycja. Przesuń w lewo, żeby usunąć.</p>
       </div>
     </ion-content>
   </ion-page>
