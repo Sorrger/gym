@@ -13,11 +13,11 @@ export const PLAN = [
     ['Uginanie nóg na maszynie', '3 × 10-12'], ['Wspięcia na palce siedząc', '4 × 12-15'],
     ['Pallof press na wyciągu', '3 × 10-12 / stronę, 2 s pauza'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
-  { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6. Odwrotne rozpiętki zaraz po butterfly – ta sama maszyna.', ex: [
+  { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6. Odwrotne rozpiętki zaraz po butterfly – ta sama maszyna. Na koniec unoszenie bokiem na wyciągu.', ex: [
     ['Podciąganie nachwytem (wspomagane)', '3 × 6-8', 'Plecy'], ['Wyciskanie sztangi siedząc z oparciem', '3 × 6-8', 'Barki'],
     ['Seal row – wiosłowanie leżąc na ławce', '3 × 8-10', 'Plecy'], ['Wyciskanie na skosie na Smithie', '3 × 8-10', 'Klatka'],
     ['Ściąganie drążka szerokim chwytem', '3 × 8-10', 'Plecy'], ['Rozpiętki na maszynie (butterfly)', '3 × 10-15', 'Klatka'],
-    ['Odwrotne rozpiętki na maszynie (reverse butterfly)', '3 × 12-15', 'Tył barków'], ['Triceps + biceps na wyciągu', '2 × 12-15 każdy', 'Ręce']] }
+    ['Odwrotne rozpiętki na maszynie (reverse butterfly)', '3 × 12-15', 'Tył barków'], ['Triceps + biceps na wyciągu', '2 × 12-15 każdy', 'Ręce'], ['Unoszenie ramienia bokiem na wyciągu', '3 × 10-15 / stronę', 'Boki barków']] }
 ]
 export const COLORS = { push: '#ff5a4f', pull: '#2f8cff', legs: '#22b864', chestback: '#ff9500' }
 // the user's week: Mon Push, Tue Pull, Thu Legs, Fri Upper (JS getDay: 0 = Sunday)
@@ -42,7 +42,7 @@ export function rangeOf(target) {
 export const INC = {
   'Martwy ciąg rumuński': 5,
   'Wyciskanie hantli na ławce skośnej': 2, 'Wiosłowanie hantlem jednorącz z podparciem': 2,
-  'Unoszenie hantli bokiem': 1, 'Uginanie ramion z hantlami na ławce skośnej': 1
+  'Unoszenie hantli bokiem': 1, 'Unoszenie ramienia bokiem na wyciągu': 1.25, 'Uginanie ramion z hantlami na ławce skośnej': 1
 }
 // machines where the kg number is help (less = harder)
 export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)'])
