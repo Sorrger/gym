@@ -31,6 +31,7 @@ export const MUSCLES = {
   'Ściąganie drążka szerokim chwytem': [['lats'], ['biceps', 'upperback']],
   'Rozpiętki na maszynie (butterfly)': [['chest'], []],
   'Odwrotne rozpiętki na maszynie (reverse butterfly)': [['reardelts'], ['upperback']],
+  // removed from Upper (Nov 2026) – kept so old workouts still count
   'Triceps + biceps na wyciągu': [['triceps', 'biceps'], ['forearms']],
 
   'Unoszenie nóg w podporze na poręczach': [['abs'], ['obliques']],
