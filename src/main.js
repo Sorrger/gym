@@ -23,6 +23,7 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     { path: '/', redirect: '/tabs/home' },
+    { path: '/progress/:day', component: () => import('./views/PlanProgressView.vue') },
     { path: '/exercise/:day/:i', component: () => import('./views/ExerciseView.vue') },
     { path: '/workout/:id', component: () => import('./views/WorkoutView.vue') },
     { path: '/tabs/', component: Tabs, children: [

@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button default-href="/tabs/progress" text="Postępy" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button :default-href="'/progress/' + day" :text="plan.name" /></ion-buttons>
         <ion-title>{{ plan?.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
