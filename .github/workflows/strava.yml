@@ -4,19 +4,36 @@ on:
     - cron: '*/10 4-22 * * *'   # every 10 min, 5:00–23:59 Polish time
   workflow_dispatch:
 concurrency: { group: strava, cancel-in-progress: false }
+permissions:
+  contents: read
+  actions: write   # only to switch itself off after END_DATE
+env:
+  END_DATE: '2026-12-31'   # the user asked to run only until the end of December 2026
 jobs:
   sync:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Switch off after END_DATE
+        id: end
+        env: { GH_TOKEN: '${{ github.token }}' }
+        run: |
+          if [ "$(TZ=Europe/Warsaw date +%F)" \> "$END_DATE" ]; then
+            echo "Past $END_DATE – disabling this workflow"
+            gh workflow disable strava.yml -R "$GITHUB_REPOSITORY"
+            echo "stop=1" >> "$GITHUB_OUTPUT"
+          fi
       - uses: actions/checkout@v4
+        if: steps.end.outputs.stop != '1'
         with:
           sparse-checkout: |
             scripts
             src
       - uses: actions/setup-node@v4
+        if: steps.end.outputs.stop != '1'
         with: { node-version: 22 }
       - run: node scripts/strava-sync.mjs
+        if: steps.end.outputs.stop != '1'
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
           STRAVA_CLIENT_ID: ${{ secrets.STRAVA_CLIENT_ID }}
