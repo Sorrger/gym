@@ -200,7 +200,7 @@ async function start(day) {
 .day.future .dot { background: none; color: var(--app-faint); }
 .day.today .dot { background: var(--accent); color: #fff; font-weight: 700; }
 .dot.has { background: var(--c); color: #fff; font-size: 18px; }
-.day.today .dot.has { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--accent); }
+.day.today .dot.has { background: var(--c); box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--c); }
 
 .section-title { margin-top: 20px; }
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px; }

@@ -31,7 +31,7 @@
             </div>
             <div class="ex-title">
               <div class="ex-tt">
-                <h1>{{ exName }}</h1>
+                <h1 :class="{ long: exName.length > 24, xlong: exName.length > 36 }">{{ exName }}</h1>
                 <div class="ex-sub">
                   <span class="target">{{ exTarget }}</span>
                   <span v-if="exTag" class="tag">{{ exTag }}</span>
@@ -223,13 +223,13 @@ const plan = computed(() => (s.value ? PLAN[s.value.day] : null))
 const color = computed(() => COLORS[plan.value?.key] || '#2f4bd8')
 const progPct = computed(() => { const k = counts(s.value); return k.t ? k.n / k.t * 100 : 0 })
 
-const idx = computed(() => Math.min(s.value?.cur || 0, plan.value.ex.length - 1))
-const exName = computed(() => plan.value.ex[idx.value][0])
-const exTarget = computed(() => plan.value.ex[idx.value][1])
-const exTag = computed(() => plan.value.ex[idx.value][2])
+const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, plan.value.ex.length - 1) : 0))
+const exName = computed(() => plan.value?.ex[idx.value][0] || '')
+const exTarget = computed(() => plan.value?.ex[idx.value][1] || '')
+const exTag = computed(() => plan.value?.ex[idx.value][2])
 const sv = computed(() => s.value && stravaFor(s.value.id))
 const exMuscles = computed(() => musclesOf(exName.value))
-const groups = computed(() => groupsOf(plan.value.ex[idx.value]))
+const groups = computed(() => (plan.value ? groupsOf(plan.value.ex[idx.value]) : []))
 function sets(key) {
   if (!s.value.ex[key]) s.value.ex[key] = [{ w: null, d: false }]
   return s.value.ex[key]
@@ -503,6 +503,8 @@ function save() {
 .saved.cloudok { color: var(--app-ok); }
 .ex-meta { display: flex; justify-content: space-between; align-items: center; color: var(--app-muted); font-size: 13px; font-weight: 600;
   text-transform: uppercase; letter-spacing: .3px; padding: 0 4px; }
+h1.long { font-size: 24px; }
+h1.xlong { font-size: 21px; }
 h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; text-wrap: balance; }
 .ex-title { display: flex; gap: 8px; align-items: center; }
 .ex-tt { flex: 1; min-width: 0; }
