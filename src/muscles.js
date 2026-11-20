@@ -15,7 +15,6 @@ export const MUSCLES = {
   'Wiosłowanie hantlem z podparciem': [['lats', 'upperback'], ['biceps', 'reardelts']],
   'T-bar row': [['upperback', 'lats'], ['biceps', 'reardelts', 'lowerback']],
   'Face pully': [['reardelts', 'upperback'], ['traps']],
-  'Szrugsy': [['traps'], ['forearms']],
   'Uginanie na ławce skośnej (hantle)': [['biceps'], ['forearms']],
 
   'Rumuński martwy ciąg': [['hamstrings', 'glutes'], ['lowerback', 'forearms']],

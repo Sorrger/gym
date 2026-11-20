@@ -6,7 +6,7 @@ export const PLAN = [
     ['Nauka podciągania', 'Wiszenie + negatywy', null, [
       { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
       { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wiosłowanie hantlem z podparciem', '3 × 8-10 / stronę'],
-    ['T-bar row', '3 × 8-10'], ['Face pully', '3 × 12-15'], ['Szrugsy', '3 × 10-12'], ['Uginanie na ławce skośnej (hantle)', '3 × 8-12'],
+    ['T-bar row', '3 × 8-10'], ['Face pully', '3 × 12-15'], ['Uginanie na ławce skośnej (hantle)', '3 × 8-12'],
     ['Unoszenie nóg na poręczach (captain’s chair)', '3 × 10-15', null, 'reps'], ['Allahy (brzuch na wyciągu)', '3 × 12-15']] },
   { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: '', ex: [
     ['Rumuński martwy ciąg', '3 × 8-10'], ['Przysiad Zercher', '3 × 6-8'], ['Prostowanie nóg (maszyna)', '3 × 10-12'],
