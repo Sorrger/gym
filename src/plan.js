@@ -8,8 +8,8 @@ export const PLAN = [
       { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
     ['Wiosłowanie sztangą T (T-bar)', '3 × 8-10'], ['Face pull na wyciągu', '3 × 12-15'], ['Uginanie ramion z hantlami na ławce skośnej', '3 × 8-12'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
-  { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: '', ex: [
-    ['Martwy ciąg rumuński', '3 × 8-10'], ['Przysiad Zerchera', '3 × 6-8'], ['Prostowanie nóg na maszynie', '3 × 10-12'],
+  { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: 'Najpierw przysiad Zerchera – najcięższy, na świeżo.', ex: [
+    ['Przysiad Zerchera', '3 × 6-8'], ['Martwy ciąg rumuński', '3 × 8-10'], ['Prostowanie nóg na maszynie', '3 × 10-12'],
     ['Uginanie nóg na maszynie', '3 × 10-12'], ['Wspięcia na palce siedząc', '4 × 12-15'],
     ['Pallof press na wyciągu', '3 × 10-12 / stronę, 2 s pauza'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },

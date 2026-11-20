@@ -63,7 +63,7 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 
 - Nov 2026 review (6 rounds): seed realistic sessions straight into IndexedDB (`keyval-store`/`keyval`, key `sessions`) with Playwright, screenshot every tab light+dark, run the workout flow (dialog → Ustaw → tick → auto-next → summary → save), hang timer, edit from History, offline reload. All passed after fixes.
 - **User said: do not change the training plan anymore unless asked.**
-- Training priorities (from the user): chest + back first; rear delts weaker (reverse butterfly 3 × 12-15 added on Upper right after butterfly, same machine); side delts were only 4 sets/week → cable lateral raise 3 × 10-15 / side added at the end of Upper (Nov 2026, user asked); legs: one day on purpose (maintenance) – don't flag legs as a problem. Keep personal body data out of this public repo.
+- Training priorities (from the user): chest + back first; rear delts weaker (reverse butterfly 3 × 12-15 added on Upper right after butterfly, same machine); side delts were only 4 sets/week → cable lateral raise 3 × 10-15 / side added at the end of Upper (Nov 2026, user asked); legs: one day on purpose (maintenance), Zercher before RDL (Nov 2026, user asked) – don't flag legs as a problem. Keep personal body data out of this public repo.
 
 ## Ideas the user floated (not done)
 - Shrugs removed from Pull (Nov 2026, user). iOS Live Activity / Dynamic Island workout status: impossible for a PWA (needs a native app + Mac) – told the user.
