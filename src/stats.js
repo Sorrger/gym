@@ -1,5 +1,5 @@
 // Numbers for the Progress tab (overview + per plan)
-import { PLAN, ASSISTED, entriesOf } from './plan'
+import { PLAN, ASSISTED, entriesOf, rangeOf } from './plan'
 import { sorted, series } from './store'
 import { musclesOf } from './muscles'
 
@@ -29,11 +29,54 @@ export function prCount(day = null, days = 30) {
   return n
 }
 
+// "strength" of one exercise in one workout: kg → estimated 1-rep max (Epley: kg × (1 + reps/30)) of the best set,
+// reps/seconds → the best value. Compared only with itself, so units never mix.
+function bestValue(g, arr) {
+  const done = (arr || []).filter(x => x.d && x.w != null)
+  if (!done.length) return null
+  if (g.unit !== 'kg') return Math.max(...done.map(x => x.w))
+  const lo = rangeOf(g.target)?.lo || 6
+  if (ASSISTED.has(g.name)) return Math.min(...done.map(x => x.w)) // less help = stronger
+  return Math.max(...done.map(x => x.w * (1 + (x.r ?? lo) / 30)))
+}
+
+// strength index of a plan per workout: average of every exercise vs its first workout (100 = start)
+export function strength(day) {
+  const groups = entriesOf(day)
+  const list = sorted().filter(s => s.day === day && ticked(s)).reverse() // oldest first
+  const first = {}, last = {}, prev = {}
+  const index = []
+  for (const s of list) {
+    const rel = []
+    for (const g of groups) {
+      const v = bestValue(g, s.ex?.[g.key])
+      if (v == null) continue
+      if (first[g.key] == null) first[g.key] = v
+      prev[g.key] = last[g.key]; last[g.key] = v
+      const as = ASSISTED.has(g.name)
+      rel.push(as ? (v > 0 ? first[g.key] / v : 1) : (first[g.key] > 0 ? v / first[g.key] : 1))
+    }
+    if (rel.length) index.push(rel.reduce((a, b) => a + b, 0) / rel.length * 100)
+  }
+  // exercises that went up last time (vs the time before)
+  let up = 0, tracked = 0
+  for (const g of groups) {
+    if (last[g.key] == null || prev[g.key] == null) continue
+    tracked++
+    if (ASSISTED.has(g.name) ? last[g.key] < prev[g.key] : last[g.key] > prev[g.key]) up++
+  }
+  return { index, gain: index.length ? Math.round(index[index.length - 1] - 100) : null, up, tracked }
+}
+
 export function planSummary(day) {
   const list = sorted().filter(s => s.day === day && ticked(s))
   const vols = list.slice(0, 8).map(volumeOf).reverse()
   const n = vols.length, hi = Math.max(1, ...vols)
+  const st = strength(day)
+  const idx = st.index.slice(-8), lo = Math.min(...idx), hi2 = Math.max(...idx, lo + 0.0001)
   return { last: list[0] || null, count: list.length, prs: prCount(day, 30), vol: n ? vols[n - 1] : 0,
+    gain: st.gain, up: st.up, tracked: st.tracked,
+    sbars: idx.map(v => Math.round(30 + (v - lo) / (hi2 - lo) * 70)),
     volDiff: n > 1 && vols[n - 2] ? Math.round((vols[n - 1] / vols[n - 2] - 1) * 100) : null,
     bars: vols.map(v => Math.max(6, Math.round(v / hi * 100))) }
 }

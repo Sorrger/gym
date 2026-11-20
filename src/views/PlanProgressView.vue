@@ -20,15 +20,15 @@
             </div>
           </div>
           <div class="sum-stats num">
-            <div><small>Tonaż</small><b>{{ summary.vol ? fmtTon(summary.vol) : '–' }}</b>
-              <em v-if="summary.volDiff != null" :class="summary.volDiff >= 0 ? 'up' : 'down'">{{ summary.volDiff >= 0 ? '+' : '−' }}{{ Math.abs(summary.volDiff) }}%</em></div>
+            <div><small>Siła od startu</small><b>{{ summary.gain == null ? '–' : (summary.gain > 0 ? '+' : summary.gain < 0 ? '−' : '±') + Math.abs(summary.gain) + '%' }}</b></div>
+            <div><small>W górę</small><b>{{ summary.tracked ? summary.up + '/' + summary.tracked : '–' }}</b></div>
             <div><small>Rekordy</small><b>{{ summary.prs }}</b></div>
             <div><small>Treningi</small><b>{{ summary.count }}</b></div>
           </div>
-          <div class="bars" v-if="summary.bars.length > 1" aria-hidden="true">
-            <span v-for="(h, i) in summary.bars" :key="i" :style="{ height: h + '%' }" :class="{ last: i === summary.bars.length - 1 }"></span>
+          <div class="bars" v-if="summary.sbars.length > 1" aria-hidden="true">
+            <span v-for="(h, i) in summary.sbars" :key="i" :style="{ height: h + '%' }" :class="{ last: i === summary.sbars.length - 1 }"></span>
           </div>
-          <p class="bars-cap" v-if="summary.bars.length > 1">Tonaż ostatnich treningów · rekordy z 30 dni</p>
+          <p class="bars-cap">Siła z ostatnich treningów (średnio ze wszystkich ćwiczeń) · rekordy z 30 dni</p>
         </div>
 
         <h3 class="section-title">Ćwiczenia</h3>
@@ -70,7 +70,7 @@ import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, ASSISTED, entriesOf, fmtNum, fmtVal } from '../plan'
 import { useRoute } from 'vue-router'
 import { state, series, fmtShort, ago } from '../store'
-import { planSummary, fmtTon } from '../stats'
+import { planSummary } from '../stats'
 import { suggest } from '../coach'
 
 const router = useIonRouter()
@@ -123,10 +123,10 @@ function open(i) { router.push(`/exercise/${day.value}/${i}`) }
 .sum-t { display: flex; flex-direction: column; }
 .sum-t b { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
 .sum-t span { font-size: 13px; opacity: .85; }
-.sum-stats { display: grid; grid-template-columns: 1.3fr 1fr .8fr; gap: 8px; margin-top: 14px; }
+.sum-stats { display: grid; grid-template-columns: 1.25fr 1fr .9fr .9fr; gap: 8px; margin-top: 14px; }
 .sum-stats div { display: flex; flex-direction: column; background: rgba(255,255,255,.16); border-radius: 14px; padding: 8px 10px; }
-.sum-stats small { font-size: 11px; opacity: .85; font-weight: 500; }
-.sum-stats b { font-size: 20px; font-weight: 700; letter-spacing: -.3px; }
+.sum-stats small { font-size: 11px; white-space: nowrap; opacity: .85; font-weight: 500; }
+.sum-stats b { font-size: 18px; font-weight: 700; letter-spacing: -.3px; }
 .sum-stats em { font-style: normal; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; align-self: flex-start; margin-top: 2px; background: rgba(255,255,255,.25); }
 .bars { display: flex; align-items: flex-end; gap: 6px; height: 56px; margin-top: 14px; }
 .bars span { flex: 1; max-width: 30px; border-radius: 6px 6px 3px 3px; background: rgba(255,255,255,.35); min-height: 4px; transition: height .4s cubic-bezier(.2,.8,.2,1); }

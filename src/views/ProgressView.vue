@@ -13,7 +13,7 @@
           <div><small>Treningi</small><b>{{ ov.workouts }}</b></div>
           <div><small>Serie</small><b>{{ ov.sets }}</b></div>
           <div><small>Rekordy</small><b>{{ ov.prs }}<span v-if="ov.prs"> 🏆</span></b></div>
-          <div><small>Tonaż</small><b>{{ ov.vol ? fmtTon(ov.vol) : '–' }}</b></div>
+          <div><small>Siła</small><b>{{ avgGain == null ? '–' : (avgGain > 0 ? '+' : avgGain < 0 ? '−' : '±') + Math.abs(avgGain) + '%' }}</b></div>
         </div>
 
         <!-- per plan -->
@@ -26,16 +26,17 @@
             </div>
             <span class="pc-last">{{ p.s.last ? ago(p.s.last.date) : 'jeszcze nie było' }}</span>
             <div class="pc-bars" aria-hidden="true">
-              <span v-for="(h, j) in p.s.bars" :key="j" :style="{ height: h + '%' }" :class="{ last: j === p.s.bars.length - 1 }"></span>
-              <span v-if="!p.s.bars.length" class="ghost" style="height: 30%"></span>
+              <span v-for="(h, j) in p.s.sbars" :key="j" :style="{ height: h + '%' }" :class="{ last: j === p.s.sbars.length - 1 }"></span>
+              <span v-if="!p.s.sbars.length" class="ghost" style="height: 30%"></span>
             </div>
             <div class="pc-foot num">
-              <b>{{ p.s.vol ? fmtTon(p.s.vol) : '–' }}</b>
-              <em v-if="p.s.volDiff != null" :class="p.s.volDiff >= 0 ? 'up' : 'down'">{{ p.s.volDiff >= 0 ? '+' : '−' }}{{ Math.abs(p.s.volDiff) }}%</em>
+              <b>{{ p.s.gain == null ? '–' : (p.s.gain > 0 ? '+' : p.s.gain < 0 ? '−' : '±') + Math.abs(p.s.gain) + '%' }}</b>
+              <small>siły</small>
+              <em v-if="p.s.tracked">↑ {{ p.s.up }}/{{ p.s.tracked }}</em>
             </div>
           </button>
         </div>
-        <p class="section-foot">Słupki: tonaż (kg × powtórzenia) ostatnich treningów. Kliknij, żeby zobaczyć ćwiczenia.</p>
+        <p class="section-foot">Siła = średni postęp ćwiczeń od pierwszego treningu (ciężar i powtórzenia razem). ↑ = ile ćwiczeń poszło w górę ostatnio. Kliknij, żeby zobaczyć ćwiczenia.</p>
 
         <!-- per body part -->
         <h3 class="section-title">Partie ciała · serie na tydzień</h3>
@@ -68,13 +69,14 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, useIonRo
 import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS } from '../plan'
 import { state, ago } from '../store'
-import { overview, planSummary, muscleWeek, fmtTon } from '../stats'
+import { overview, planSummary, muscleWeek } from '../stats'
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
 
 const router = useIonRouter()
 const ov = computed(() => { void state.sessions; return overview(28) })
 const plans = computed(() => { void state.sessions; return PLAN.map((p, i) => ({ ...p, s: planSummary(i) })) })
+const avgGain = computed(() => { const g = plans.value.map(p => p.s.gain).filter(x => x != null); return g.length ? Math.round(g.reduce((a, b) => a + b, 0) / g.length) : null })
 const mw = computed(() => { void state.sessions; return muscleWeek(28) })
 
 const ORDER = ['chest', 'shoulders', 'reardelts', 'triceps', 'biceps', 'lats', 'upperback', 'quads', 'hamstrings', 'glutes', 'calves', 'abs', 'obliques']
@@ -110,7 +112,8 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .pc-bars span.ghost { background: rgba(255,255,255,.18); max-width: none; }
 .pc-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .pc-foot b { font-size: 17px; font-weight: 700; }
-.pc-foot em { font-style: normal; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; background: rgba(255,255,255,.25); }
+.pc-foot small { font-size: 13px; opacity: .85; margin-left: -2px; }
+.pc-foot em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; background: rgba(255,255,255,.25); }
 
 .muscles { margin: 0 16px; padding: 16px; }
 .mm-map { height: 170px; display: flex; justify-content: center; }
