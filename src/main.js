@@ -7,6 +7,7 @@ import Tabs from './views/Tabs.vue'
 import { load } from './store'
 import { initCloud } from './cloud'
 import { initStrava } from './strava'
+import { initWeights } from './weight'
 import { initUpdater } from './updater'
 
 import '@ionic/vue/css/core.css'
@@ -31,6 +32,7 @@ const router = createRouter({
       { path: 'home', component: () => import('./views/HomeView.vue') },
       { path: 'progress', component: () => import('./views/ProgressView.vue') },
       { path: 'history', component: () => import('./views/HistoryView.vue') },
+      { path: 'weight', component: () => import('./views/WeightView.vue') },
       { path: 'settings', component: () => import('./views/SettingsView.vue') }
     ] }
   ]
@@ -53,6 +55,7 @@ initUpdater()
 load().then(() => {
   initCloud()
   initStrava()
+  initWeights()
   const app = createApp(App).use(IonicVue, { mode: 'ios' }).use(router)
   router.isReady().then(() => app.mount('#app'))
 })

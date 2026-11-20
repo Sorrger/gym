@@ -6,7 +6,9 @@
           <div v-if="o.icon" class="dlg-ico" :class="{ danger: isDanger }"><ion-icon :icon="o.icon" /></div>
           <h2>{{ o.title }}</h2>
           <p v-if="o.message">{{ o.message }}</p>
-          <input v-if="o.input" ref="inp" class="dlg-in" v-model="dialog.value" :type="o.input.type || 'text'" :placeholder="o.input.placeholder"
+          <textarea v-if="o.input?.multi" ref="inp" class="dlg-in dlg-ta" v-model="dialog.value" :placeholder="o.input.placeholder" rows="5"
+            autocomplete="off" autocapitalize="off" spellcheck="false" />
+          <input v-else-if="o.input" ref="inp" :inputmode="o.input.mode" class="dlg-in" v-model="dialog.value" :type="o.input.type || 'text'" :placeholder="o.input.placeholder"
             autocomplete="off" autocapitalize="off" spellcheck="false" @keyup.enter="closeDialog(main?.role || 'ok')" />
           <div class="dlg-btns">
             <button v-for="b in btns" :key="b.role" class="dlg-btn press" :class="b.kind || 'plain'" @click="closeDialog(b.role)">{{ b.text }}</button>
@@ -59,4 +61,5 @@ p { margin: 8px 8px 0; color: var(--app-muted); font-size: 15px; line-height: 1.
 .dlg-enter-from, .dlg-leave-to { opacity: 0; }
 .dlg-enter-from .dlg, .dlg-leave-to .dlg { transform: translateY(110%); }
 @media (prefers-reduced-motion: reduce) { .dlg-enter-from .dlg, .dlg-leave-to .dlg { transform: none; } }
+.dlg-ta { resize: none; min-height: 120px; font-size: 16px; line-height: 1.4; text-align: left; font-family: inherit; }
 </style>
