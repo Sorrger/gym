@@ -1,10 +1,18 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true">
+    <ion-header class="sh-header" :style="{ '--c': color }">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button default-href="/tabs/history" text="Historia" /></ion-buttons>
-        <ion-title>{{ plan?.name || 'Trening' }}</ion-title>
-        <ion-buttons slot="end"><ion-button v-if="s" @click="edit" class="edit-top">Edytuj</ion-button></ion-buttons>
+        <div class="sh-bar">
+          <button class="rb press" @click="goBack" aria-label="Wróć do historii"><ion-icon :icon="chevronBack" /></button>
+          <div class="sh-title">
+            <b>Podsumowanie</b>
+            <span v-if="s" class="num">{{ fmtShortDay }}</span>
+          </div>
+          <div class="sh-right" v-if="s">
+            <button class="rb tint press" @click="edit" aria-label="Edytuj trening"><ion-icon :icon="createOutline" /></button>
+            <button class="rb danger press" @click="del" aria-label="Usuń trening"><ion-icon :icon="trashOutline" /></button>
+          </div>
+        </div>
       </ion-toolbar>
     </ion-header>
     <ion-content :fullscreen="true">
@@ -55,6 +63,7 @@
         </div>
 
         <button class="btn block edit-btn press" @click="edit"><ion-icon :icon="createOutline" /> Edytuj trening</button>
+        <button class="btn block del-btn press" @click="del"><ion-icon :icon="trashOutline" /> Usuń trening</button>
       </div>
       <div v-else class="page"><div class="card empty">Nie ma takiego treningu.</div></div>
     </ion-content>
@@ -64,10 +73,11 @@
 <script setup>
 import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, onIonViewDidEnter } from '@ionic/vue'
-import { createOutline } from 'ionicons/icons'
+import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, onIonViewDidEnter, useIonRouter } from '@ionic/vue'
+import { createOutline, trashOutline, chevronBack } from 'ionicons/icons'
+import { ask } from '../dialog'
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip } from 'chart.js'
-import { state, counts, fmtDate, sorted } from '../store'
+import { state, counts, fmtDate, sorted, remove } from '../store'
 import { PLAN, COLORS, UNITS, ASSISTED, entriesOf, fmtNum } from '../plan'
 import { musclesOf } from '../muscles'
 import { volumeOf, fmtTon } from '../stats'
@@ -136,6 +146,17 @@ const muscles = computed(() => {
 const setText = (x, unit) => (x.w == null ? '✓' : unit === 'kg' ? fmtNum(x.w) + ' × ' + (x.r ?? '–') : fmtNum(x.w) + ' ' + UNITS[unit].short)
 
 function edit() { router.push('/workout/' + s.value.id) }
+const ionRouter = useIonRouter()
+function goBack() { if (ionRouter.canGoBack()) ionRouter.back(); else ionRouter.navigate('/tabs/history', 'back', 'replace') }
+async function del() {
+  const x = s.value; if (!x) return
+  const { role } = await ask({ icon: trashOutline, title: 'Usunąć trening?', message: `${plan.value.name}, ${fmtDate(x.date)}. Tego nie da się cofnąć.`,
+    buttons: [{ text: 'Usuń trening', role: 'destructive', kind: 'danger' }, { text: 'Anuluj', role: 'cancel' }] })
+  if (role !== 'destructive') return
+  goBack()
+  setTimeout(() => remove(x.id), 350) // after the page has left, so it never shows "Nie ma takiego treningu"
+}
+const fmtShortDay = computed(() => s.value ? new Date(s.value.date + 'T12:00').toLocaleDateString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short' }) : '')
 
 // heart-rate chart
 const cv = ref(null)
@@ -200,6 +221,19 @@ onBeforeUnmount(() => chart?.destroy())
 .skipped { color: var(--app-faint, var(--app-muted)); font-size: 14px; }
 .edit-btn { margin: 4px 16px 24px; width: calc(100% - 32px); background: var(--accent); color: #fff; }
 .edit-btn ion-icon { font-size: 20px; }
-.edit-top { font-weight: 600; }
+.del-btn { margin: -12px 16px 28px; width: calc(100% - 32px); background: color-mix(in srgb, var(--app-bad) 12%, var(--app-card)); color: var(--app-bad); }
+.del-btn ion-icon { font-size: 20px; }
+.sh-header ion-toolbar { --background: var(--app-bg, var(--ion-background-color)); --border-width: 0 !important; --min-height: 56px; }
+.sh-header::after { display: none; }
+.sh-bar { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 6px 14px; }
+.sh-title { text-align: center; display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.sh-title b { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+.sh-title span { font-size: 12.5px; color: var(--app-muted); font-weight: 500; margin-top: 1px; }
+.sh-right { display: flex; justify-content: flex-end; gap: 10px; }
+.rb { width: 38px; height: 38px; border-radius: 50%; border: 0; display: grid; place-items: center; padding: 0;
+  background: var(--app-card); color: var(--ion-text-color); box-shadow: 0 1px 3px rgba(0,0,0,.08); font-size: 20px; }
+.rb ion-icon { font-size: 21px; }
+.rb.tint { background: color-mix(in srgb, var(--c) 18%, var(--app-card)); color: var(--c); }
+.rb.danger { background: color-mix(in srgb, var(--app-bad) 14%, var(--app-card)); color: var(--app-bad); }
 .empty { color: var(--app-muted); text-align: center; padding: 28px; }
 </style>
