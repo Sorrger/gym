@@ -46,7 +46,13 @@ export function suggest(g, session) {
   const inc = INC[g.name] || 2.5, assist = ASSISTED.has(g.name)
   const W = assist ? Math.min(...last.map(x => x.w)) : Math.max(...last.map(x => x.w))
   const work = last.filter(x => x.w === W)
-  const reps = work.map(x => x.r ?? 6)
+  // workouts saved before reps were tracked have no reps: don't guess (it could wrongly say "go lighter")
+  if (work.every(x => x.r == null)) {
+    return { kind: 'same', title: 'Licz powtórzenia', short: `${fmtNum(W)} kg × ${lo}-${hi}`,
+      text: `Ostatnio ${fmtNum(W)} kg (bez zapisanych powtórzeń). Zostań na tym ciężarze i wpisz, ile powtórzeń zrobisz – od następnego razu podpowiem, kiedy dodać.`,
+      sets: Array.from({ length: n }, () => ({ w: W, r: lo })) }
+  }
+  const reps = work.map(x => x.r ?? lo)
   const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}`
   const top = work.length >= n && reps.every(r => r >= hi)
   if (top) {
@@ -57,7 +63,7 @@ export function suggest(g, session) {
   }
   // stuck: two workouts in a row at this weight with a set under the bottom of the range
   const prev = hist[1]?.sets.filter(x => x.w === W)
-  const failed = reps.some(r => r < lo) && prev?.length && prev.some(x => (x.r ?? 6) < lo)
+  const failed = reps.some(r => r < lo) && prev?.length && prev.some(x => x.r != null && x.r < lo)
   if (failed) {
     const w = assist ? W + 2 * inc : Math.max(0, roundTo(W * 0.9, inc))
     return { kind: 'down', title: 'Lżej, żeby ruszyć dalej', short: `${fmtNum(w)} kg × ${lo}`,
