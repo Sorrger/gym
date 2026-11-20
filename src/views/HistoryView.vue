@@ -58,7 +58,7 @@
         <div v-else class="card empty">
           {{ selected ? 'Tego dnia nie było treningu.' : 'W tym miesiącu nie ma jeszcze treningów.' }}
         </div>
-        <p class="hint" v-if="shown.length">Kliknij trening, żeby go zobaczyć lub poprawić</p>
+        <p class="hint" v-if="shown.length">Kliknij trening, żeby zobaczyć szczegóły i tętno – tam też go poprawisz</p>
       </div>
     </ion-content>
   </ion-page>
@@ -112,7 +112,7 @@ function pick(c) {
 }
 const dayName = d => { const s = new Date(d + 'T12:00:00').toLocaleDateString('pl-PL', { weekday: 'short' }); return s.charAt(0).toUpperCase() + s.slice(1) }
 
-function open(s) { router.push('/workout/' + s.id) }
+function open(s) { router.push((s.finished ? '/session/' : '/workout/') + s.id) }
 async function ask(s) {
   const { role } = await askDialog({ icon: trashOutline, title: 'Usunąć trening?',
     message: `${PLAN[s.day].name}, ${fmtDate(s.date)}. Tego nie da się cofnąć.`,
