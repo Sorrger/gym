@@ -68,4 +68,5 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 ## Ideas the user floated (not done)
 - Shrugs removed from Pull (Nov 2026, user). iOS Live Activity / Dynamic Island workout status: impossible for a PWA (needs a native app + Mac) – told the user.
 - Garmin Connect direct link (unofficial login) – user said no; Strava instead.
+- Strava Exercises tab: API can't edit an existing activity; only a NEW upload (JSON/FIT with sets, May 2026) fills it → would duplicate the Garmin activity and the API can't delete. User said no (Nov 2026) – keep the description only.
 - Pull-up part reps-only without weight; hang timer only for that exercise.
