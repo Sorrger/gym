@@ -53,26 +53,44 @@ const PL = Object.fromEntries(Object.entries(MUSCLE_NAMES).map(([k, v]) => [k, v
 // default names from Strava / Garmin ("Night Weight Training", "Siła", "Trening siłowy"…) may be replaced; a name the user typed stays
 const DEFAULT_NAME = /^((morning|lunch|afternoon|evening|night)\s+)?(weight training|workout|strength( training)?|si[łl]a|trening( si[łl]owy)?|[a-ząćęłńóśźż ]*trening si[łl]owy)$/i
 const fmt = v => String(+(+v).toFixed(2)).replace('.', ',')
-function describe(s) {
-  const lines = []
-  let n = 0
-  for (const [key, sets] of Object.entries(s.ex || {})) {
-    const done = sets.filter(x => x.d)
+const plural = (n, one, few, many) => (n === 1 ? one : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? few : many)
+// one set list: "40 kg × 8, 8, 7" when the weight is the same, else "40×8 · 42,5×6 kg"; time/reps: "20 · 25 · 25 s"
+function setsText(done, unit) {
+  if (done.every(x => x.w == null)) return done.length + ' ' + plural(done.length, 'seria', 'serie', 'serii')
+  if (unit !== 'kg') return done.map(x => (x.w == null ? '✓' : fmt(x.w))).join(' · ') + ' ' + UNITS[unit].short
+  const ws = new Set(done.map(x => x.w))
+  if (ws.size === 1) return `${fmt(done[0].w)} kg × ${done.map(x => x.r ?? 6).join(', ')}`
+  return done.map(x => `${x.w == null ? '–' : fmt(x.w)}×${x.r ?? 6}`).join(' · ') + ' kg'
+}
+// Strava description: only what was really done (skipped exercises and their muscles are left out)
+function describe(s, all = []) {
+  const plan = PLAN[s.day]
+  const order = plan ? plan.ex.flatMap(e => groupsOf(e)) : []
+  const known = new Set(order.map(g => g.key))
+  const extra = Object.keys(s.ex || {}).filter(k => !known.has(k)).map(k => ({ key: k, name: k.split(' · ')[0], label: k.split(' · ')[1] || null, unit: UNIT[k] || 'kg' }))
+  const earlier = all.filter(o => o.id !== s.id && (o.started || 0) < (s.started || 0))
+  const blocks = new Map() // exercise name -> lines
+  const main = new Set(), prs = []
+  let n = 0, vol = 0
+  for (const g of [...order, ...extra]) {
+    const done = (s.ex?.[g.key] || []).filter(x => x.d)
     if (!done.length) continue
     n += done.length
-    const unit = UNIT[key] || 'kg'
-    const parts = done.map(x => x.w == null ? '✓' : unit === 'kg' ? `${fmt(x.w)}×${x.r ?? 6}` : `${fmt(x.w)} ${UNITS[unit].short}`)
-    lines.push(`• ${key}: ${parts.join(', ')}${unit === 'kg' ? ' kg' : ''}`)
+    if (g.unit === 'kg') done.forEach(x => { if (x.w != null) vol += x.w * (x.r ?? 6) })
+    musclesOf(g.name).main.forEach(x => main.add(x))
+    const best = Math.max(...done.filter(x => x.w != null).map(x => x.w), -Infinity)
+    const prev = Math.max(...earlier.flatMap(o => (o.ex?.[g.key] || []).filter(x => x.d && x.w != null).map(x => x.w)), -Infinity)
+    if (best > -Infinity && prev > -Infinity && best > prev && !g.name.includes('wspomagane')) prs.push(`${g.label ? g.name + ' (' + g.label.toLowerCase() + ')' : g.name} ${fmt(best)} ${UNITS[g.unit].short}`)
+    if (!blocks.has(g.name)) blocks.set(g.name, [])
+    blocks.get(g.name).push((g.label ? g.label.toLowerCase() + ': ' : '') + setsText(done, g.unit))
   }
-  const plan = PLAN[s.day]?.name || ''
-  const main = new Set(), help = new Set()
-  for (const key of Object.keys(s.ex || {})) {
-    if (!(s.ex[key] || []).some(x => x.d)) continue
-    const m = musclesOf(key.split(' · ')[0]); m.main.forEach(x => main.add(x)); m.help.forEach(x => help.add(x))
-  }
-  main.forEach(x => help.delete(x))
-  const parts = [...main].map(x => PL[x]).join(', ') + (help.size ? ` (pomocniczo: ${[...help].map(x => PL[x]).join(', ')})` : '')
-  return n ? `${MARK} ${plan} – ${n} ${n === 1 ? 'seria' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'serie' : 'serii'}\n💪 Partie: ${parts}\n\n${lines.join('\n')}` : ''
+  if (!n) return ''
+  const head = [`${MARK} · ${plan?.name || 'Trening'}`,
+    `${n} ${plural(n, 'seria', 'serie', 'serii')} · ${blocks.size} ${plural(blocks.size, 'ćwiczenie', 'ćwiczenia', 'ćwiczeń')}` + (vol ? ` · ${vol >= 1000 ? fmt(Math.round(vol / 100) / 10) + ' t' : Math.round(vol) + ' kg'} objętości` : ''),
+    `💪 ${[...main].map((x, i) => (i ? MUSCLE_NAMES[x].toLowerCase() : MUSCLE_NAMES[x])).join(', ')}`]
+  if (prs.length) head.push(`🏆 ${plural(prs.length, 'Rekord', 'Rekordy', 'Rekordów')}: ${prs.join(', ')}`)
+  const body = [...blocks].map(([name, ls], i) => `${i + 1}. ${name}\n` + ls.map(l => '    ' + l).join('\n'))
+  return head.join('\n') + '\n\n' + body.join('\n\n')
 }
 const mergeDesc = (old, ours) => {
   old = old || ''
@@ -138,7 +156,7 @@ try {
       } catch (e) { console.warn(e.message) }
     }
     if (best) {
-      const text = describe(best)
+      const text = describe(best, sessions)
       const title = `${PLAN[best.day]?.name || 'Trening'} · Gym 🏋️`
       const rename = a.name !== title && (DEFAULT_NAME.test(a.name.trim()) || a.name === old.title)
       if ((text && text !== act.written) || rename) {
