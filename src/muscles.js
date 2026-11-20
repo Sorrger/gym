@@ -5,20 +5,20 @@ import { PLAN } from './plan.js'
 // back:  traps, reardelts, upperback, lats, triceps, lowerback, glutes, hamstrings, calves
 export const MUSCLES = {
   'Wyciskanie sztangi na ławce płaskiej': [['chest'], ['shoulders', 'triceps']],
-  'Wyciskanie hantli na ławce skośnej': [['chest', 'shoulders'], ['triceps']],
+  'Wyciskanie hantli na ławce skośnej': [['chest'], ['shoulders', 'triceps']],
   'Rozpiętki na bramie': [['chest'], ['shoulders']],
   'Unoszenie hantli bokiem': [['shoulders'], ['traps', 'reardelts']],
   'Wyciskanie francuskie leżąc': [['triceps'], []],
   'Prostowanie ramion na wyciągu nad głową': [['triceps'], []],
 
-  'Nauka podciągania': [['lats', 'biceps'], ['upperback', 'forearms', 'abs']],
+  'Nauka podciągania': [['lats'], ['biceps', 'upperback', 'forearms']],
   'Wiosłowanie hantlem jednorącz z podparciem': [['lats', 'upperback'], ['biceps', 'reardelts']],
   'Wiosłowanie sztangą T (T-bar)': [['upperback', 'lats'], ['biceps', 'reardelts', 'lowerback']],
   'Face pull na wyciągu': [['reardelts', 'upperback'], ['traps']],
   'Uginanie ramion z hantlami na ławce skośnej': [['biceps'], ['forearms']],
 
   'Martwy ciąg rumuński': [['hamstrings', 'glutes'], ['lowerback', 'forearms']],
-  'Przysiad Zerchera': [['quads', 'glutes'], ['abs', 'upperback', 'biceps']],
+  'Przysiad Zerchera': [['quads', 'glutes'], ['abs', 'upperback', 'lowerback', 'biceps']],
   'Prostowanie nóg na maszynie': [['quads'], []],
   'Uginanie nóg na maszynie': [['hamstrings'], ['calves']],
   'Wspięcia na palce siedząc': [['calves'], []],
@@ -26,12 +26,12 @@ export const MUSCLES = {
   'Podciąganie nachwytem (wspomagane)': [['lats'], ['biceps', 'upperback']],
   'Wyciskanie sztangi siedząc z oparciem': [['shoulders'], ['triceps', 'traps']],
   'Seal row – wiosłowanie leżąc na ławce': [['upperback', 'lats'], ['reardelts', 'biceps']],
-  'Wyciskanie na skosie na Smithie': [['chest', 'shoulders'], ['triceps']],
+  'Wyciskanie na skosie na Smithie': [['chest'], ['shoulders', 'triceps']],
   'Ściąganie drążka szerokim chwytem': [['lats'], ['biceps', 'upperback']],
   'Rozpiętki na maszynie (butterfly)': [['chest'], []],
   'Triceps + biceps na wyciągu': [['triceps', 'biceps'], ['forearms']],
 
-  'Unoszenie nóg w podporze na poręczach': [['abs'], ['obliques', 'forearms']],
+  'Unoszenie nóg w podporze na poręczach': [['abs'], ['obliques']],
   'Allahy – spięcia brzucha na wyciągu': [['abs'], ['obliques']],
   'Pallof press na wyciągu': [['obliques', 'abs'], ['shoulders']]
 }
