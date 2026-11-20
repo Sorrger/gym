@@ -1,7 +1,7 @@
 name: Strava sync
 on:
   schedule:
-    - cron: '*/10 4-22 * * *'   # every 10 min, 5:00–23:59 Polish time
+    - cron: '3-59/10 4-22 * * *'   # every 10 min (at :03, :13 …), 5:00–23:59 Polish time
   workflow_dispatch:
 concurrency: { group: strava, cancel-in-progress: false }
 permissions:
