@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true" collapse="fade"><ion-toolbar><ion-title>Kopia</ion-title></ion-toolbar></ion-header>
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar><ion-title size="large">Kopia</ion-title></ion-toolbar>
+    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Kopia</span></div>
+    <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
+      <header class="big-head">
+        <h1 class="t-large">Kopia</h1>
         <p class="sub">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona' : 'Twoje treningi są tylko w tym telefonie' }}</p>
-      </ion-header>
+      </header>
       <div class="page">
 
         <!-- automatic GitHub backup -->
@@ -109,15 +109,17 @@
 </template>
 
 <script setup>
+import { useScrolled } from '../useScrolled'
 import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonToast  } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
 import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline } from 'ionicons/icons'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { wstate, importWeights } from '../weight'
 import { cloud, connect, syncNow, restoreNow, disconnect } from '../cloud'
 import { strava, status as stravaStatus, startConnect, sendCode, pull, disconnectStrava, STRAVA_ICON } from '../strava'
 
+const { scrolled, onScroll } = useScrolled()
 const fileInput = ref(null)
 const msg = ref('')
 const count = computed(() => { void state.sessions; return doneSessions().length })

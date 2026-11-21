@@ -59,5 +59,10 @@ load().then(() => {
   initStrava()
   initWeights()
   const app = createApp(App).use(IonicVue, { mode: 'ios' }).use(router)
-  router.isReady().then(() => app.mount('#app'))
+  router.isReady().then(() => {
+    app.mount('#app')
+    // warm up every screen in the background, so the first visit of a tab or page doesn't wait for its code
+    const warm = () => router.getRoutes().forEach(r => { const c = r.components?.default; if (typeof c === 'function') c().catch(() => {}) })
+    ;(window.requestIdleCallback || (f => setTimeout(f, 1200)))(warm, { timeout: 2500 })
+  })
 })

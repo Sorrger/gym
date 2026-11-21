@@ -77,6 +77,14 @@ ion-toolbar { --background: color-mix(in srgb, var(--app-bg) 78%, transparent); 
 ion-header.header-translucent ion-toolbar, ion-header ion-toolbar { backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); }
 ion-header[collapse="condense"] ion-toolbar { --background: var(--app-bg); backdrop-filter: none; -webkit-backdrop-filter: none; --border-width: 0; }
 ion-title.title-large { font-size: 34px; font-weight: 700; letter-spacing: .2px; }
+/* tab pages: own large title + a small bar that fades in on scroll (see useScrolled.js) */
+.big-head { padding-top: calc(env(safe-area-inset-top) + 50px); }
+.big-head .t-large { padding: 0 20px 2px; }
+.mini-bar { position: absolute; top: 0; left: 0; right: 0; z-index: 20; height: calc(env(safe-area-inset-top) + 44px); padding-top: env(safe-area-inset-top);
+  display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 600; color: var(--ion-text-color);
+  background: color-mix(in srgb, var(--app-bg) 82%, transparent); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--app-line); opacity: 0; pointer-events: none; transition: opacity .18s; }
+.mini-bar.on { opacity: 1; }
 .sub { margin: -2px 0 8px; padding: 0 20px; color: var(--app-muted); font-size: 15px; }
 ion-back-button { --color: var(--accent); }
 

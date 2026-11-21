@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true" collapse="fade"><ion-toolbar><ion-title>Postępy</ion-title></ion-toolbar></ion-header>
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar><ion-title size="large">Postępy</ion-title></ion-toolbar>
+    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Postępy</span></div>
+    <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
+      <header class="big-head">
+        <h1 class="t-large">Postępy</h1>
         <p class="sub">{{ periodLabel }}</p>
-      </ion-header>
+      </header>
       <div class="page">
         <ion-segment class="period" :value="String(ui.period ?? 'all')" @ionChange="e => (ui.period = e.detail.value === 'all' ? null : +e.detail.value)">
           <ion-segment-button value="28"><ion-label>4 tygodnie</ion-label></ion-segment-button>
@@ -136,8 +136,9 @@
 </template>
 
 <script setup>
+import { useScrolled } from '../useScrolled'
 import { computed } from 'vue'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonRouter } from '@ionic/vue'
+import { IonPage, IonContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonRouter } from '@ionic/vue'
 import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS, fmtVal } from '../plan'
 import { state, ui, ago } from '../store'
@@ -145,6 +146,7 @@ import { overview, planSummary, muscleWeek, muscleSets, plansDone, planMuscleSet
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
 
+const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
 const period = computed(() => ui.period) // days or null = all time
 const periodLabel = computed(() => (period.value === 28 ? 'Ostatnie 4 tygodnie' : period.value === 91 ? 'Ostatnie 3 miesiące' : 'Od początku'))

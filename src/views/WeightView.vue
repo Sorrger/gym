@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true" collapse="fade"><ion-toolbar><ion-title>Waga</ion-title></ion-toolbar></ion-header>
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar><ion-title size="large">Waga</ion-title></ion-toolbar>
+    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Waga</span></div>
+    <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
+      <header class="big-head">
+        <h1 class="t-large">Waga</h1>
         <p class="sub">{{ list.length ? 'Ostatni pomiar ' + ago(last.date) : 'Zapisuj wagę rano, na czczo' }}</p>
-      </ion-header>
+      </header>
       <div class="page">
 
         <div class="card stats4 num">
@@ -55,8 +55,9 @@
 </template>
 
 <script setup>
+import { useScrolled } from '../useScrolled'
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonSegment, IonSegmentButton, IonLabel, IonIcon, onIonViewDidEnter } from '@ionic/vue'
+import { IonPage, IonContent, IonSegment, IonSegmentButton, IonLabel, IonIcon, onIonViewDidEnter } from '@ionic/vue'
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip } from 'chart.js'
 import { add as add_, clipboardOutline, scale, trashOutline } from 'ionicons/icons'
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
@@ -65,6 +66,7 @@ import { weights, setWeight, delWeight, parseList, smooth, trend } from '../weig
 import { ask } from '../dialog'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, Tooltip)
+const { scrolled, onScroll } = useScrolled()
 const dnum = s => Math.round(new Date(s + 'T12:00').getTime() / 864e5) // x axis = real days, so gaps show as gaps
 const dstr = n => fmtShort(iso(new Date(n * 864e5)))
 

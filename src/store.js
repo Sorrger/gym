@@ -1,4 +1,4 @@
-import { reactive, watch } from 'vue'
+import { reactive, watch, computed } from 'vue'
 import { get, set } from 'idb-keyval'
 import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
@@ -56,7 +56,9 @@ document.addEventListener('visibilitychange', () => {
 })
 window.addEventListener('pagehide', () => { if (state.ready) saveNow() })
 
-export const sorted = () => Object.values(state.sessions).sort((a, b) => b.date.localeCompare(a.date) || (b.started || 0) - (a.started || 0))
+// newest first; cached (recomputed only when a workout is added/removed or its date changes) – a copy, so callers may reverse it
+const sortedC = computed(() => Object.values(state.sessions).sort((a, b) => b.date.localeCompare(a.date) || (b.started || 0) - (a.started || 0)))
+export const sorted = () => sortedC.value.slice()
 
 export function counts(s) {
   let n = 0, t = 0
@@ -192,7 +194,9 @@ export function pullupStage() {
   }
   return st
 }
-setStageFn(() => { void state.sessions; return pullupStage() })
+// cached: groupsOf/entriesOf ask for the stage very often (every list, card and chart)
+const stageC = computed(() => pullupStage())
+setStageFn(() => stageC.value)
 
 export const activeSession = () => sorted().find(s => !s.finished) || null
 

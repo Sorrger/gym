@@ -1,11 +1,11 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true" collapse="fade"><ion-toolbar><ion-title>Historia</ion-title></ion-toolbar></ion-header>
-    <ion-content :fullscreen="true">
-      <ion-header collapse="condense">
-        <ion-toolbar><ion-title size="large">Historia</ion-title></ion-toolbar>
+    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Historia</span></div>
+    <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
+      <header class="big-head">
+        <h1 class="t-large">Historia</h1>
         <p class="sub">Dni, w których byłeś na siłowni</p>
-      </ion-header>
+      </header>
       <div class="page">
 
         <div class="card cal">
@@ -64,15 +64,17 @@
 </template>
 
 <script setup>
+import { useScrolled } from '../useScrolled'
 import { ask as askDialog } from '../dialog'
 import { computed, ref } from 'vue'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonItemSliding,
+import { IonPage, IonContent, IonList, IonItem, IonItemSliding,
   IonItemOptions, IonItemOption, IonLabel, IonNote, IonIcon, useIonRouter  } from '@ionic/vue'
 import { chevronBack, chevronForward, trashOutline, heart } from 'ionicons/icons'
 import { stravaFor, svText } from '../strava'
 import { PLAN, COLORS } from '../plan'
 import { state, doneSessions, counts, fmtDate, remove, iso } from '../store'
 
+const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
 const today = iso(new Date())
 const view = ref(new Date(new Date().getFullYear(), new Date().getMonth(), 1))
