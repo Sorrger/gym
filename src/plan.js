@@ -58,6 +58,25 @@ export const HARDER = {
   'Nauka podciągania · Pełne@4': 'dołóż obciążenie (hantel między stopami / pas) i wróć do 3 powtórzeń'
 }
 
+// warm-up sets before heavy barbell lifts (only shown on screen, never saved – so they never count in stats)
+export const WARMUP = { 'Wyciskanie sztangi na ławce płaskiej': 20, 'Przysiad Zerchera': 20, 'Wyciskanie sztangi siedząc z oparciem': 20, 'Martwy ciąg rumuński': 20 }
+const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25]
+export function warmupSets(W, bar = 20) {
+  if (!(W > bar)) return []
+  const out = [{ w: bar, r: 10 }]
+  for (const [p, r] of [[0.5, 8], [0.7, 5], [0.85, 2]]) {
+    const w = Math.round((W * p) / 2.5) * 2.5
+    if (w > out[out.length - 1].w && w < W) out.push({ w, r })
+  }
+  return out.map(x => ({ ...x, plates: platesPerSide(x.w, bar) }))
+}
+export function platesPerSide(w, bar = 20) {
+  let side = Math.round(((w - bar) / 2) * 100) / 100
+  const out = []
+  for (const p of PLATES) while (side >= p - 1e-9) { out.push(p); side = Math.round((side - p) * 100) / 100 }
+  return out
+}
+
 // Pull-up learning goes through stages; the app moves to the next one by itself when the goal is met
 // (looked up from the workout history, so it follows the backup to a new phone).
 export const PULLUP = 'Nauka podciągania'

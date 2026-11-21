@@ -5,7 +5,7 @@
 // Optional reps in reserve per set (x.q: 0, 1, 2, 3 = "3+") refine it:
 // • every set with 3+ left → too light: add weight now, even below the top of the range
 // • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
-import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf } from './plan'
+import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf, DEF_REPS } from './plan'
 import { sorted, deloadKg, deloadSets } from './store'
 
 const roundTo = (v, st) => Math.round(v / st) * st
@@ -104,6 +104,37 @@ export function suggest(g, session) {
     text: `Ostatnio ${lastTxt}. Zostań na ${fmtNum(W)} kg i zrób ${target.join(', ')}. ` +
       (left > 0 ? `Gdy zrobisz ${n} × ${hi}, dodasz ${fmtNum(inc)} kg.` : `Jak się uda, następnym razem ${assist ? 'mniej wspomagania' : 'więcej kilogramów'}.`),
     sets: target.map(r => ({ w: W, r })) }
+}
+
+// during the workout (Alpha Progression style): after a ticked set, advice for the sets still to do.
+// Only for clear cases, a normal drop like 8, 7, 6 says nothing:
+//  - below the range with 0 (or unknown) left → lighter (~10 %, at least one step) and the bottom of the range
+//  - 3+ left at the top of the range, or 3+ reps over it → one step heavier
+// Assisted machine: the other way round. Not in a deload week (it is light on purpose). Null when nothing to say
+// or the remaining sets already have that weight.
+export function live(g, session) {
+  if (g.unit !== 'kg' || session.deload) return null
+  const arr = session.ex?.[g.key] || []
+  let li = -1
+  arr.forEach((x, i) => { if (x.d) li = i })
+  const rest = arr.filter(x => !x.d)
+  const last = arr[li], range = rangeOf(g.target)
+  if (!last || last.w == null || !rest.length || !range) return null
+  const { lo, hi } = range, r = last.r ?? DEF_REPS, q = last.q, inc = incOf(g), assist = isAssisted(g)
+  const n = li + 1, kg = v => fmtNum(v) + ' kg'
+  if (r < lo && (q == null || q === 0)) {
+    const w = assist ? last.w + inc : Math.max(0, Math.min(last.w - inc, roundTo(last.w * 0.9, inc)))
+    if (rest.every(x => x.w != null && (assist ? x.w >= w : x.w <= w))) return null
+    return { kind: 'down', w, r: lo, short: `${kg(w)} × ${lo}`,
+      text: `Seria ${n}: ${r} ${r === 1 ? 'powtórzenie' : 'powt.'}${q === 0 ? ' do upadku' : ''} – poniżej zakresu ${lo}-${hi}. ${assist ? 'Więcej pomocy' : 'Trochę lżej'} na kolejne serie: ${kg(w)} × ${lo}.` }
+  }
+  if ((q === 3 && r >= hi) || r >= hi + 3) {
+    const w = assist ? Math.max(0, last.w - inc) : last.w + inc
+    if (rest.every(x => x.w != null && (assist ? x.w <= w : x.w >= w))) return null
+    return { kind: 'up', w, r: lo, short: `${kg(w)} × ${lo}`,
+      text: `Seria ${n}: ${r} powt.${q === 3 ? ' i zostało 3+' : ''} – za lekko. ${assist ? 'Mniej pomocy' : 'Dołóż'} na kolejne serie: ${kg(w)} × ${lo}.` }
+  }
+  return null
 }
 
 // light week: same exercises, half the sets, ~10 % lighter, bottom of the range, 3-4 reps left in every set

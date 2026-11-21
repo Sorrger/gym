@@ -53,6 +53,22 @@
                   <ion-icon :icon="kindIcon(sugOf(g).kind)" />
                   <span>{{ { up: 'Dodaj', down: 'Lżej', deload: 'Lżej', stage: 'Nowy' }[sugOf(g).kind] || 'Cel' }}: <b>{{ sugOf(g).short }}</b></span>
                 </button>
+                <!-- warm-up: a note only, nothing is saved, so it never counts in stats -->
+                <div v-if="warm(g)" class="warm">
+                  <div class="warm-h"><ion-icon :icon="flameOutline" /><b>Rozgrzewka</b><span>nie liczy się do statystyk</span></div>
+                  <div class="warm-row num" v-for="(w, wi) in warm(g).sets" :key="wi">
+                    <b>{{ wi === 0 ? 'Gryf ' + fmtNum(w.w) : fmtNum(w.w) }} kg × {{ w.r }}</b>
+                    <span>{{ w.plates.length ? 'na stronę: ' + w.plates.map(fmtNum).join(' + ') : 'pusty gryf' }}</span>
+                  </div>
+                  <div class="warm-row work num"><b>Robocze {{ fmtNum(warm(g).W) }} kg</b><span>{{ warm(g).plates.length ? 'na stronę: ' + warm(g).plates.map(fmtNum).join(' + ') : '' }}</span></div>
+                  <p>Spokojnie, bez zmęczenia, ok. 1 min przerwy między seriami.</p>
+                </div>
+                <!-- advice for the sets still to do, after a clearly too heavy / too light set -->
+                <div v-if="liveOf(g)" class="live-tip" :class="liveOf(g).kind">
+                  <ion-icon :icon="liveOf(g).kind === 'up' ? trendingUp : trendingDown" />
+                  <span>{{ liveOf(g).text }}</span>
+                  <button class="press" @click="applyLive(g)">Ustaw</button>
+                </div>
                 <div class="sets">
                   <div class="set" v-for="(x, si) in sets(g.key)" :key="si" :class="{ d: x.d }">
                     <span class="idx num">{{ si + 1 }}</span>
@@ -204,14 +220,14 @@
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
 import { stravaFor, svText } from '../strava'
-import { suggest, applySuggestion } from '../coach'
+import { suggest, applySuggestion, live } from '../coach'
 import { musclesOf } from '../muscles'
 import { computed, ref, watch, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
-import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted } from '../plan'
+import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline } from 'ionicons/icons'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload } from '../store'
 
@@ -275,6 +291,22 @@ async function showTip(list) {
   if (role === 'apply') { list.forEach(x => applySuggestion(sets(x.g.key), x.sug, x.g.unit)); touch() }
 }
 
+function warm(g) {
+  const bar = WARMUP[g.name]
+  if (bar == null || g.label) return null
+  const arr = sets(g.key)
+  if (arr.some(x => x.d)) return null // hidden once the first working set is done
+  const W = arr.find(x => x.w != null)?.w
+  const list = warmupSets(W, bar)
+  return list.length ? { W, sets: list, plates: platesPerSide(W, bar) } : null
+}
+const liveOf = g => (s.value ? live(g, s.value) : null)
+function applyLive(g) {
+  const t = liveOf(g)
+  if (!t) return
+  sets(g.key).forEach(x => { if (!x.d) { x.w = t.w; x.r = t.r } })
+  touch()
+}
 function kindIcon(k) { return k === 'up' ? trendingUp : k === 'down' || k === 'deload' ? trendingDown : k === 'stage' ? trophyOutline : bulbOutline }
 async function deloadInfo() {
   const { role } = await ask({ icon: trendingDown, color: color.value, title: 'Tydzień lżejszy (deload)',
@@ -563,6 +595,21 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .tip-chip b { font-weight: 700; }
 .tip-chip ion-icon { font-size: 15px; }
 .tip-chip.down { color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 12%, transparent); }
+.warm { margin: 8px 4px 2px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, #ff9f0a 10%, var(--app-card, transparent)); }
+.warm-h { display: flex; align-items: center; gap: 6px; color: #ff9f0a; font-size: 14px; }
+.warm-h span { margin-left: auto; font-size: 11.5px; color: var(--app-muted); }
+.warm-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 14.5px; border-top: 0.5px solid var(--app-line); }
+.warm-row:first-of-type { border-top: 0; }
+.warm-row span { color: var(--app-muted); font-size: 13px; }
+.warm-row.work b { color: var(--c); }
+.warm p { margin: 4px 0 0; font-size: 12px; color: var(--app-muted); }
+.live-tip { display: flex; align-items: center; gap: 8px; margin: 8px 4px 0; padding: 9px 10px 9px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.3;
+  color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 11%, transparent); }
+.live-tip.up { color: var(--app-ok); background: color-mix(in srgb, var(--app-ok) 12%, transparent); }
+.live-tip ion-icon { font-size: 18px; flex: none; }
+.live-tip span { flex: 1; color: var(--ion-text-color); }
+.live-tip button { flex: none; border: 0; border-radius: 999px; padding: 7px 13px; font: inherit; font-weight: 700; color: #fff; background: var(--app-bad); }
+.live-tip.up button { background: var(--app-ok); }
 .tip-chip.deload { color: #0a84ff; background: color-mix(in srgb, #0a84ff 12%, transparent); }
 .tip-chip.stage { color: #ff9f0a; background: color-mix(in srgb, #ff9f0a 14%, transparent); }
 .tag.dl { border: 0; font-family: inherit; color: #0a84ff; background: color-mix(in srgb, #0a84ff 13%, transparent); }
