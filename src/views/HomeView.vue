@@ -42,7 +42,7 @@
             <span class="t-foot num">{{ weekCount }} {{ weekCount === 1 ? 'trening' : weekCount >= 2 && weekCount <= 4 ? 'treningi' : 'treningów' }}</span>
           </div>
           <div class="days">
-            <div v-for="d in week" :key="d.date" class="day" :class="{ today: d.today, future: d.future, off: d.off }" @click="d.off && unmarkOff(d.s)">
+            <div v-for="d in week" :key="d.date" class="day" :class="{ today: d.today, future: d.future, off: d.off, both: d.both }" @click="dayTap(d)">
               <span class="wd">{{ d.wd }}</span>
               <span class="dot num" :class="{ has: d.s }" :style="d.s ? { '--c': COLORS[PLAN[d.s.day].key] } : null">
                 <ion-icon v-if="d.s" :icon="checkmark" /><template v-else>{{ d.n }}</template>
@@ -58,7 +58,7 @@
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Zacznij trening' }}</h3>
         <button v-if="sug.kind === 'missed' && !active" class="off-link press" @click="markOff">
-          Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? <b>Oznacz jako zrobiony</b>
+          Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? <b>Oznacz</b>
         </button>
         <div class="plans">
           <button v-for="(d, i) in PLAN" :key="d.key" class="plan press" :class="{ next: i === next && !active }"
@@ -126,31 +126,44 @@ const greeting = computed(() => {
   return h < 5 ? 'Dobranoc' : h < 12 ? 'Dzień dobry' : h < 18 ? 'Cześć' : 'Dobry wieczór'
 })
 
+// "done without the app": the user picks which plan and on which day of this week (maybe another plan was done that day)
 async function markOff() {
-  const day = next.value, name = PLAN[day].name
-  const { role } = await ask({ icon: checkmark, color: COLORS[PLAN[day].key], title: `${name} zrobiony bez apki?`,
-    message: `Oznaczę ${name} jako zrobiony w tym tygodniu, więc nie będzie już pokazywany jako zaległy. Serie się nie zapiszą i nie wejdą do statystyk. Następnym razem trener podpowie ciężary z ostatniego zapisanego treningu.`,
+  const day = next.value
+  const days = week.value.filter(d => !d.future)
+  const js = +Object.keys(WEEKDAY_TO_DAY).find(k => WEEKDAY_TO_DAY[k] === day)
+  const sched = days.find(d => d.k === (js + 6) % 7)
+  const def = (sched && !sched.real.length ? sched : days.find(d => !d.real.length && !d.offs.length) || days[days.length - 1]).date
+  const { role, picks } = await ask({ icon: checkmark, title: 'Trening zrobiony bez apki',
+    message: 'Wybierz, który trening i kiedy. Nie będzie już pokazywany jako zaległy. Serie się nie zapiszą i nie wejdą do statystyk.',
+    choices: [
+      { key: 'day', label: 'Trening', value: day, options: PLAN.map((p, i) => ({ value: i, label: p.name })) },
+      { key: 'date', label: 'Kiedy', value: def, options: days.map(d => ({ value: d.date, label: d.wd, sub: d.real.length ? PLAN[d.real[0].day].name : String(d.n) })) }],
     buttons: [{ text: 'Oznacz jako zrobiony', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role === 'ok') { markDoneOff(day); state.flash = `${name} oznaczony jako zrobiony` }
+  if (role !== 'ok') return
+  markDoneOff(picks.day, picks.date)
+  const d = days.find(x => x.date === picks.date)
+  state.flash = `${PLAN[picks.day].name} oznaczony jako zrobiony (${d.wd.toLowerCase()} ${d.n}.${picks.date.slice(5, 7)})`
 }
-async function unmarkOff(s) {
-  const name = PLAN[s.day].name
-  const { role } = await ask({ icon: checkmark, color: COLORS[PLAN[s.day].key], title: `${name} – zrobiony bez apki`,
-    message: 'Ten dzień jest oznaczony jako trening zrobiony poza apką (bez serii). Usunąć oznaczenie?',
-    buttons: [{ text: 'Usuń oznaczenie', role: 'del', kind: 'danger' }, { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
-  if (role === 'del') remove(s.id)
+// tapping a day with "done without the app" marks: remove one
+async function dayTap(d) {
+  if (!d.offs.length) return
+  const { role } = await ask({ icon: checkmark, title: 'Zrobione bez apki', message: `${d.wd} ${d.n}.${d.date.slice(5, 7)}: ` + d.offs.map(s => PLAN[s.day].name).join(', ') + '. Usunąć oznaczenie?',
+    buttons: [...d.offs.map(s => ({ text: 'Usuń: ' + PLAN[s.day].name, role: s.id, kind: 'danger' })), { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
+  if (role !== 'cancel' && state.sessions[role]?.offApp) remove(role)
 }
 const week = computed(() => {
+  void state.sessions
   const now = new Date(), today = iso(now)
   const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7))
+  const offs = offMarks()
   return ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((wd, k) => {
     const d = new Date(mon); d.setDate(mon.getDate() + k)
     const date = iso(d)
-    const real = done.value.find(s => s.date === date), off = real ? null : offMarks().find(s => s.date === date)
-    return { wd, date, n: d.getDate(), today: date === today, future: date > today, s: real || off, off: !!off }
+    const real = done.value.filter(s => s.date === date), off = offs.filter(s => s.date === date)
+    return { k, wd, date, n: d.getDate(), today: date === today, future: date > today, real, offs: off, s: real[0] || off[0], off: !real.length && !!off.length, both: !!real.length && !!off.length }
   })
 })
-const weekCount = computed(() => week.value.filter(d => d.s).length + done.value.filter(s => s.date >= week.value[0].date).length - week.value.filter(d => d.s && !d.off).length)
+const weekCount = computed(() => week.value.reduce((a, d) => a + d.real.length + d.offs.length, 0))
 const monthCount = computed(() => { const p = iso(new Date()).slice(0, 7); return done.value.filter(s => s.date.startsWith(p)).length })
 
 function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? ago(l.date) : 'jeszcze nie robiony' }
@@ -197,6 +210,7 @@ function start(day) { router.push('/plan/' + day) }
 
 .week { padding: 14px 12px; }
 .day.off .dot { opacity: .5; }
+.day.both .dot { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 3.5px color-mix(in srgb, var(--c) 45%, transparent); }
 .off-link { display: block; width: calc(100% - 40px); margin: 0 20px 12px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13.5px; color: var(--app-muted); }
 .off-link b { color: var(--accent); font-weight: 600; }
 .week-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px 12px; }

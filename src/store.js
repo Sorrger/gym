@@ -138,7 +138,8 @@ const dayN = d => Math.round(new Date(d + 'T12:00:00').getTime() / 864e5)
 const addDays = (d, n) => iso(new Date(new Date(d + 'T12:00:00').getTime() + n * 864e5))
 export function deloadState(today = iso(new Date())) {
   // an open workout counts too (a deload workout just started makes the week light; "Trenuj normalnie" postpones it)
-  const list = sorted().filter(s => hasData(s) || !s.finished).reverse() // oldest first
+  // trainings marked as done without the app count as training too (not a break)
+  const list = sorted().filter(s => hasData(s) || !s.finished || s.offApp).reverse() // oldest first
   if (!list.length) return { active: false, due: false, weeks: 0, left: DELOAD_EVERY }
   let block = list[0].date, dl = null, prev = null, skip = ''
   for (const s of list) {
@@ -246,11 +247,14 @@ export const suggestedDay = () => suggestion().day
 // "Zrobiłem poza apką": a plan done this week without logging it (e.g. before the app was installed).
 // Stored as an empty finished session { offApp: true } on that plan's scheduled day, so it syncs with the backup;
 // it has no sets, so it never shows in history or stats – it only stops the plan from being suggested as missed.
-export function markDoneOff(day, now = new Date()) {
-  const wd = (now.getDay() + 6) % 7
-  const js = +Object.keys(WEEKDAY_TO_DAY).find(k => WEEKDAY_TO_DAY[k] === day)
-  const back = js >= 0 ? Math.max(0, wd - ((js + 6) % 7)) : 0
-  const date = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - back))
+// date: the day it was done (picked by the user); default = the plan's scheduled day this week, or today if that's later.
+export function markDoneOff(day, date = null, now = new Date()) {
+  if (!date) {
+    const wd = (now.getDay() + 6) % 7
+    const js = +Object.keys(WEEKDAY_TO_DAY).find(k => WEEKDAY_TO_DAY[k] === day)
+    const back = js >= 0 ? Math.max(0, wd - ((js + 6) % 7)) : 0
+    date = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - back))
+  }
   const id = 'off' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
   state.sessions[id] = { id, date, day, ex: {}, started: 0, finished: true, updated: Date.now(), offApp: true }
   saveNow()

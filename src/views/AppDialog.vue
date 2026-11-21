@@ -10,6 +10,15 @@
             autocomplete="off" autocapitalize="off" spellcheck="false" />
           <input v-else-if="o.input" ref="inp" :inputmode="o.input.mode" class="dlg-in" v-model="dialog.value" :type="o.input.type || 'text'" :placeholder="o.input.placeholder"
             autocomplete="off" autocapitalize="off" spellcheck="false" @keyup.enter="closeDialog(main?.role || 'ok')" />
+          <div v-for="c in o.choices || []" :key="c.key" class="dlg-ch">
+            <span class="dlg-ch-l">{{ c.label }}</span>
+            <div class="dlg-chips">
+              <button v-for="op in c.options" :key="op.value" class="dlg-chip press" :class="{ on: dialog.picks[c.key] === op.value }"
+                :aria-pressed="dialog.picks[c.key] === op.value" @click="dialog.picks[c.key] = op.value">
+                <b>{{ op.label }}</b><small v-if="op.sub">{{ op.sub }}</small>
+              </button>
+            </div>
+          </div>
           <div class="dlg-btns">
             <button v-for="b in btns" :key="b.role" class="dlg-btn press" :class="b.kind || 'plain'" @click="closeDialog(b.role)">{{ b.text }}</button>
           </div>
@@ -47,6 +56,15 @@ p { margin: 8px 8px 0; color: var(--app-muted); font-size: 15px; line-height: 1.
 .dlg-in { width: 100%; margin-top: 16px; height: 48px; border: 0; border-radius: 14px; background: var(--app-field); color: inherit;
   padding: 0 14px; font: inherit; font-size: 16px; outline: none; }
 .dlg-in:focus { box-shadow: inset 0 0 0 2px var(--dc); }
+.dlg-ch { width: 100%; margin-top: 16px; text-align: left; }
+.dlg-ch-l { display: block; margin: 0 4px 6px; font-size: 13px; color: var(--app-muted); }
+.dlg-chips { display: flex; gap: 5px; }
+.dlg-chip { flex: 1 1 0; min-width: 0; min-height: 44px; padding: 5px 2px; border: 0; border-radius: 12px; background: var(--app-field); color: var(--ion-text-color);
+  font: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.15; }
+.dlg-chip b { font-size: 15px; font-weight: 600; }
+.dlg-chip small { font-size: 11.5px; color: var(--app-muted); }
+.dlg-chip.on { background: var(--dc); color: #fff; }
+.dlg-chip.on small { color: rgba(255, 255, 255, .8); }
 .dlg-btns { width: 100%; display: flex; flex-direction: column; gap: 8px; margin-top: 20px; }
 .dlg-btn { height: 52px; border: 0; border-radius: 16px; font: inherit; font-size: 17px; font-weight: 600; }
 .dlg-btn.primary { background: var(--dc); color: #fff; }
