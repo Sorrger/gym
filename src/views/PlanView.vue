@@ -21,7 +21,7 @@
           </div>
           <BodyMap class="hero-map" v-bind="dayMuscles(day)" />
         </div>
-        <p v-if="dl.active || dl.due" class="tip dl"><ion-icon :icon="trendingDown" /> Tydzień lżejszy (deload): połowa serii, ok. 10% lżej, zostaw 3-4 powtórzenia w zapasie. Apka sama ustawi ciężary.</p>
+        <div v-if="dl.active || dl.due" class="dl-box"><ion-icon :icon="trendingDown" /><div><b>Tydzień lżejszy (deload)</b><span>Połowa serii, ok. 10% lżej, zostaw 3-4 powtórzenia w zapasie. Apka sama ustawi ciężary.</span></div></div>
         <p v-if="plan.note" class="tip"><ion-icon :icon="informationCircle" /> {{ plan.note }}</p>
 
         <div class="card exs">
@@ -29,7 +29,7 @@
             <span class="n num">{{ i + 1 }}</span>
             <div class="ex-body">
               <b>{{ ex.name }}</b>
-              <span v-if="ex.stage" class="stage num">{{ ex.stage }}</span>
+              <span v-if="ex.stage" class="stage num">{{ ex.stage.t }}<small v-if="ex.stage.goal">Następny etap: {{ ex.stage.goal }}</small></span>
               <div v-for="g in ex.groups" :key="g.key" class="g">
                 <span class="tgt num">{{ g.label ? g.label + ': ' : '' }}{{ g.target }}</span>
                 <span class="last num" v-if="g.last">ostatnio {{ g.last }}</span>
@@ -51,7 +51,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, useIonRouter } from '@ionic/vue'
 import { chevronBack, statsChart, play, informationCircle, trendingDown } from 'ionicons/icons'
@@ -62,7 +62,9 @@ import { startPlan } from '../startFlow'
 import BodyMap from './BodyMap.vue'
 
 const route = useRoute(), router = useIonRouter()
-const day = computed(() => +route.params.day)
+// Ionic keeps this page alive under the next one: keep the last valid day
+const day = ref(+route.params.day)
+watch(() => route.params.day, d => { if (d != null && PLAN[+d]) day.value = +d })
 const plan = computed(() => PLAN[day.value] || null)
 const color = computed(() => (plan.value ? COLORS[plan.value.key] : 'var(--accent)'))
 const active = computed(() => { void state.sessions; return activeSession() })
@@ -82,7 +84,7 @@ function lastOf(g) {
 }
 const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], stage: e[3] === 'stages' ? stageText() : '', groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
 
-function stageText() { const n = stageOf(); const st = PULLUP_STAGES[n - 1]; return targetOf(['', '', '', 'stages']) + (st.goal ? ` – dalej, gdy: ${st.goal}` : '') }
+function stageText() { const st = PULLUP_STAGES[stageOf() - 1]; return { t: targetOf(['', '', '', 'stages']), goal: st.goal } }
 function goBack() { if (router.canGoBack()) router.back(); else router.navigate('/tabs/home', 'back', 'replace') }
 const go = () => startPlan(day.value, router)
 </script>
@@ -124,6 +126,10 @@ const go = () => startPlan(day.value, router)
 .go { width: 100%; height: 56px; border: 0; border-radius: 18px; background: var(--c); color: #fff; font: inherit; font-size: 18px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 35%, transparent); }
 .go ion-icon { font-size: 22px; }
-.stage { display: block; font-size: 12.5px; color: var(--c); font-weight: 600; margin: 1px 0 2px; }
-.tip.dl { color: #0a84ff; }
+.stage { display: block; font-size: 13px; color: var(--c); font-weight: 600; margin: 1px 0 2px; }
+.stage small { display: block; font-size: 12px; font-weight: 400; color: var(--app-muted); margin-top: 1px; }
+.dl-box { display: flex; gap: 12px; align-items: flex-start; margin: 0 16px 14px; padding: 12px 14px; border-radius: 16px; color: #0a84ff; background: color-mix(in srgb, #0a84ff 9%, var(--app-card)); }
+.dl-box ion-icon { font-size: 20px; padding: 7px; border-radius: 10px; flex: none; background: color-mix(in srgb, #0a84ff 16%, transparent); }
+.dl-box b { display: block; font-size: 15px; font-weight: 600; }
+.dl-box span { display: block; margin-top: 2px; font-size: 13.5px; line-height: 1.35; color: var(--app-muted); }
 </style>

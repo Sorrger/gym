@@ -283,7 +283,7 @@ async function showTip(list) {
   const multi = list.length > 1
   const main = list.find(x => x.sug.kind === 'stage') || list.find(x => x.sug.kind === 'up') || list.find(x => x.sug.kind === 'down') || list[0]
   const can = list.some(x => x.sug.sets)
-  const { role } = await ask({ icon: kindIcon(main.sug.kind), color: color.value,
+  const { role } = await ask({ icon: kindIcon(main.sug.kind), color: main.sug.kind === 'deload' ? '#0a84ff' : main.sug.kind === 'stage' ? '#ff9f0a' : color.value,
     title: multi ? (main.sug.kind === 'stage' || main.sug.kind === 'deload' ? main.sug.title : 'Podpowiedź na dziś') : main.sug.title,
     message: [...new Set(list.map(x => x.sug.note).filter(Boolean)), ...list.map(x => (multi ? x.g.label + ': ' : '') + x.sug.text)].join('\n\n'),
     buttons: can ? [{ text: multi ? 'Ustaw w seriach' : 'Ustaw: ' + main.sug.short, role: 'apply', kind: 'primary' }, { text: 'Zostaw jak jest', role: 'cancel' }]
@@ -309,7 +309,7 @@ function applyLive(g) {
 }
 function kindIcon(k) { return k === 'up' ? trendingUp : k === 'down' || k === 'deload' ? trendingDown : k === 'stage' ? trophyOutline : bulbOutline }
 async function deloadInfo() {
-  const { role } = await ask({ icon: trendingDown, color: color.value, title: 'Tydzień lżejszy (deload)',
+  const { role } = await ask({ icon: trendingDown, color: '#0a84ff', title: 'Tydzień lżejszy (deload)',
     message: 'Co kilka tygodni apka sama robi lżejszy tydzień: te same ćwiczenia, połowa serii, ok. 10% lżej i 3-4 powtórzenia w zapasie. Zmęczenie schodzi, stawy odpoczywają, a po nim wracasz do normalnych ciężarów – zwykle z nową siłą.',
     buttons: s.value.finished ? [{ text: 'OK', role: 'ok', kind: 'primary' }]
       : [{ text: 'OK', role: 'ok', kind: 'primary' }, { text: 'Dziś trenuj normalnie', role: 'normal', kind: 'soft' }] })
@@ -512,7 +512,7 @@ onUnmounted(closeTimer)
 const summary = ref(false)
 watch(() => [s.value?.id, idx.value, summary.value], () => {
   const sess = s.value
-  if (!sess || sess.finished || summary.value) return
+  if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout')) return
   const k = sess.id + ':' + idx.value
   if (tipsShown.has(k)) return
   tipsShown.add(k)
@@ -599,7 +599,7 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .warm-h { display: flex; align-items: center; gap: 6px; color: #ff9f0a; font-size: 14px; }
 .warm-h span { margin-left: auto; font-size: 11.5px; color: var(--app-muted); }
 .warm-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 14.5px; border-top: 0.5px solid var(--app-line); }
-.warm-row:first-of-type { border-top: 0; }
+.warm-h + .warm-row { border-top: 0; margin-top: 4px; }
 .warm-row span { color: var(--app-muted); font-size: 13px; }
 .warm-row.work b { color: var(--c); }
 .warm p { margin: 4px 0 0; font-size: 12px; color: var(--app-muted); }

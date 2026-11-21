@@ -33,7 +33,7 @@
           <div><small>Czas</small><b>{{ minutes ? minutes + ' min' : '–' }}</b></div>
           <div><small>Serie</small><b>{{ c.n }}<i>/{{ c.t }}</i></b></div>
           <div><small>Objętość</small><b>{{ vol ? fmtTon(vol) : '–' }}</b></div>
-          <div><small>Rekordy</small><b>{{ prN }}<i v-if="prN"> 🏆</i></b></div>
+          <div><small>Rekordy</small><b>{{ prN || '–' }}<i v-if="prN"> 🏆</i></b></div>
           <template v-if="sv">
             <div><small>Śr. tętno</small><b>{{ sv.hr ? Math.round(sv.hr) : '–' }}<i v-if="sv.hr"> bpm</i></b></div>
             <div><small>Max tętno</small><b>{{ sv.hrMax ? Math.round(sv.hrMax) : '–' }}<i v-if="sv.hrMax"> bpm</i></b></div>

@@ -2,13 +2,13 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button :default-href="'/progress/' + day" :text="plan.name" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button :default-href="'/progress/' + day" :text="plan?.name" /></ion-buttons>
         <ion-title>{{ plan?.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
     <ion-content v-if="plan" :fullscreen="true">
       <div class="hero" :style="{ '--c': color }">
-        <span class="badge">{{ plan.name }} · ćwiczenie {{ (entry?.ex ?? 0) + 1 }}</span>
+        <span class="badge">{{ plan?.name }} · ćwiczenie {{ (entry?.ex ?? 0) + 1 }}</span>
         <h1>{{ entry?.name }}<template v-if="entry?.label"> · {{ entry.label }}</template></h1>
         <p class="target">{{ target }}</p>
       </div>
@@ -23,7 +23,7 @@
       <div class="card chart-card">
         <div class="card-title">{{ UNITS[unit].best }}</div>
         <div v-show="pts.length" class="chart-wrap"><canvas ref="cv"></canvas></div>
-        <div v-if="!pts.length" class="empty">Jeszcze nie ma zapisów dla tego ćwiczenia.<br>Pojawią się po pierwszym treningu {{ plan.name }}.</div>
+        <div v-if="!pts.length" class="empty">Jeszcze nie ma zapisów dla tego ćwiczenia.<br>Pojawią się po pierwszym treningu {{ plan?.name }}.</div>
       </div>
 
       <div class="card" v-if="rows.length">
@@ -55,8 +55,10 @@ import { state, sorted, fmtKg, fmtDate, fmtShort } from '../store'
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip)
 
 const route = useRoute()
-const day = computed(() => +route.params.day)
-const i = computed(() => +route.params.i)
+// Ionic keeps this page alive under the next one: keep the last valid params, so it never renders with another route's params
+const day = ref(+route.params.day)
+const i = ref(+route.params.i)
+watch(() => [route.params.day, route.params.i], ([d, k]) => { if (d != null && k != null && PLAN[+d]) { day.value = +d; i.value = +k } })
 const plan = computed(() => PLAN[day.value])
 const entry = computed(() => (plan.value ? entriesOf(day.value, 'all')[i.value] : null))
 const name = computed(() => entry.value?.key)

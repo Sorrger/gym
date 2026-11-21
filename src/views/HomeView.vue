@@ -187,7 +187,9 @@ function start(day) { router.push('/plan/' + day) }
 .warn ion-icon { font-size: 26px; flex: none; }
 .warn b { display: block; font-size: 15px; font-weight: 600; }
 .warn span { display: block; font-size: 13px; color: var(--app-muted); }
-.dl-card { color: #0a84ff; }
+.dl-card { color: #0a84ff; background: color-mix(in srgb, #0a84ff 9%, var(--app-card)); align-items: flex-start; }
+.dl-card ion-icon { font-size: 20px; padding: 8px; border-radius: 11px; background: color-mix(in srgb, #0a84ff 16%, transparent); }
+.dl-card span { margin-top: 2px; line-height: 1.35; }
 
 /* in-progress workout: the most important thing on the screen */
 .live-card { display: block; width: calc(100% - 32px); margin: 0 16px 12px; padding: 16px 16px 14px; border: 0; border-radius: var(--r-lg); text-align: left;

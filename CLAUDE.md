@@ -56,6 +56,9 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - `src/theme.css` – design system: iOS look, violet accent `--accent`, plan colours only as identity, `.card`, `.stats`, `.ios-group`/`.row`, `.btn`, `.plan-ico`, large collapsing titles (ion-header collapse="condense").
 - `public/icon-*.png` – app icon (white biceps on violet gradient). Name "Gym" in vite.config.js manifest + index.html.
 
+- Ionic keeps pages alive under the next one, so a route-param page (PlanView, ExerciseView) keeps its last valid params in a ref (`watch(route.params…)`), and WorkoutView's tip dialog only fires on `/workout` – else hidden pages crash/pop dialogs with another route's params (found Nov 21 2026).
+- Look (Nov 21 2026 loops): deload = blue (#0a84ff) tinted cards on Home/PlanView and blue dialogs; new pull-up stage = orange; PlanView stage line + muted "Następny etap: …"; PlanProgress multi-part cards show the part big and the exercise name small above.
+
 ## Rules (data safety)
 - Never lose or overwrite workout data. If IndexedDB can't be read, `state.loadError` blocks all saves and uploads.
 - A phone with no workouts must never overwrite a gist that has workouts (cloud.js restores instead).

@@ -35,7 +35,7 @@
         <div class="list">
           <button v-for="(t, i) in tiles" :key="t.key" class="row-card press" :class="{ empty: !t.pts.length }" :style="{ '--c': COLORS[plan.key] }" @click="open(i)">
             <div class="rc-main">
-              <span class="rc-name">{{ t.name }}<template v-if="t.label"> · {{ t.label }}</template></span>
+              <span class="rc-name"><small v-if="t.label" class="rc-parent">{{ t.name }}</small>{{ t.label || t.name }}</span>
               <div class="rc-val num" v-if="t.pts.length">
                 <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
                 <span v-if="t.pr" class="pr" title="Nowy rekord">🏆</span>
@@ -163,4 +163,5 @@ function open(i) { router.push(`/exercise/${day.value}/${i}`) }
 .spark .line { fill: none; stroke: var(--c); stroke-width: 2.4; vector-effect: non-scaling-stroke; stroke-linejoin: round; stroke-linecap: round; }
 .spark .area { fill: color-mix(in srgb, var(--c) 16%, transparent); stroke: none; }
 .spark .end { fill: var(--c); stroke: var(--app-card); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.rc-parent { display: block; font-size: 12px; font-weight: 500; color: var(--app-muted); margin-bottom: 1px; }
 </style>
