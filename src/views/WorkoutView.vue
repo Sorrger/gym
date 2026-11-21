@@ -72,6 +72,12 @@
                     <button class="check" @click="toggle(g, si)" :aria-pressed="x.d" aria-label="Seria zrobiona">
                       <ion-icon :icon="checkmark" />
                     </button>
+                    <!-- reps in reserve: optional, shown once the set is ticked; the coach uses it -->
+                    <div v-if="x.d && g.unit !== 's'" class="rir">
+                      <span>Zapas</span>
+                      <button v-for="q in [0, 1, 2, 3]" :key="q" class="rir-b num press" :class="{ on: x.q === q }"
+                        @click="setRir(g, si, q)" :aria-label="'Zostało ' + q + (q === 3 ? ' lub więcej' : '') + ' powtórzeń do upadku'">{{ q === 3 ? '3+' : q }}</button>
+                    </div>
                   </div>
                 </div>
                 <button v-if="g.unit === 's'" class="timer-btn" @click="openTimer(g)">
@@ -281,13 +287,26 @@ function lastText(g) {
 
 function toggle(g, si) {
   const x = sets(g.key)[si]
-  x.d = !x.d; touch()
-  // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine)
-  if (x.d && isComplete(idx.value)) {
-    const at = idx.value, n = plan.value.ex.length
-    const to = [...Array(n - 1)].map((_, k) => (at + 1 + k) % n).find(i => !isComplete(i))
-    if (to != null) setTimeout(() => { if (idx.value === at && !summary.value && isComplete(at)) go(to) }, 650)
-  }
+  x.d = !x.d
+  if (!x.d) delete x.q
+  touch()
+  // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine);
+  // when the reps-in-reserve chips are shown, give time to tap one first (jumps right after the tap, or after 5 s)
+  if (x.d) autoNext(g.unit !== 's' ? 5000 : 650)
+}
+let nextT = 0
+function autoNext(ms) {
+  clearTimeout(nextT)
+  if (!isComplete(idx.value)) return
+  const at = idx.value, n = plan.value.ex.length
+  const to = [...Array(n - 1)].map((_, k) => (at + 1 + k) % n).find(i => !isComplete(i))
+  if (to != null) nextT = setTimeout(() => { if (idx.value === at && !summary.value && isComplete(at)) go(to) }, ms)
+}
+function setRir(g, si, q) {
+  const x = sets(g.key)[si]
+  if (x.q === q) delete x.q; else x.q = q
+  touch()
+  if (x.q != null) autoNext(600)
 }
 function step(g, si, dirn) {
   const a = sets(g.key), x = a[si], u = UNITS[g.unit]
@@ -606,6 +625,11 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .check:active { transform: scale(.9); }
 .set.d .check { background: var(--c); border-color: var(--c); color: #fff; }
 .set.d .weight b { color: var(--c); }
+.rir { grid-column: 2 / 4; display: flex; align-items: center; gap: 6px; margin-top: -2px; }
+.rir span { font-size: 12.5px; color: var(--app-muted); font-weight: 600; margin-right: 2px; }
+.rir-b { flex: 1; max-width: 56px; height: 30px; border-radius: 9px; border: 0; font: inherit; font-size: 14px; font-weight: 700;
+  background: color-mix(in srgb, var(--c) 10%, var(--app-card)); color: var(--ion-text-color); }
+.rir-b.on { background: var(--c); color: #fff; }
 .ex-foot { display: flex; gap: 18px; align-items: center; padding: 10px 6px 0; flex: none; }
 .link { border: 0; background: none; color: var(--c); font-size: 15px; font-weight: 600; padding: 4px 0; display: inline-flex; align-items: center; gap: 3px; }
 .link.muted { color: var(--app-muted); }

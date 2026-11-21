@@ -2,10 +2,15 @@
 // • every planned set reached the top (8) at the same weight → add weight, start again at the bottom (6)
 // • otherwise stay on the weight and beat last time by 1 rep per set (up to the top)
 // • two workouts in a row below the bottom of the range at that weight → go ~10 % lighter and build back up
+// Optional reps in reserve per set (x.q: 0, 1, 2, 3 = "3+") refine it:
+// • every set with 3+ left → too light: add weight now, even below the top of the range
+// • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
 import { UNITS, INC, ASSISTED, HARDER, rangeOf, fmtNum } from './plan'
 import { sorted } from './store'
 
 const roundTo = (v, st) => Math.round(v / st) * st
+const gain = q => (q == null ? 1 : q >= 3 ? 2 : q >= 1 ? 1 : 0)
+const qTxt = sets => (sets.some(x => x.q != null) ? ` (zapas ${sets.map(x => (x.q == null ? '?' : x.q >= 3 ? '3+' : x.q)).join(', ')})` : '')
 const repsWord = n => (n === 1 ? 'powtórzenie' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'powtórzenia' : 'powtórzeń')
 
 // done sets of this exercise in earlier workouts, newest first
@@ -32,15 +37,19 @@ export function suggest(g, session) {
   if (g.unit !== 'kg') {
     const unit = UNITS[g.unit].short, plus = g.unit === 's' ? 5 : 1
     const vals = last.map(x => x.w)
-    const top = vals.length >= n && vals.every(v => v >= hi)
+    const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= 3)
+    const top = vals.length >= n && (vals.every(v => v >= hi) || easy)
     if (top) {
       const how = HARDER[g.key] || HARDER[g.name]
       return { kind: 'up', title: 'Masz cały zakres! 💪', short: how ? 'Utrudnij' : `${hi} ${unit}`,
-        text: `Ostatnio: ${vals.join(', ')} ${unit} – wszystkie serie na górze zakresu (${lo}-${hi}).` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
+        text: `Ostatnio: ${vals.join(', ')} ${unit}${qTxt(last)} – ${easy && !vals.every(v => v >= hi) ? 'za łatwo, w każdej serii zostało 3+' : `wszystkie serie na górze zakresu (${lo}-${hi})`}.` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
     }
-    const target = Array.from({ length: n }, (_, i) => Math.min(hi, Math.max(lo, (vals[i] ?? vals[vals.length - 1]) + plus)))
+    const target = Array.from({ length: n }, (_, i) => {
+      const v = vals[i] ?? vals[vals.length - 1], q = g.unit === 's' ? null : (last[i] ?? last[last.length - 1]).q
+      return Math.min(hi, Math.max(lo, v + (g.unit === 's' ? plus : gain(q))))
+    })
     return { kind: 'same', title: 'Więcej niż ostatnio', short: target.join(', ') + ' ' + unit,
-      text: `Ostatnio: ${vals.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'} Dziś celuj w ${target.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}`, sets: target.map(w => ({ w })) }
+      text: `Ostatnio: ${vals.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}${qTxt(last)} Dziś celuj w ${target.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}`, sets: target.map(w => ({ w })) }
   }
 
   const inc = INC[g.name] || 2.5, assist = ASSISTED.has(g.name)
@@ -53,14 +62,15 @@ export function suggest(g, session) {
       sets: Array.from({ length: n }, () => ({ w: W, r: lo })) }
   }
   const reps = work.map(x => x.r ?? lo)
-  const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}`
-  const top = work.length >= n && reps.every(r => r >= hi)
+  const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}${qTxt(work)}`
+  const easy = work.length >= n && work.every(x => x.q != null && x.q >= 3)
+  const top = work.length >= n && (reps.every(r => r >= hi) || easy)
   if (top) {
     // way above the range (every set 3+ reps over the top) → a double step, otherwise one step
     const step = reps.every(r => r >= hi + 3) ? 2 * inc : inc
     const w = Math.max(0, W + (assist ? -step : step))
     return { kind: 'up', title: assist ? 'Mniej wspomagania 💪' : 'Dodaj ciężar 💪', short: `${fmtNum(w)} kg × ${lo}`,
-      text: `Ostatnio ${lastTxt} – wszystkie serie na górze zakresu (${lo}-${hi}). Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
+      text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? 'za lekko, w każdej serii zostało 3+ powtórzenia' : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
   // stuck: two workouts in a row at this weight with a set under the bottom of the range AND no more total reps
@@ -75,7 +85,10 @@ export function suggest(g, session) {
       text: `Dwa treningi z rzędu poniżej ${lo} powtórzeń na ${fmtNum(W)} kg. Zejdź na ${fmtNum(w)} kg, zrób ${lo}-${hi} czysto i buduj od nowa.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
-  const target = Array.from({ length: n }, (_, i) => Math.min(hi, Math.max(lo, (reps[i] ?? reps[reps.length - 1]) + 1)))
+  const target = Array.from({ length: n }, (_, i) => {
+    const x = work[i] ?? work[work.length - 1]
+    return Math.min(hi, Math.max(lo, (x.r ?? lo) + gain(x.q)))
+  })
   const left = hi * n - target.reduce((a, b) => a + b, 0)
   return { kind: 'same', title: 'Ten sam ciężar, więcej powtórzeń', short: `${fmtNum(W)} kg × ${target.join(', ')}`,
     text: `Ostatnio ${lastTxt}. Zostań na ${fmtNum(W)} kg i zrób ${target.join(', ')}. ` +

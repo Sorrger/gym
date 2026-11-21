@@ -141,7 +141,8 @@ const muscles = computed(() => {
   main.forEach(x => help.delete(x))
   return { main: [...main], help: [...help] }
 })
-const setText = (x, unit) => (x.w == null ? '✓' : unit === 'kg' ? fmtNum(x.w) + ' × ' + (x.r ?? '–') : fmtNum(x.w) + ' ' + UNITS[unit].short)
+const setText = (x, unit) => (x.w == null ? '✓' : unit === 'kg' ? fmtNum(x.w) + ' × ' + (x.r ?? '–') : fmtNum(x.w) + ' ' + UNITS[unit].short) +
+  (x.q != null ? ' · zapas ' + (x.q >= 3 ? '3+' : x.q) : '')
 
 function edit() { router.push('/workout/' + s.value.id) }
 const ionRouter = useIonRouter()
