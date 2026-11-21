@@ -1,1 +1,0 @@
-import{ln as e}from"./store-BCPtVgwg.js";var t=e({open:!1,opts:null,value:``,_res:null});function n(e){return t._res&&t._res({role:`cancel`}),t.opts=e,t.value=e.input?.value||``,t.open=!0,new Promise(e=>{t._res=e})}function r(e){let n=t._res;t._res=null,t.open=!1,n?.({role:e,value:t.value.trim()})}export{r as n,t as r,n as t};

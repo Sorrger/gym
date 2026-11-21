@@ -2,11 +2,11 @@ export const PLAN = [
   { key: 'push', abbr: 'Pu', short: 'Pn', name: 'Push', note: 'Najpierw najcięższe wyciskanie.', ex: [
     ['Wyciskanie sztangi na ławce płaskiej', '3 × 6-8'], ['Wyciskanie hantli na ławce skośnej', '3 × 8-10'], ['Rozpiętki na bramie', '3 × 10-15'],
     ['Unoszenie hantli bokiem', '4 × 10-15'], ['Wyciskanie francuskie leżąc', '3 × 8-10'], ['Prostowanie ramion na wyciągu nad głową', '3 × 10-12']] },
-  { key: 'pull', abbr: 'Pl', short: 'Wt', name: 'Pull', note: 'Ściąganie drążka zaraz po negatywach. Wolny ciężar przed T-barem. Młotki od razu po uginaniu na skosie.', ex: [
+  { key: 'pull', abbr: 'Pl', short: 'Wt', name: 'Pull', note: 'Najpierw wolne ciężary (hantel, T-bar), ściąganie drążka po nich. Młotki od razu po uginaniu na skosie.', ex: [
     ['Nauka podciągania', 'Wiszenie + negatywy', null, [
       { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
-      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Ściąganie drążka szerokim chwytem', '3 × 8-10'], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
-    ['Wiosłowanie sztangą T (T-bar)', '3 × 8-10'], ['Face pull na wyciągu', '3 × 12-15'], ['Uginanie ramion z hantlami na ławce skośnej', '3 × 8-12'], ['Uginanie ramion z hantlami chwytem młotkowym', '2 × 10-12'],
+      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
+    ['Wiosłowanie sztangą T (T-bar)', '3 × 8-10'], ['Ściąganie drążka szerokim chwytem', '3 × 8-10'], ['Face pull na wyciągu', '3 × 12-15'], ['Uginanie ramion z hantlami na ławce skośnej', '3 × 8-12'], ['Uginanie ramion z hantlami chwytem młotkowym', '2 × 10-12'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
   { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: 'Najpierw przysiad Zerchera – najcięższy, na świeżo.', ex: [
     ['Przysiad Zerchera', '3 × 6-8'], ['Martwy ciąg rumuński', '3 × 8-10'], ['Prostowanie nóg na maszynie', '3 × 10-12'],
