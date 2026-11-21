@@ -37,7 +37,7 @@ export function suggest(g, session) {
   if (g.unit !== 'kg') {
     const unit = UNITS[g.unit].short, plus = g.unit === 's' ? 5 : 1
     const vals = last.map(x => x.w)
-    const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= 3)
+    const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= 3 && x.w >= lo)
     const top = vals.length >= n && (vals.every(v => v >= hi) || easy)
     if (top) {
       const how = HARDER[g.key] || HARDER[g.name]
@@ -63,7 +63,7 @@ export function suggest(g, session) {
   }
   const reps = work.map(x => x.r ?? lo)
   const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}${qTxt(work)}`
-  const easy = work.length >= n && work.every(x => x.q != null && x.q >= 3)
+  const easy = work.length >= n && work.every(x => x.q != null && x.q >= 3 && (x.r ?? 0) >= lo) // 3+ left in every set, at least the bottom of the range
   const top = work.length >= n && (reps.every(r => r >= hi) || easy)
   if (top) {
     // way above the range (every set 3+ reps over the top) → a double step, otherwise one step
