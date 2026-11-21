@@ -1,6 +1,6 @@
 export const PLAN = [
-  { key: 'push', abbr: 'Pu', short: 'Pn', name: 'Push', note: 'Najpierw najcięższe wyciskanie.', ex: [
-    ['Wyciskanie sztangi na ławce płaskiej', '3 × 6-8'], ['Wyciskanie hantli na ławce skośnej', '3 × 8-10'], ['Rozpiętki na bramie', '3 × 10-15'],
+  { key: 'push', abbr: 'Pu', short: 'Pn', name: 'Push', note: 'Najpierw najcięższe wyciskanie. Rozpiętki z dołu do góry: wyciągi nisko, ręce łukiem do wysokości brody – góra klatki.', ex: [
+    ['Wyciskanie sztangi na ławce płaskiej', '3 × 6-8'], ['Wyciskanie hantli na ławce skośnej', '4 × 8-10'], ['Rozpiętki na bramie z dołu do góry', '3 × 10-15'],
     ['Unoszenie hantli bokiem', '4 × 10-15'], ['Wyciskanie francuskie leżąc', '3 × 8-10'], ['Prostowanie ramion na wyciągu nad głową', '3 × 10-12']] },
   { key: 'pull', abbr: 'Pl', short: 'Wt', name: 'Pull', note: 'Najpierw hantel (wolny ciężar), potem wyciągi. Wiosłowanie na wyciągu: szeroki drążek nachwytem, łokcie ok. 45–60° od tułowia, ściągaj łopatki – góra pleców. Młotki od razu po uginaniu na skosie.', ex: [
     ['Nauka podciągania', 'Wiszenie + negatywy', null, [
@@ -17,7 +17,7 @@ export const PLAN = [
     ['Nauka podciągania', 'Wiszenie + negatywy', 'Plecy', [
       { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
       { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wyciskanie sztangi siedząc z oparciem', '3 × 6-8', 'Barki'],
-    ['Seal row – wiosłowanie leżąc na ławce', '3 × 8-10', 'Plecy'], ['Wyciskanie na skosie na Smithie', '3 × 8-10', 'Klatka'],
+    ['Seal row – wiosłowanie leżąc na ławce', '3 × 8-10', 'Plecy'], ['Wyciskanie na skosie na Smithie', '4 × 8-10', 'Klatka'],
     ['Ściąganie drążka szerokim chwytem', '3 × 8-10', 'Plecy'], ['Rozpiętki na maszynie (butterfly)', '3 × 10-15', 'Klatka'],
     ['Odwrotne rozpiętki na maszynie (reverse butterfly)', '3 × 12-15', 'Tył barków'], ['Unoszenie ramienia bokiem na wyciągu', '3 × 10-15 / stronę', 'Boki barków']] }
 ]

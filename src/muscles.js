@@ -6,6 +6,8 @@ import { PLAN } from './plan.js'
 export const MUSCLES = {
   'Wyciskanie sztangi na ławce płaskiej': [['chest'], ['shoulders', 'triceps']],
   'Wyciskanie hantli na ławce skośnej': [['chest'], ['shoulders', 'triceps']],
+  'Rozpiętki na bramie z dołu do góry': [['chest'], ['shoulders']],
+  // replaced on Push by the low-to-high version (Nov 2026) – kept so old workouts still count
   'Rozpiętki na bramie': [['chest'], ['shoulders']],
   'Unoszenie hantli bokiem': [['shoulders'], ['traps', 'reardelts']],
   'Unoszenie ramienia bokiem na wyciągu': [['shoulders'], ['traps']],

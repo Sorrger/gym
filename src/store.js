@@ -94,7 +94,8 @@ export function startSession(day) {
     // values: newest earlier workout where this exercise had any value entered (skip empty ones)
     const prev = sorted().find(o => (o.ex?.[g.key] || []).some(x => x.w != null))?.ex[g.key]
     const lastAny = sorted().find(o => (o.ex?.[g.key] || []).some(x => x.d))?.ex[g.key]
-    const n = lastAny ? Math.max(1, lastAny.length) : prev ? Math.max(1, prev.length) : g.sets
+    // at least the planned number of sets (so a set added to the plan shows up), more if done last time
+    const n = Math.max(g.sets || 1, lastAny ? lastAny.length : prev ? prev.length : 0)
     s.ex[g.key] = Array.from({ length: n }, (_, i) => {
       const w = prev ? (prev[i]?.w ?? [...prev].reverse().find(x => x.w != null)?.w ?? null) : null
       if (g.unit !== 'kg') return { w, d: false }
