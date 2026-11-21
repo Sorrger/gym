@@ -87,7 +87,7 @@ const tiles = computed(() => {
     const ws = pts.map(p => p.w)
     const prevBest = ws.length > 1 ? (ASS.has(g) ? Math.min(...ws.slice(0, -1)) : Math.max(...ws.slice(0, -1))) : null
     const t = { ...g, pts, pr: prevBest != null && (ASS.has(g) ? ws[ws.length - 1] < prevBest : ws[ws.length - 1] > prevBest), status: now.has(g.key) ? statusOf(g) : { kind: 'up', text: '✓ Etap zaliczony' },
-      last: ws[ws.length - 1], lastR: pts.length ? pts[pts.length - 1].r : null, best: ws.length ? Math.max(...ws) : null, diff: ws.length ? ws[ws.length - 1] - ws[0] : 0 }
+      last: ws[ws.length - 1], lastR: pts.length ? pts[pts.length - 1].r : null, best: ws.length ? (ASS.has(g) ? Math.min(...ws) : Math.max(...ws)) : null, diff: ws.length ? ws[ws.length - 1] - ws[0] : 0 }
     if (pts.length > 1) {
       const lo = Math.min(...ws), hi = Math.max(...ws), span = hi - lo || 1
       const xy = ws.map((w, i) => [i * 100 / (ws.length - 1), 28 - ((w - lo) / span) * 24])

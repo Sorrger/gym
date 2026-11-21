@@ -8,7 +8,8 @@ const daysAgoIso = n => { const d = new Date(Date.now() - n * 864e5); return d.g
 
 // kg × reps of one workout (only kg exercises)
 export function volumeOf(s) {
-  const kg = new Set(entriesOf(s.day, s).filter(g => g.unit === 'kg').map(g => g.key))
+  // assisted machine kg is help, not load → not volume
+  const kg = new Set(entriesOf(s.day, s).filter(g => g.unit === 'kg' && !isAssisted(g)).map(g => g.key))
   let v = 0
   for (const [k, arr] of Object.entries(s.ex || {})) if (kg.has(k)) for (const x of arr) if (x.d && x.w != null) v += x.w * (x.r || 0)
   return Math.round(v)

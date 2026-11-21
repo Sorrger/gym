@@ -89,7 +89,9 @@ export function lastFor(name, session) {
 // values a new set list starts with: from the newest earlier workout with a value (deload workouts don't count,
 // so after the light week the old numbers come back)
 function prefill(g, n, deload, self = null) {
-  const prev = sorted().find(o => o.id !== self && !o.deload && (o.ex?.[g.key] || []).some(x => x.w != null))?.ex[g.key]
+  const find = key => sorted().find(o => o.id !== self && !o.deload && (o.ex?.[key] || []).some(x => x.w != null))?.ex[key]
+  // first time on the assisted machine in pull-up stage 2: start from the old assisted pull-up numbers, if any
+  const prev = find(g.key) || (g.key === 'Nauka podciągania · Ze wspomaganiem' ? find('Podciąganie nachwytem (wspomagane)') : null)
   const lo = rangeOf(g.target)?.lo
   return Array.from({ length: n }, (_, i) => {
     let w = prev ? (prev[i]?.w ?? [...prev].reverse().find(x => x.w != null)?.w ?? null) : null
@@ -245,7 +247,7 @@ export function series(name) {
   return sorted().slice().reverse().map(s => {
     const done = (s.ex?.[name] || []).filter(x => x.d && x.w != null)
     if (!done.length) return null
-    const w = Math.max(...done.map(x => x.w))
+    const w = isAssisted({ key: name, name: name.split(' · ')[0] }) ? Math.min(...done.map(x => x.w)) : Math.max(...done.map(x => x.w))
     const r = Math.max(0, ...done.filter(x => x.w === w).map(x => x.r || 0)) || null // reps of the heaviest set (kg exercises)
     return { id: s.id, date: s.date, w, r }
   }).filter(Boolean)

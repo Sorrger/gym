@@ -485,6 +485,8 @@ watch(() => [s.value?.id, idx.value, summary.value], () => {
   if (tipsShown.has(k)) return
   tipsShown.add(k)
   if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) return
+  // light week: the numbers are already set, so explain it once per workout (the chip stays on every exercise)
+  if (sess.deload && sugList().every(x => x.sug.kind === 'deload')) { if (tipsShown.has(sess.id + ':dl')) return; tipsShown.add(sess.id + ':dl') }
   const list = sugList()
   if (list.length) setTimeout(() => { if (s.value?.id === sess.id && idx.value === +k.split(':')[1]) showTip(list) }, 450)
 }, { immediate: true })

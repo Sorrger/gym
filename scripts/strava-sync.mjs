@@ -4,7 +4,7 @@
 // 3. pulls recent strength activities (heart rate, kcal, time), matches them to workouts by time
 // 4. writes the exercise list into the Strava activity description
 // 5. saves everything to strava.json in the gist; the app shows it
-import { PLAN, groupsOf, UNITS, migrateNames, PULLUP, PULLUP_STAGES } from '../src/plan.js'
+import { PLAN, groupsOf, UNITS, migrateNames, PULLUP, PULLUP_STAGES, isAssisted } from '../src/plan.js'
 import { musclesOf, MUSCLE_NAMES } from '../src/muscles.js'
 const { GIST_TOKEN, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET } = process.env
 if (!GIST_TOKEN || !STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET) { console.log('Strava secrets not set – nothing to do'); process.exit(0) }
@@ -77,11 +77,12 @@ function describe(s, all = []) {
     const done = (s.ex?.[g.key] || []).filter(x => x.d)
     if (!done.length) continue
     n += done.length
-    if (g.unit === 'kg') done.forEach(x => { if (x.w != null) vol += x.w * (x.r ?? 6) })
+    const as = isAssisted(g)
+    if (g.unit === 'kg' && !as) done.forEach(x => { if (x.w != null) vol += x.w * (x.r ?? 6) })
     musclesOf(g.name).main.forEach(x => main.add(x))
     const best = Math.max(...done.filter(x => x.w != null).map(x => x.w), -Infinity)
     const prev = Math.max(...earlier.flatMap(o => (o.ex?.[g.key] || []).filter(x => x.d && x.w != null).map(x => x.w)), -Infinity)
-    if (best > -Infinity && prev > -Infinity && best > prev && !g.name.includes('wspomagane')) prs.push(`${g.label ? g.name + ' (' + g.label.toLowerCase() + ')' : g.name} ${fmt(best)} ${UNITS[g.unit].short}`)
+    if (best > -Infinity && prev > -Infinity && best > prev && !as) prs.push(`${g.label ? g.name + ' (' + g.label.toLowerCase() + ')' : g.name} ${fmt(best)} ${UNITS[g.unit].short}`)
     if (!blocks.has(g.name)) blocks.set(g.name, [])
     blocks.get(g.name).push((g.label ? g.label.toLowerCase() + ': ' : '') + setsText(done, g.unit))
   }
