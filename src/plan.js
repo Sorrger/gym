@@ -2,15 +2,15 @@ export const PLAN = [
   { key: 'push', abbr: 'Pu', short: 'Pn', name: 'Push', note: 'Najpierw najcięższe wyciskanie.', ex: [
     ['Wyciskanie sztangi na ławce płaskiej', '3 × 6-8'], ['Wyciskanie hantli na ławce skośnej', '3 × 8-10'], ['Rozpiętki na bramie', '3 × 10-15'],
     ['Unoszenie hantli bokiem', '4 × 10-15'], ['Wyciskanie francuskie leżąc', '3 × 8-10'], ['Prostowanie ramion na wyciągu nad głową', '3 × 10-12']] },
-  { key: 'pull', abbr: 'Pl', short: 'Wt', name: 'Pull', note: 'Wolny ciężar przed T-barem.', ex: [
+  { key: 'pull', abbr: 'Pl', short: 'Wt', name: 'Pull', note: 'Ściąganie drążka zaraz po negatywach. Wolny ciężar przed T-barem. Młotki od razu po uginaniu na skosie.', ex: [
     ['Nauka podciągania', 'Wiszenie + negatywy', null, [
       { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
-      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
-    ['Wiosłowanie sztangą T (T-bar)', '3 × 8-10'], ['Face pull na wyciągu', '3 × 12-15'], ['Uginanie ramion z hantlami na ławce skośnej', '3 × 8-12'],
+      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Ściąganie drążka szerokim chwytem', '3 × 8-10'], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
+    ['Wiosłowanie sztangą T (T-bar)', '3 × 8-10'], ['Face pull na wyciągu', '3 × 12-15'], ['Uginanie ramion z hantlami na ławce skośnej', '3 × 8-12'], ['Uginanie ramion z hantlami chwytem młotkowym', '2 × 10-12'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
   { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: 'Najpierw przysiad Zerchera – najcięższy, na świeżo.', ex: [
     ['Przysiad Zerchera', '3 × 6-8'], ['Martwy ciąg rumuński', '3 × 8-10'], ['Prostowanie nóg na maszynie', '3 × 10-12'],
-    ['Uginanie nóg na maszynie', '3 × 10-12'], ['Wspięcia na palce siedząc', '4 × 12-15'],
+    ['Uginanie nóg siedząc na maszynie', '3 × 10-12'], ['Wspięcia na palce stojąc', '2 × 12-15'], ['Wspięcia na palce siedząc', '2 × 12-15'],
     ['Pallof press na wyciągu', '3 × 10-12 / stronę, 2 s pauza'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
   { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6. Odwrotne rozpiętki zaraz po butterfly – ta sama maszyna. Na koniec unoszenie bokiem na wyciągu.', ex: [
@@ -44,7 +44,7 @@ export function rangeOf(target) {
 export const INC = {
   'Martwy ciąg rumuński': 5,
   'Wyciskanie hantli na ławce skośnej': 2, 'Wiosłowanie hantlem jednorącz z podparciem': 2,
-  'Unoszenie hantli bokiem': 1, 'Unoszenie ramienia bokiem na wyciągu': 1.25, 'Uginanie ramion z hantlami na ławce skośnej': 1
+  'Unoszenie hantli bokiem': 1, 'Unoszenie ramienia bokiem na wyciągu': 1.25, 'Uginanie ramion z hantlami na ławce skośnej': 1, 'Uginanie ramion z hantlami chwytem młotkowym': 1
 }
 // machines where the kg number is help (less = harder)
 export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)'])
@@ -85,7 +85,8 @@ export const RENAMED = {
   'Rumuński martwy ciąg': 'Martwy ciąg rumuński',
   'Przysiad Zercher': 'Przysiad Zerchera',
   'Prostowanie nóg (maszyna)': 'Prostowanie nóg na maszynie',
-  'Uginanie nóg (maszyna)': 'Uginanie nóg na maszynie',
+  'Uginanie nóg (maszyna)': 'Uginanie nóg siedząc na maszynie',
+  'Uginanie nóg na maszynie': 'Uginanie nóg siedząc na maszynie',
   'Łydki siedząc (maszyna)': 'Wspięcia na palce siedząc',
   'Pallof press (wyciąg, bokiem)': 'Pallof press na wyciągu',
   'Wyciskanie sztangi nad głowę': 'Wyciskanie sztangi siedząc z oparciem',

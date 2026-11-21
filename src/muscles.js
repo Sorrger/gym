@@ -21,7 +21,9 @@ export const MUSCLES = {
   'Martwy ciąg rumuński': [['hamstrings', 'glutes'], ['lowerback', 'forearms']],
   'Przysiad Zerchera': [['quads', 'glutes'], ['abs', 'upperback', 'lowerback', 'biceps']],
   'Prostowanie nóg na maszynie': [['quads'], []],
-  'Uginanie nóg na maszynie': [['hamstrings'], ['calves']],
+  'Uginanie nóg siedząc na maszynie': [['hamstrings'], ['calves']],
+  'Wspięcia na palce stojąc': [['calves'], []],
+  'Uginanie ramion z hantlami chwytem młotkowym': [['biceps', 'forearms'], []],
   'Wspięcia na palce siedząc': [['calves'], []],
 
   'Podciąganie nachwytem (wspomagane)': [['lats'], ['biceps', 'upperback']],
