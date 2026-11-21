@@ -22,7 +22,10 @@ export function prEvents(day = null, days = null) {
   const cut = days ? daysAgoIso(days) : ''
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
+  const seen = new Set() // an exercise in two plans (e.g. pull-up learning) shares one history: count it once
   for (const d of plans) for (const g of entriesOf(d, 'all')) {
+    if (seen.has(g.key)) continue
+    seen.add(g.key)
     const as = isAssisted(g)
     let best = null
     for (const p of series(g.key)) {
@@ -38,7 +41,10 @@ export function prCount(day = null, days = 30) {
   const cut = daysAgoIso(days)
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
+  const seen = new Set()
   for (const d of plans) for (const g of entriesOf(d, 'all')) {
+    if (seen.has(g.key)) continue
+    seen.add(g.key)
     const pts = series(g.key), old = pts.filter(p => p.date < cut), rec = pts.filter(p => p.date >= cut)
     if (!old.length || !rec.length) continue
     const as = isAssisted(g)
@@ -98,6 +104,51 @@ export function planSummary(day) {
     sbars: idx.map(v => Math.round(30 + (v - lo) / (hi2 - lo) * 70)),
     volDiff: n > 1 && vols[n - 2] ? Math.round((vols[n - 1] / vols[n - 2] - 1) * 100) : null,
     bars: vols.map(v => Math.max(6, Math.round(v / hi * 100))) }
+}
+
+// newest records (all plans): [{ key, name, label, unit, w, r, prev, date, day, i }] – i = index in entriesOf(day, 'all')
+export function recentPRs(limit = 5, days = null) {
+  const cut = days ? daysAgoIso(days) : '', out = [], seen = new Set()
+  PLAN.forEach((_, d) => entriesOf(d, 'all').forEach((g, i) => {
+    if (seen.has(g.key)) return
+    seen.add(g.key)
+    const as = isAssisted(g)
+    let best = null
+    for (const p of series(g.key)) {
+      const better = best != null && (as ? p.w < best : p.w > best)
+      if (better && p.date >= cut) out.push({ key: g.key, name: g.name, label: g.label, unit: g.unit, w: p.w, r: p.r, prev: best, date: p.date, day: d, i, as })
+      if (best == null || better) best = p.w
+    }
+  }))
+  return out.sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit)
+}
+// workouts per week (Mon–Sun), oldest first, last n weeks incl. this one; marks "done without the app" count too
+export function weekly(n = 8) {
+  const now = new Date(), mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7))
+  const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+  const all = sorted().filter(s => ticked(s) || s.offApp)
+  return Array.from({ length: n }, (_, k) => {
+    const a = new Date(mon); a.setDate(mon.getDate() - (n - 1 - k) * 7)
+    const b = new Date(a); b.setDate(a.getDate() + 7)
+    const from = iso(a), to = iso(b)
+    return { from, n: all.filter(s => s.date >= from && s.date < to).length, label: a.getDate() + '.' + String(a.getMonth() + 1).padStart(2, '0'), now: k === n - 1 }
+  })
+}
+// overall strength trend: every workout (all plans) vs each exercise's first workout, averaged over the last 4 workouts
+export function strengthTrend(max = 16) {
+  const first = {}, per = []
+  for (const s of sorted().filter(s => ticked(s) && !s.deload).reverse()) {
+    const rel = []
+    for (const g of entriesOf(s.day, s)) {
+      const v = bestValue(g, s.ex?.[g.key])
+      if (v == null) continue
+      if (first[g.key] == null) first[g.key] = v
+      rel.push(isAssisted(g) ? (v > 0 ? first[g.key] / v : 1) : (first[g.key] > 0 ? v / first[g.key] : 1))
+    }
+    if (rel.length) per.push(rel.reduce((a, b) => a + b, 0) / rel.length * 100)
+  }
+  const roll = per.map((_, i) => { const w = per.slice(Math.max(0, i - 3), i + 1); return w.reduce((a, b) => a + b, 0) / w.length })
+  return roll.slice(-max)
 }
 
 // last 4 weeks, all plans

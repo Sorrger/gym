@@ -13,13 +13,59 @@
           <ion-segment-button value="all"><ion-label>Całość</ion-label></ion-segment-button>
         </ion-segment>
 
-        <!-- all plans together -->
-        <div class="card stats4 num">
-          <div><small>Treningi</small><b>{{ ov.workouts }}</b></div>
-          <div><small>Serie</small><b>{{ ov.sets }}</b></div>
-          <div><small>Rekordy</small><b>{{ ov.prs }}<span v-if="ov.prs"> 🏆</span></b></div>
-          <div><small>Siła</small><b>{{ avgGain == null ? '–' : (avgGain > 0 ? '+' : avgGain < 0 ? '−' : '±') + Math.abs(avgGain) + '%' }}</b></div>
+        <!-- hero: strength since start + trend line, then the period numbers -->
+        <div class="hero">
+          <div class="h-top">
+            <div>
+              <small>Siła od startu</small>
+              <b class="num">{{ avgGain == null ? '–' : (avgGain > 0 ? '+' : avgGain < 0 ? '−' : '±') + Math.abs(avgGain) + '%' }}</b>
+              <span class="h-sub">{{ avgGain == null ? 'pojawi się po 2 treningach' : 'średnio ze wszystkich ćwiczeń' }}</span>
+            </div>
+            <svg v-if="trend.line" class="h-spark" viewBox="0 0 140 60" preserveAspectRatio="none" aria-hidden="true">
+              <path :d="trend.area" class="a" /><path :d="trend.line" class="l" /><circle :cx="trend.x" :cy="trend.y" r="3.5" class="d" />
+            </svg>
+          </div>
+          <div class="h-stats num">
+            <div><b>{{ ov.workouts }}</b><small>treningi</small></div>
+            <div><b>{{ ov.sets }}</b><small>serie</small></div>
+            <div><b>{{ ov.prs }}</b><small>rekordy 🏆</small></div>
+            <div><b>{{ fmtTon(ov.vol) }}</b><small>objętość</small></div>
+          </div>
         </div>
+
+        <!-- consistency: workouts per week -->
+        <h3 class="section-title">Regularność</h3>
+        <div class="card weeks">
+          <div class="w-head">
+            <div><b class="num">{{ wk[wk.length - 1].n }}</b><span> z {{ PLAN.length }} w tym tygodniu</span></div>
+            <span class="w-avg num">śr. {{ wkAvg }} / tydz.</span>
+          </div>
+          <div class="w-bars" aria-hidden="true">
+            <div v-for="w in wk" :key="w.from" class="w-col" :class="{ now: w.now, full: w.n >= PLAN.length }">
+              <span class="w-n num">{{ w.n || '' }}</span>
+              <i :style="{ height: Math.max(4, w.n / wkMax * 100) + '%' }"></i>
+              <small class="num">{{ w.label }}</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- newest records -->
+        <template v-if="prs.length">
+          <h3 class="section-title">Ostatnie rekordy</h3>
+          <div class="ios-group prs">
+            <button v-for="r in prs" :key="r.key + r.date" class="row press" @click="router.push('/exercise/' + r.day + '/' + r.i)">
+              <span class="pr-ico" :style="{ '--c': COLORS[PLAN[r.day].key] }">🏆</span>
+              <div class="grow">
+                <b>{{ r.label || r.name }}</b>
+                <span>{{ r.label ? r.name + ' · ' : '' }}{{ prDate(r.date) }}</span>
+              </div>
+              <div class="pr-val num">
+                <b>{{ fmtVal(r.w, r.unit) }}<template v-if="r.unit === 'kg' && r.r"> × {{ r.r }}</template></b>
+                <small v-if="r.prev != null">{{ r.as ? 'pomoc ' : 'było ' }}{{ fmtVal(r.prev, r.unit) }}</small>
+              </div>
+            </button>
+          </div>
+        </template>
 
         <!-- per plan -->
         <h3 class="section-title">Treningi</h3>
@@ -41,7 +87,7 @@
             </div>
           </button>
         </div>
-        <p class="section-foot">Siła = średni postęp ćwiczeń od pierwszego treningu (ciężar i powtórzenia razem). ↑ = ile ćwiczeń poszło w górę ostatnio. Kliknij, żeby zobaczyć ćwiczenia.</p>
+        <p class="section-foot">Słupki = siła z ostatnich treningów. ↑ = ile ćwiczeń poprawiłeś ostatnim razem.</p>
 
         <!-- per body part -->
         <h3 class="section-title">Partie ciała · serie na tydzień</h3>
@@ -56,13 +102,13 @@
           </div>
           <div class="mm-list">
             <div v-for="m in muscleRows" :key="m.id" class="mrow">
-              <span class="m-name">{{ m.name }}</span>
+              <span class="m-name">{{ SHORT[m.id] || m.name }}</span>
               <div class="m-bar"><span :class="m.level" :style="{ width: m.pct + '%' }"></span><i class="zone"></i></div>
               <span class="m-val num">{{ fmtSets(m.v) }}</span>
             </div>
           </div>
         </div>
-        <p class="section-foot">Średnio na tydzień w wybranym okresie. Główna praca mięśnia = 1 seria, pomocnicza = ½. Badania: najwięcej daje ok. 10–20 serii na partię tygodniowo, pole w tle to ten zakres.</p>
+        <p class="section-foot">Średnio na tydzień. Mięsień główny = 1 seria, pomocniczy = ½. Zielone pole = 10–20 serii, zakres, który daje najwięcej.</p>
 
         <h3 class="section-title">Balans ciała</h3>
         <div class="card radar-card">
@@ -82,7 +128,7 @@
             <p>{{ radar.text }}</p>
           </div>
         </div>
-        <p class="section-foot">Wszystkie serie w wybranym okresie, dla każdej grupy. Brzeg wykresu = najmocniej trenowana grupa. Przerywana linia = jak rozkłada serie Twój plan (nogi mniej – celowo). Wynik 100% = trenujesz dokładnie tak, jak zakłada plan.</p>
+        <p class="section-foot">Przerywana linia = rozkład z Twojego planu (nogi mniej – celowo). 100% = trenujesz dokładnie wg planu.</p>
 
       </div>
     </ion-content>
@@ -93,9 +139,9 @@
 import { computed } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonRouter } from '@ionic/vue'
 import { chevronForward } from 'ionicons/icons'
-import { PLAN, COLORS } from '../plan'
+import { PLAN, COLORS, fmtVal } from '../plan'
 import { state, ui, ago } from '../store'
-import { overview, planSummary, muscleWeek, muscleSets, plansDone, planMuscleSets } from '../stats'
+import { overview, planSummary, muscleWeek, muscleSets, plansDone, planMuscleSets, recentPRs, weekly, strengthTrend, fmtTon } from '../stats'
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
 
@@ -109,6 +155,22 @@ const all = computed(() => { void state.sessions; return muscleSets(period.value
 const done = computed(() => { void state.sessions; return plansDone(period.value) })
 const mw = computed(() => { void state.sessions; return muscleWeek(period.value) })
 
+const prs = computed(() => { void state.sessions; return recentPRs(5, period.value) })
+const MONTHS = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru']
+const prDate = d => +d.slice(8) + ' ' + MONTHS[+d.slice(5, 7) - 1]
+const wk = computed(() => { void state.sessions; return weekly(8) })
+const wkMax = computed(() => Math.max(PLAN.length, ...wk.value.map(w => w.n)))
+const wkAvg = computed(() => { const a0 = wk.value.slice(0, -1), f = a0.findIndex(x => x.n > 0); const past = f < 0 ? [] : a0.slice(f); return past.length ? String(Math.round(past.reduce((a, w) => a + w.n, 0) / past.length * 10) / 10).replace('.', ',') : '–' })
+const trend = computed(() => {
+  void state.sessions
+  const v = strengthTrend(16)
+  if (v.length < 2) return {}
+  const lo = Math.min(...v), hi = Math.max(...v, lo + 1)
+  const P = v.map((y, i) => [i / (v.length - 1) * 136 + 2, 54 - (y - lo) / (hi - lo) * 48])
+  const line = P.map(([x, y], i) => (i ? 'L' : 'M') + x.toFixed(1) + ' ' + y.toFixed(1)).join(' ')
+  return { line, area: line + ' L138 60 L2 60 Z', x: P[P.length - 1][0], y: P[P.length - 1][1] }
+})
+const SHORT = { lats: 'Najszersze', upperback: 'Górne plecy', quads: 'Czworogłowe', hamstrings: 'Dwugłowe ud', reardelts: 'Tył barków', obliques: 'Skośne brzucha' }
 const ORDER = ['chest', 'shoulders', 'reardelts', 'triceps', 'biceps', 'lats', 'upperback', 'quads', 'hamstrings', 'glutes', 'calves', 'abs', 'obliques']
 const SCALE = 24 // bar = 0..24 sets/week; the 10–20 zone is drawn behind
 const muscleRows = computed(() => ORDER.map(id => {
@@ -161,6 +223,41 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .period { margin: 4px 16px 14px; width: auto; --background: var(--app-field); }
 .period ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
 @media (prefers-color-scheme: dark) { .period { --seg-on: #636366; } }
+.hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: #fff;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 75%, #fff) 0%, var(--accent) 55%, color-mix(in srgb, var(--accent) 80%, #000) 100%);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 30%, transparent); }
+.h-top { display: flex; align-items: flex-end; gap: 12px; }
+.h-top > div { flex: none; display: flex; flex-direction: column; }
+.h-top small { font-size: 13px; opacity: .85; }
+.h-top b { font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1.05; }
+.h-sub { font-size: 12px; opacity: .75; }
+.h-spark { flex: 1; height: 62px; min-width: 0; }
+.h-spark .l { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.h-spark .a { fill: rgba(255,255,255,.16); }
+.h-spark .d { fill: #fff; }
+.h-stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.25); }
+.h-stats div { display: flex; flex-direction: column; align-items: center; }
+.h-stats b { font-size: 18px; font-weight: 700; letter-spacing: -.3px; white-space: nowrap; }
+.h-stats small { font-size: 11.5px; opacity: .8; }
+.weeks { margin: 0 16px; padding: 14px 14px 10px; }
+.w-head { display: flex; justify-content: space-between; align-items: baseline; }
+.w-head b { font-size: 22px; font-weight: 700; color: var(--accent); }
+.w-head span { font-size: 14px; color: var(--app-muted); }
+.w-avg { font-size: 13px; }
+.w-bars { position: relative; display: flex; gap: 6px; height: 120px; margin-top: 10px; }
+.w-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; }
+.w-col i { width: 100%; max-width: 26px; border-radius: 6px 6px 3px 3px; background: color-mix(in srgb, var(--accent) 30%, transparent); max-height: calc(100% - 36px); }
+.w-col.full i { background: color-mix(in srgb, var(--accent) 65%, transparent); }
+.w-col.now i { background: var(--accent); }
+.w-n { font-size: 11px; font-weight: 700; color: var(--app-muted); height: 14px; }
+.w-col small { font-size: 10.5px; color: var(--app-muted); height: 14px; }
+.w-col.now small { color: var(--accent); font-weight: 700; }
+.prs .pr-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); }
+.prs .grow b { display: block; font-size: 15px; font-weight: 600; }
+.prs .grow span { display: block; font-size: 12.5px; color: var(--app-muted); }
+.pr-val { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+.pr-val b { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.pr-val small { font-size: 11.5px; color: var(--app-muted); white-space: nowrap; }
 .stats4 { margin: 0 16px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 14px 6px; }
 .stats4 div { display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--app-line); }
 .stats4 div:first-child { border-left: 0; }
@@ -183,7 +280,7 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .pc-foot { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
 .pc-foot b { font-size: 17px; font-weight: 700; }
 .pc-foot small { font-size: 13px; opacity: .85; margin-left: -2px; }
-.pc-foot em { margin-left: auto; font-style: normal; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; background: rgba(255,255,255,.25); }
+.pc-foot em { margin-left: auto; white-space: nowrap; font-style: normal; font-size: 11px; font-weight: 700; border-radius: 999px; padding: 1px 7px; background: rgba(255,255,255,.25); }
 
 .muscles { margin: 0 16px; padding: 16px; }
 .mm-map { height: 170px; display: flex; justify-content: center; }
