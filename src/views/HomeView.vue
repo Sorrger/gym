@@ -42,7 +42,7 @@
             <span class="t-foot num">{{ weekCount }} {{ weekCount === 1 ? 'trening' : weekCount >= 2 && weekCount <= 4 ? 'treningi' : 'treningów' }}</span>
           </div>
           <div class="days">
-            <div v-for="d in week" :key="d.date" class="day" :class="{ today: d.today, future: d.future }">
+            <div v-for="d in week" :key="d.date" class="day" :class="{ today: d.today, future: d.future, off: d.off }" @click="d.off && unmarkOff(d.s)">
               <span class="wd">{{ d.wd }}</span>
               <span class="dot num" :class="{ has: d.s }" :style="d.s ? { '--c': COLORS[PLAN[d.s.day].key] } : null">
                 <ion-icon v-if="d.s" :icon="checkmark" /><template v-else>{{ d.n }}</template>
@@ -57,6 +57,9 @@
             <span>{{ dl.active ? 'Do ' + dlEnd + ': połowa serii, ok. 10% lżej, 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. Połowa serii, ok. 10% lżej, potem wracasz do normy.' }}</span></div>
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Zacznij trening' }}</h3>
+        <button v-if="sug.kind === 'missed' && !active" class="off-link press" @click="markOff">
+          Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? <b>Oznacz jako zrobiony</b>
+        </button>
         <div class="plans">
           <button v-for="(d, i) in PLAN" :key="d.key" class="plan press" :class="{ next: i === next && !active }"
             :style="{ '--c': COLORS[d.key] }" @click="start(i)">
@@ -92,7 +95,8 @@ import { IonPage, IonContent, IonIcon, IonToast, useIonRouter  } from '@ionic/vu
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
-import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso } from '../store'
+import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove } from '../store'
+import { ask } from '../dialog'
 
 const router = useIonRouter()
 const active = computed(() => { void state.sessions; return activeSession() })
@@ -122,16 +126,31 @@ const greeting = computed(() => {
   return h < 5 ? 'Dobranoc' : h < 12 ? 'Dzień dobry' : h < 18 ? 'Cześć' : 'Dobry wieczór'
 })
 
+async function markOff() {
+  const day = next.value, name = PLAN[day].name
+  const { role } = await ask({ icon: checkmark, color: COLORS[PLAN[day].key], title: `${name} zrobiony bez apki?`,
+    message: `Oznaczę ${name} jako zrobiony w tym tygodniu, więc nie będzie już pokazywany jako zaległy. Serie się nie zapiszą i nie wejdą do statystyk. Następnym razem trener podpowie ciężary z ostatniego zapisanego treningu.`,
+    buttons: [{ text: 'Oznacz jako zrobiony', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (role === 'ok') { markDoneOff(day); state.flash = `${name} oznaczony jako zrobiony` }
+}
+async function unmarkOff(s) {
+  const name = PLAN[s.day].name
+  const { role } = await ask({ icon: checkmark, color: COLORS[PLAN[s.day].key], title: `${name} – zrobiony bez apki`,
+    message: 'Ten dzień jest oznaczony jako trening zrobiony poza apką (bez serii). Usunąć oznaczenie?',
+    buttons: [{ text: 'Usuń oznaczenie', role: 'del', kind: 'danger' }, { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
+  if (role === 'del') remove(s.id)
+}
 const week = computed(() => {
   const now = new Date(), today = iso(now)
   const mon = new Date(now); mon.setDate(now.getDate() - ((now.getDay() + 6) % 7))
   return ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb', 'Nd'].map((wd, k) => {
     const d = new Date(mon); d.setDate(mon.getDate() + k)
     const date = iso(d)
-    return { wd, date, n: d.getDate(), today: date === today, future: date > today, s: done.value.find(s => s.date === date) }
+    const real = done.value.find(s => s.date === date), off = real ? null : offMarks().find(s => s.date === date)
+    return { wd, date, n: d.getDate(), today: date === today, future: date > today, s: real || off, off: !!off }
   })
 })
-const weekCount = computed(() => { const from = week.value[0].date; return done.value.filter(s => s.date >= from).length })
+const weekCount = computed(() => week.value.filter(d => d.s).length + done.value.filter(s => s.date >= week.value[0].date).length - week.value.filter(d => d.s && !d.off).length)
 const monthCount = computed(() => { const p = iso(new Date()).slice(0, 7); return done.value.filter(s => s.date.startsWith(p)).length })
 
 function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? ago(l.date) : 'jeszcze nie robiony' }
@@ -177,6 +196,9 @@ function start(day) { router.push('/plan/' + day) }
   font-size: 15px; font-weight: 600; }
 
 .week { padding: 14px 12px; }
+.day.off .dot { opacity: .5; }
+.off-link { display: block; width: calc(100% - 40px); margin: 0 20px 12px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13.5px; color: var(--app-muted); }
+.off-link b { color: var(--accent); font-weight: 600; }
 .week-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px 12px; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); }
 .day { display: flex; flex-direction: column; align-items: center; gap: 6px; }
