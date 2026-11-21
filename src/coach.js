@@ -56,14 +56,19 @@ export function suggest(g, session) {
   const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}`
   const top = work.length >= n && reps.every(r => r >= hi)
   if (top) {
-    const w = Math.max(0, W + (assist ? -inc : inc))
+    // way above the range (every set 3+ reps over the top) → a double step, otherwise one step
+    const step = reps.every(r => r >= hi + 3) ? 2 * inc : inc
+    const w = Math.max(0, W + (assist ? -step : step))
     return { kind: 'up', title: assist ? 'Mniej wspomagania 💪' : 'Dodaj ciężar 💪', short: `${fmtNum(w)} kg × ${lo}`,
       text: `Ostatnio ${lastTxt} – wszystkie serie na górze zakresu (${lo}-${hi}). Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
-  // stuck: two workouts in a row at this weight with a set under the bottom of the range
+  // stuck: two workouts in a row at this weight with a set under the bottom of the range AND no more total reps
+  // than the time before (a normal 8, 7, 6 right after adding weight, then 8, 8, 7, is progress – not a reason to go lighter)
   const prev = hist[1]?.sets.filter(x => x.w === W)
-  const failed = reps.some(r => r < lo) && prev?.length && prev.some(x => x.r != null && x.r < lo)
+  const sum = a => a.reduce((t, r) => t + (r ?? 0), 0)
+  const failed = reps.some(r => r < lo) && prev?.length && prev.some(x => x.r != null && x.r < lo) &&
+    sum(reps.slice(0, prev.length)) <= sum(prev.map(x => x.r).slice(0, reps.length))
   if (failed) {
     const w = assist ? W + 2 * inc : Math.max(0, roundTo(W * 0.9, inc))
     return { kind: 'down', title: 'Lżej, żeby ruszyć dalej', short: `${fmtNum(w)} kg × ${lo}`,
