@@ -24,6 +24,7 @@
             <h1>{{ plan.name }}</h1>
             <p class="num">{{ dayName }}, {{ fmtDate(s.date) }}<template v-if="timeRange"> · {{ timeRange }}</template></p>
             <p v-if="!s.finished" class="live">w toku</p>
+            <p v-if="s.deload" class="dl">Tydzień lżejszy (deload)</p>
           </div>
           <BodyMap class="hero-map" :main="muscles.main" :help="muscles.help" />
         </div>
@@ -76,7 +77,7 @@ import { createOutline, trashOutline, chevronBack } from 'ionicons/icons'
 import { ask } from '../dialog'
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip } from 'chart.js'
 import { state, counts, fmtDate, sorted, remove } from '../store'
-import { PLAN, COLORS, UNITS, ASSISTED, entriesOf, fmtNum } from '../plan'
+import { PLAN, COLORS, UNITS, isAssisted, entriesOf, fmtNum } from '../plan'
 import { musclesOf } from '../muscles'
 import { volumeOf, fmtTon } from '../stats'
 import { strava, stravaFor } from '../strava'
@@ -106,7 +107,7 @@ const minutes = computed(() => {
 // exercises in plan order, plus anything stored that is no longer in the plan
 const exList = computed(() => {
   if (!s.value) return []
-  const groups = entriesOf(s.value.day)
+  const groups = entriesOf(s.value.day, s.value)
   const known = new Set(groups.map(g => g.key))
   const extra = Object.keys(s.value.ex || {}).filter(k => !known.has(k) && (s.value.ex[k] || []).some(x => x.d))
     .map(k => ({ key: k, name: k, label: null, unit: s.value.ex[k].some(x => x.r != null) ? 'kg' : 'reps' }))
@@ -115,7 +116,7 @@ const exList = computed(() => {
   return [...groups.filter(g => g.key in (s.value.ex || {})), ...extra].map(g => {
     const done = (s.value.ex?.[g.key] || []).filter(x => x.d)
     const vals = done.filter(x => x.w != null).map(x => x.w)
-    const as = ASSISTED.has(g.name)
+    const as = isAssisted(g)
     const best = vals.length ? (as ? Math.min(...vals) : Math.max(...vals)) : null
     const prevAll = earlier.flatMap(o => (o.ex?.[g.key] || []).filter(x => x.d && x.w != null).map(x => x.w))
     const prevBest = prevAll.length ? (as ? Math.min(...prevAll) : Math.max(...prevAll)) : null
@@ -193,6 +194,7 @@ onBeforeUnmount(() => chart?.destroy())
 .hero h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -.4px; }
 .hero p { margin: 2px 0 0; color: var(--app-muted); font-size: 14px; }
 .hero .live { color: var(--c); font-weight: 600; }
+.hero .dl { color: #0a84ff; font-weight: 600; }
 .hero-map { width: 74px; flex: none; }
 .grid { display: grid; grid-template-columns: repeat(4, 1fr); row-gap: 14px; padding: 14px 4px; }
 .grid > div { padding: 0 8px; min-width: 0; }

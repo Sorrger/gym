@@ -35,6 +35,7 @@
                 <div class="ex-sub">
                   <span class="target">{{ exTarget }}</span>
                   <span v-if="exTag" class="tag">{{ exTag }}</span>
+                  <button v-if="s.deload" class="tag dl press" @click="deloadInfo">Tydzień lżejszy</button>
                 </div>
               </div>
               <div class="ex-body"><BodyMap v-bind="exMuscles" /></div>
@@ -49,8 +50,8 @@
                   {{ lastText(g) }}
                 </div>
                 <button v-if="sugOf(g)" class="tip-chip press" :class="sugOf(g).kind" @click="showTip(sugList())">
-                  <ion-icon :icon="sugOf(g).kind === 'down' ? trendingDown : sugOf(g).kind === 'up' ? trendingUp : bulbOutline" />
-                  <span>{{ sugOf(g).kind === 'up' ? 'Dodaj' : sugOf(g).kind === 'down' ? 'Lżej' : 'Cel' }}: <b>{{ sugOf(g).short }}</b></span>
+                  <ion-icon :icon="kindIcon(sugOf(g).kind)" />
+                  <span>{{ { up: 'Dodaj', down: 'Lżej', deload: 'Lżej', stage: 'Nowy' }[sugOf(g).kind] || 'Cel' }}: <b>{{ sugOf(g).short }}</b></span>
                 </button>
                 <div class="sets">
                   <div class="set" v-for="(x, si) in sets(g.key)" :key="si" :class="{ d: x.d }">
@@ -209,10 +210,10 @@ import { computed, ref, watch, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
-import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf } from '../plan'
+import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline } from 'ionicons/icons'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted } from '../plan'
 import { cloud } from '../cloud'
-import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted } from '../store'
+import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload } from '../store'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -231,16 +232,16 @@ const progPct = computed(() => { const k = counts(s.value); return k.t ? k.n / k
 
 const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, plan.value.ex.length - 1) : 0))
 const exName = computed(() => plan.value?.ex[idx.value][0] || '')
-const exTarget = computed(() => plan.value?.ex[idx.value][1] || '')
+const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value], s.value) || '' : ''))
 const exTag = computed(() => plan.value?.ex[idx.value][2])
 const sv = computed(() => s.value && stravaFor(s.value.id))
 const exMuscles = computed(() => musclesOf(exName.value))
-const groups = computed(() => (plan.value ? groupsOf(plan.value.ex[idx.value]) : []))
+const groups = computed(() => (plan.value ? groupsOf(plan.value.ex[idx.value], s.value) : []))
 function sets(key) {
   if (!s.value.ex[key]) s.value.ex[key] = [{ w: null, d: false }]
   return s.value.ex[key]
 }
-const isComplete = i => groupsOf(plan.value.ex[i]).every(g => (s.value.ex[g.key] || []).length > 0 && s.value.ex[g.key].every(x => x.d))
+const isComplete = i => groupsOf(plan.value.ex[i], s.value).every(g => (s.value.ex[g.key] || []).length > 0 && s.value.ex[g.key].every(x => x.d))
 const touch = () => { s.value.updated = Date.now() }
 
 const dir = ref('next')
@@ -264,19 +265,28 @@ const tipsShown = new Set()
 async function showTip(list) {
   if (!list.length) return
   const multi = list.length > 1
-  const main = list.find(x => x.sug.kind === 'up') || list.find(x => x.sug.kind === 'down') || list[0]
+  const main = list.find(x => x.sug.kind === 'stage') || list.find(x => x.sug.kind === 'up') || list.find(x => x.sug.kind === 'down') || list[0]
   const can = list.some(x => x.sug.sets)
-  const { role } = await ask({ icon: main.sug.kind === 'up' ? trendingUp : main.sug.kind === 'down' ? trendingDown : bulbOutline, color: color.value,
-    title: multi ? 'Podpowiedź na dziś' : main.sug.title,
-    message: list.map(x => (multi ? x.g.label + ': ' : '') + x.sug.text).join('\n\n'),
+  const { role } = await ask({ icon: kindIcon(main.sug.kind), color: color.value,
+    title: multi ? (main.sug.kind === 'stage' || main.sug.kind === 'deload' ? main.sug.title : 'Podpowiedź na dziś') : main.sug.title,
+    message: [...new Set(list.map(x => x.sug.note).filter(Boolean)), ...list.map(x => (multi ? x.g.label + ': ' : '') + x.sug.text)].join('\n\n'),
     buttons: can ? [{ text: multi ? 'Ustaw w seriach' : 'Ustaw: ' + main.sug.short, role: 'apply', kind: 'primary' }, { text: 'Zostaw jak jest', role: 'cancel' }]
       : [{ text: 'OK', role: 'cancel', kind: 'primary' }] })
   if (role === 'apply') { list.forEach(x => applySuggestion(sets(x.g.key), x.sug, x.g.unit)); touch() }
 }
 
+function kindIcon(k) { return k === 'up' ? trendingUp : k === 'down' || k === 'deload' ? trendingDown : k === 'stage' ? trophyOutline : bulbOutline }
+async function deloadInfo() {
+  const { role } = await ask({ icon: trendingDown, color: color.value, title: 'Tydzień lżejszy (deload)',
+    message: 'Co kilka tygodni apka sama robi lżejszy tydzień: te same ćwiczenia, połowa serii, ok. 10% lżej i 3-4 powtórzenia w zapasie. Zmęczenie schodzi, stawy odpoczywają, a po nim wracasz do normalnych ciężarów – zwykle z nową siłą.',
+    buttons: s.value.finished ? [{ text: 'OK', role: 'ok', kind: 'primary' }]
+      : [{ text: 'OK', role: 'ok', kind: 'primary' }, { text: 'Dziś trenuj normalnie', role: 'normal', kind: 'soft' }] })
+  if (role === 'normal') { cancelDeload(s.value); state.flash = 'Normalny trening – lżejszy tydzień za tydzień' }
+}
 function lastText(g) {
   const p = lastFor(g.key, s.value)
   const rg = rangeOf(g.target)
+  if (!p && isAssisted(g)) return `Pierwszy raz. Dobierz wspomaganie (kg pomocy) na ${rg.lo}-${rg.hi} powtórzeń.`
   if (!p) return g.unit === 'kg' ? (rg ? `Pierwszy raz. Dobierz ciężar na ${rg.lo}-${rg.hi} powtórzeń.` : 'Pierwszy raz. Ustaw ciężar dla serii.') : 'Pierwszy raz. Ustaw wartość dla serii.'
   const done = p.ex[g.key].filter(x => x.d && x.w != null)
   const txt = g.unit === 'kg' && done.some(x => x.r)
@@ -484,7 +494,7 @@ function finish() {
 }
 const c = computed(() => counts(s.value))
 const niceDate = computed(() => new Date(s.value.date + 'T12:00:00').toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' }))
-const rows = computed(() => entriesOf(s.value.day).map(g => {
+const rows = computed(() => entriesOf(s.value.day, s.value).map(g => {
   const arr = s.value.ex[g.key] || []
   const done = arr.filter(x => x.d && x.w != null)
   const max = done.length ? Math.max(...done.map(x => x.w)) : null
@@ -551,6 +561,9 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .tip-chip b { font-weight: 700; }
 .tip-chip ion-icon { font-size: 15px; }
 .tip-chip.down { color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 12%, transparent); }
+.tip-chip.deload { color: #0a84ff; background: color-mix(in srgb, #0a84ff 12%, transparent); }
+.tip-chip.stage { color: #ff9f0a; background: color-mix(in srgb, #ff9f0a 14%, transparent); }
+.tag.dl { border: 0; font-family: inherit; color: #0a84ff; background: color-mix(in srgb, #0a84ff 13%, transparent); }
 .last ion-icon { flex: none; font-size: 15px; }
 
 .groups { min-height: 0; overflow-y: auto; overscroll-behavior: contain; flex: 0 1 auto; margin-top: 14px; display: flex; flex-direction: column; gap: 14px; }

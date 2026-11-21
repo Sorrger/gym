@@ -1,5 +1,5 @@
 // Numbers for the Progress tab (overview + per plan)
-import { PLAN, ASSISTED, entriesOf, rangeOf } from './plan'
+import { PLAN, isAssisted, entriesOf, rangeOf } from './plan'
 import { sorted, series } from './store'
 import { musclesOf } from './muscles'
 
@@ -8,7 +8,7 @@ const daysAgoIso = n => { const d = new Date(Date.now() - n * 864e5); return d.g
 
 // kg × reps of one workout (only kg exercises)
 export function volumeOf(s) {
-  const kg = new Set(entriesOf(s.day).filter(g => g.unit === 'kg').map(g => g.key))
+  const kg = new Set(entriesOf(s.day, s).filter(g => g.unit === 'kg').map(g => g.key))
   let v = 0
   for (const [k, arr] of Object.entries(s.ex || {})) if (kg.has(k)) for (const x of arr) if (x.d && x.w != null) v += x.w * (x.r || 0)
   return Math.round(v)
@@ -21,8 +21,8 @@ export function prEvents(day = null, days = null) {
   const cut = days ? daysAgoIso(days) : ''
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
-  for (const d of plans) for (const g of entriesOf(d)) {
-    const as = ASSISTED.has(g.name)
+  for (const d of plans) for (const g of entriesOf(d, 'all')) {
+    const as = isAssisted(g)
     let best = null
     for (const p of series(g.key)) {
       const better = best != null && (as ? p.w < best : p.w > best)
@@ -37,10 +37,10 @@ export function prCount(day = null, days = 30) {
   const cut = daysAgoIso(days)
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
-  for (const d of plans) for (const g of entriesOf(d)) {
+  for (const d of plans) for (const g of entriesOf(d, 'all')) {
     const pts = series(g.key), old = pts.filter(p => p.date < cut), rec = pts.filter(p => p.date >= cut)
     if (!old.length || !rec.length) continue
-    const as = ASSISTED.has(g.name)
+    const as = isAssisted(g)
     if (as ? Math.min(...rec.map(p => p.w)) < Math.min(...old.map(p => p.w)) : Math.max(...rec.map(p => p.w)) > Math.max(...old.map(p => p.w))) n++
   }
   return n
@@ -53,14 +53,15 @@ function bestValue(g, arr) {
   if (!done.length) return null
   if (g.unit !== 'kg') return Math.max(...done.map(x => x.w))
   const lo = rangeOf(g.target)?.lo || 6
-  if (ASSISTED.has(g.name)) return Math.min(...done.map(x => x.w)) // less help = stronger
+  if (isAssisted(g)) return Math.min(...done.map(x => x.w)) // less help = stronger
   return Math.max(...done.map(x => x.w * (1 + (x.r ?? lo) / 30)))
 }
 
 // strength index of a plan per workout: average of every exercise vs its first workout (100 = start)
 export function strength(day) {
-  const groups = entriesOf(day)
-  const list = sorted().filter(s => s.day === day && ticked(s)).reverse() // oldest first
+  const groups = entriesOf(day, 'all')
+  // deload weeks are lighter on purpose: they don't count for the strength index
+  const list = sorted().filter(s => s.day === day && ticked(s) && !s.deload).reverse() // oldest first
   const first = {}, last = {}, prev = {}
   const index = []
   for (const s of list) {
@@ -70,7 +71,7 @@ export function strength(day) {
       if (v == null) continue
       if (first[g.key] == null) first[g.key] = v
       prev[g.key] = last[g.key]; last[g.key] = v
-      const as = ASSISTED.has(g.name)
+      const as = isAssisted(g)
       rel.push(as ? (v > 0 ? first[g.key] / v : 1) : (first[g.key] > 0 ? v / first[g.key] : 1))
     }
     if (rel.length) index.push(rel.reduce((a, b) => a + b, 0) / rel.length * 100)
@@ -80,7 +81,7 @@ export function strength(day) {
   for (const g of groups) {
     if (last[g.key] == null || prev[g.key] == null) continue
     tracked++
-    if (ASSISTED.has(g.name) ? last[g.key] < prev[g.key] : last[g.key] > prev[g.key]) up++
+    if (isAssisted(g) ? last[g.key] < prev[g.key] : last[g.key] > prev[g.key]) up++
   }
   return { index, gain: index.length ? Math.round(index[index.length - 1] - 100) : null, up, tracked }
 }

@@ -67,25 +67,26 @@
 import { computed } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonButtons, IonBackButton, useIonRouter } from '@ionic/vue'
 import { chevronForward } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, ASSISTED, entriesOf, fmtNum, fmtVal } from '../plan'
+import { PLAN, COLORS, UNITS, isAssisted, entriesOf, groupsOf, fmtNum, fmtVal } from '../plan'
 import { useRoute } from 'vue-router'
 import { state, series, fmtShort, ago } from '../store'
 import { planSummary } from '../stats'
 import { suggest } from '../coach'
 
 const router = useIonRouter()
-const ASS = ASSISTED
+const ASS = { has: (g) => isAssisted(g) }
 const route = useRoute()
 const day = computed(() => Math.min(PLAN.length - 1, Math.max(0, +route.params.day || 0)))
 const plan = computed(() => PLAN[day.value])
 
 const tiles = computed(() => {
   void state.sessions
-  return entriesOf(day.value).map(g => {
+  const now = new Set(entriesOf(day.value).map(g => g.key)) // parts of the current pull-up stage
+  return entriesOf(day.value, 'all').map(g => {
     const pts = series(g.key)
     const ws = pts.map(p => p.w)
-    const prevBest = ws.length > 1 ? (ASS.has(g.name) ? Math.min(...ws.slice(0, -1)) : Math.max(...ws.slice(0, -1))) : null
-    const t = { ...g, pts, pr: prevBest != null && (ASS.has(g.name) ? ws[ws.length - 1] < prevBest : ws[ws.length - 1] > prevBest), status: statusOf(g),
+    const prevBest = ws.length > 1 ? (ASS.has(g) ? Math.min(...ws.slice(0, -1)) : Math.max(...ws.slice(0, -1))) : null
+    const t = { ...g, pts, pr: prevBest != null && (ASS.has(g) ? ws[ws.length - 1] < prevBest : ws[ws.length - 1] > prevBest), status: now.has(g.key) ? statusOf(g) : { kind: 'up', text: '✓ Etap zaliczony' },
       last: ws[ws.length - 1], lastR: pts.length ? pts[pts.length - 1].r : null, best: ws.length ? Math.max(...ws) : null, diff: ws.length ? ws[ws.length - 1] - ws[0] : 0 }
     if (pts.length > 1) {
       const lo = Math.min(...ws), hi = Math.max(...ws), span = hi - lo || 1
@@ -103,7 +104,8 @@ const FUTURE = { id: '_progress', date: '9999-12-31', started: Infinity }
 function statusOf(g) {
   const x = suggest(g, FUTURE)
   if (!x || x.kind === 'first') return { kind: 'none', text: '' }
-  if (x.kind === 'up') return { kind: 'up', text: g.unit === 'kg' ? (ASS.has(g.name) ? '↑ Mniej wspomagania' : '↑ Gotowe na więcej') : '↑ Utrudnij' }
+  if (x.kind === 'stage') return { kind: 'up', text: 'Nowy etap' }
+  if (x.kind === 'up') return { kind: 'up', text: g.unit === 'kg' ? (ASS.has(g) ? '↑ Mniej wspomagania' : '↑ Gotowe na więcej') : '↑ Utrudnij' }
   if (x.kind === 'down') return { kind: 'down', text: '↓ Zejdź z ciężaru' }
   return { kind: 'same', text: 'Dobijaj powtórzenia' }
 }

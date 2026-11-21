@@ -1,6 +1,6 @@
 import { reactive, watch } from 'vue'
 import { get, set } from 'idb-keyval'
-import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames } from './plan'
+import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -86,26 +86,110 @@ export function lastFor(name, session) {
     && ticked(s.ex?.[name])) || null
 }
 
+// values a new set list starts with: from the newest earlier workout with a value (deload workouts don't count,
+// so after the light week the old numbers come back)
+function prefill(g, n, deload, self = null) {
+  const prev = sorted().find(o => o.id !== self && !o.deload && (o.ex?.[g.key] || []).some(x => x.w != null))?.ex[g.key]
+  const lo = rangeOf(g.target)?.lo
+  return Array.from({ length: n }, (_, i) => {
+    let w = prev ? (prev[i]?.w ?? [...prev].reverse().find(x => x.w != null)?.w ?? null) : null
+    if (deload && w != null) w = g.unit === 'kg' ? deloadKg(w, g) : lo != null ? Math.min(w, lo) : w
+    if (g.unit !== 'kg') return { w, d: false }
+    const r = deload ? (lo ?? DEF_REPS) : prev?.[i]?.r ?? (prev ? [...prev].reverse().find(x => x.r != null)?.r : null) ?? lo ?? DEF_REPS
+    return { w, r, d: false }
+  })
+}
+const roundTo = (v, st) => Math.round(v / st) * st
+// light week: ~10 % less (assisted machine: one step more help)
+export function deloadKg(w, g) { const inc = incOf(g); return isAssisted(g) ? w + inc : Math.max(0, roundTo(w * 0.9, inc)) }
+export const deloadSets = n => Math.max(1, Math.ceil(n / 2))
+
 export function startSession(day) {
   const now = Date.now()
+  const dl = deloadState()
+  const deload = dl.active || dl.due
   const s = { id: now.toString(36), date: iso(new Date()), day, ex: {}, started: now, finished: false, updated: now }
-  // values and number of sets default to the last time this exercise (or part) was done
-  entriesOf(day).forEach(g => {
-    // values: newest earlier workout where this exercise had any value entered (skip empty ones)
-    const prev = sorted().find(o => (o.ex?.[g.key] || []).some(x => x.w != null))?.ex[g.key]
-    // always the planned number of sets (user asked); extra sets can still be added during the workout
-    const n = g.sets || 1
-    s.ex[g.key] = Array.from({ length: n }, (_, i) => {
-      const w = prev ? (prev[i]?.w ?? [...prev].reverse().find(x => x.w != null)?.w ?? null) : null
-      if (g.unit !== 'kg') return { w, d: false }
-      const r = prev?.[i]?.r ?? (prev ? [...prev].reverse().find(x => x.r != null)?.r : null) ?? rangeOf(g.target)?.lo ?? DEF_REPS
-      return { w, r, d: false }
-    })
-  })
+  if (deload) s.deload = true
+  // always the planned number of sets (user asked; half of it in a deload week); extra sets can still be added
+  entriesOf(day).forEach(g => { const n = g.sets || 1; s.ex[g.key] = prefill(g, deload ? deloadSets(n) : n, deload) })
   state.sessions[s.id] = s
   saveNow()
   return s
 }
+// "Trenuj normalnie" in a deload workout: back to the full plan and numbers; the deload waits one more week
+export function cancelDeload(s) {
+  delete s.deload
+  s.noDeload = true
+  entriesOf(s.day, s).forEach(g => {
+    const arr = s.ex[g.key] || (s.ex[g.key] = [])
+    const full = prefill(g, g.sets || 1, false, s.id)
+    full.forEach((v, i) => { if (!arr[i]) arr.push(v); else if (!arr[i].d) Object.assign(arr[i], v) })
+  })
+  s.updated = Date.now()
+}
+
+// ---------- automatic deload (research: most lifters take ~1 lighter week every ~5-6 weeks) ----------
+// every 6 weeks of training, or from week 4 when most exercises stopped improving. A break of 7+ days counts as rest
+// and starts the count again. The light week lasts 7 days from its first workout.
+export const DELOAD_EVERY = 6, DELOAD_MIN = 4
+const dayN = d => Math.round(new Date(d + 'T12:00:00').getTime() / 864e5)
+const addDays = (d, n) => iso(new Date(new Date(d + 'T12:00:00').getTime() + n * 864e5))
+export function deloadState(today = iso(new Date())) {
+  // an open workout counts too (a deload workout just started makes the week light; "Trenuj normalnie" postpones it)
+  const list = sorted().filter(s => hasData(s) || !s.finished).reverse() // oldest first
+  if (!list.length) return { active: false, due: false, weeks: 0, left: DELOAD_EVERY }
+  let block = list[0].date, dl = null, prev = null, skip = ''
+  for (const s of list) {
+    if (s.date > today) break
+    const inDl = dl && dayN(s.date) - dayN(dl) < 7
+    if (s.deload && !inDl) { dl = s.date }
+    if (s.deload) block = addDays(dl, 7)
+    else if (prev && !inDl && dayN(s.date) - dayN(prev) >= 8) block = s.date // a week+ without training = rest
+    if (s.noDeload) skip = addDays(s.date, 7)
+    prev = s.date
+  }
+  if (dl && dayN(today) - dayN(dl) < 7) return { active: true, due: false, start: dl, end: addDays(dl, 6) }
+  if (dayN(today) - dayN(prev) >= 8) return { active: false, due: false, weeks: 0, left: DELOAD_EVERY } // back after a break
+  const weeks = (dayN(today) - dayN(block)) / 7
+  const st = weeks >= DELOAD_MIN ? stalled(block) : null
+  const due = today >= skip && (weeks >= DELOAD_EVERY || !!st?.many)
+  return { active: false, due, weeks: Math.floor(weeks), left: Math.max(0, Math.ceil(DELOAD_EVERY - weeks)),
+    reason: due ? (weeks >= DELOAD_EVERY ? `${Math.floor(weeks)} tygodni ciężkich treningów` : `w ${st.n} z ${st.t} ćwiczeń wyniki stoją`) : '' }
+}
+// exercises with no new best in their last 2 workouts since `from` (needs 3+ workouts of that exercise)
+function stalled(from) {
+  const list = sorted().filter(s => hasData(s) && !s.deload && s.date >= from).reverse()
+  const seen = new Map()
+  for (const s of list) for (const g of entriesOf(s.day, s)) {
+    const done = (s.ex?.[g.key] || []).filter(x => x.d && x.w != null)
+    if (!done.length) continue
+    const as = isAssisted(g), lo = rangeOf(g.target)?.lo || 6
+    const v = g.unit !== 'kg' ? Math.max(...done.map(x => x.w)) : as ? -Math.min(...done.map(x => x.w)) : Math.max(...done.map(x => x.w * (1 + (x.r ?? lo) / 30)))
+    if (!seen.has(g.key)) seen.set(g.key, [])
+    seen.get(g.key).push(v)
+  }
+  let n = 0, t = 0
+  for (const v of seen.values()) {
+    if (v.length < 3) continue
+    t++
+    if (Math.max(...v.slice(-2)) <= Math.max(...v.slice(0, -2)) + 1e-9) n++
+  }
+  return { n, t, many: t >= 5 && n / t >= 0.6 }
+}
+
+// ---------- pull-up learning stage, from history: highest stage seen, +1 when a workout met its goal ----------
+export function pullupStage() {
+  let st = 1
+  for (const s of sorted().filter(hasData).reverse()) {
+    if (s.deload) continue
+    const own = stageOfSession(s)
+    if (own == null) continue
+    st = Math.max(st, own)
+    if (own === st && st < 4 && stageGoalMet(st, s.ex)) st++
+  }
+  return st
+}
+setStageFn(() => { void state.sessions; return pullupStage() })
 
 export const activeSession = () => sorted().find(s => !s.finished) || null
 
@@ -137,18 +221,25 @@ export function mergeSessions(src) {
 }
 
 export function lastDoneOf(day) { return sorted().find(s => s.day === day && hasData(s)) || null }
-// suggested plan follows the weekly schedule (Mon Push, Tue Pull, Thu Legs, Fri Upper):
-// today's plan on a training day, otherwise (rest day, or today's already done) the next one in the week
-export function suggestedDay() {
-  const now = new Date(), today = iso(now)
-  const doneToday = new Set(Object.values(state.sessions).filter(s => s.date === today && hasData(s)).map(s => s.day))
-  for (let k = 0; k < 7; k++) {
-    const day = WEEKDAY_TO_DAY[(now.getDay() + k) % 7]
-    if (day == null || (k === 0 && doneToday.has(day))) continue
-    return day
-  }
-  return 0
+// which plan to do now. Weekly schedule Mon Push, Tue Pull, Thu Legs, Fri Upper (week = Mon–Sun):
+// 1) today's scheduled plan if not done this week yet ("Dziś")
+// 2) else a plan of this week whose day already passed and wasn't done – earliest first ("Zaległy"),
+//    e.g. Pull skipped on Tuesday → Wednesday or the weekend suggests Pull
+// 3) else the next scheduled plan not done yet this week, or Push of next week ("Następny")
+// Done this week = done on any day this week (order can change). A plan done today doesn't count as missed.
+export function suggestion(now = new Date()) {
+  const today = iso(now), wd = (now.getDay() + 6) % 7 // 0 = Monday
+  const monday = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - wd))
+  const doneWeek = new Set(Object.values(state.sessions).filter(s => s.date >= monday && s.date <= today && hasData(s)).map(s => s.day))
+  const sched = Object.entries(WEEKDAY_TO_DAY).map(([js, day]) => ({ wd: (+js + 6) % 7, day })).sort((a, b) => a.wd - b.wd)
+  const todays = sched.find(x => x.wd === wd)
+  if (todays && !doneWeek.has(todays.day)) return { day: todays.day, kind: 'today' }
+  const missed = sched.find(x => x.wd < wd && !doneWeek.has(x.day))
+  if (missed) return { day: missed.day, kind: 'missed' }
+  const upcoming = sched.find(x => x.wd > wd && !doneWeek.has(x.day))
+  return { day: (upcoming || sched[0]).day, kind: 'next' }
 }
+export const suggestedDay = () => suggestion().day
 
 export function series(name) {
   return sorted().slice().reverse().map(s => {

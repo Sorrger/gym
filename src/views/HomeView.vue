@@ -51,6 +51,11 @@
           </div>
         </div>
 
+        <div v-if="dl.active || dl.due" class="card warn dl-card">
+          <ion-icon :icon="trendingDown" />
+          <div><b>Tydzień lżejszy (deload)</b>
+            <span>{{ dl.active ? 'Do ' + dlEnd + ': połowa serii, ok. 10% lżej, 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. Połowa serii, ok. 10% lżej, potem wracasz do normy.' }}</span></div>
+        </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Zacznij trening' }}</h3>
         <div class="plans">
           <button v-for="(d, i) in PLAN" :key="d.key" class="plan press" :class="{ next: i === next && !active }"
@@ -58,7 +63,7 @@
             <div class="plan-top">
               <div class="plan-l">
                 <span class="plan-ico">{{ d.abbr }}</span>
-                <span v-if="i === next && !active" class="next-pill">{{ isToday(i) ? 'Dziś' : 'Następny' }}</span>
+                <span v-if="i === next && !active" class="next-pill">{{ { today: 'Dziś', missed: 'Zaległy', next: 'Następny' }[sug.kind] }}</span>
               </div>
               <div class="plan-body"><BodyMap v-bind="dayMuscles(i)" /></div>
             </div>
@@ -84,10 +89,10 @@ import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter  } from '@ionic/vue'
-import { chevronForward, checkmark, alertCircle, cloudOfflineOutline } from 'ionicons/icons'
+import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
-import { state, activeSession, lastDoneOf, suggestedDay, doneSessions, counts, ago, iso } from '../store'
+import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso } from '../store'
 
 const router = useIonRouter()
 const active = computed(() => { void state.sessions; return activeSession() })
@@ -101,7 +106,10 @@ const activeMinutes = computed(() => {
   const m = Math.max(0, Math.round((nowTick.value - active.value.started) / 60000))
   return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'
 })
-const next = computed(() => { void state.sessions; return suggestedDay() })
+const sug = computed(() => { void state.sessions; void nowTick.value; return suggestion() })
+const next = computed(() => sug.value.day)
+const dlEnd = computed(() => dl.value.end ? dl.value.end.slice(8) + '.' + dl.value.end.slice(5, 7) : '')
+const dl = computed(() => { void state.sessions; void nowTick.value; return deloadState() })
 const done = computed(() => { void state.sessions; return doneSessions() })
 const totalSets = computed(() => done.value.reduce((a, s) => a + counts(s).n, 0))
 
@@ -147,6 +155,7 @@ function start(day) { router.push('/plan/' + day) }
 .warn ion-icon { font-size: 26px; flex: none; }
 .warn b { display: block; font-size: 15px; font-weight: 600; }
 .warn span { display: block; font-size: 13px; color: var(--app-muted); }
+.dl-card { color: #0a84ff; }
 
 /* in-progress workout: the most important thing on the screen */
 .live-card { display: block; width: calc(100% - 32px); margin: 0 16px 12px; padding: 16px 16px 14px; border: 0; border-radius: var(--r-lg); text-align: left;

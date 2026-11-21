@@ -3,9 +3,7 @@ export const PLAN = [
     ['Wyciskanie sztangi na ławce płaskiej', '3 × 6-8'], ['Wyciskanie hantli na ławce skośnej', '4 × 8-10'], ['Rozpiętki na bramie z dołu do góry', '3 × 10-15'],
     ['Unoszenie hantli bokiem', '4 × 10-15'], ['Wyciskanie francuskie leżąc', '3 × 8-10'], ['Prostowanie ramion na wyciągu nad głową', '3 × 10-12']] },
   { key: 'pull', abbr: 'Pl', short: 'Wt', name: 'Pull', note: 'Najpierw hantel (wolny ciężar), potem wyciągi. Wiosłowanie na wyciągu: szeroki drążek nachwytem, łokcie ok. 45–60° od tułowia, ściągaj łopatki – góra pleców. Młotki od razu po uginaniu na skosie.', ex: [
-    ['Nauka podciągania', 'Wiszenie + negatywy', null, [
-      { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
-      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
+    ['Nauka podciągania', null, null, 'stages'], ['Wiosłowanie hantlem jednorącz z podparciem', '3 × 8-10 / stronę'],
     ['Wiosłowanie na wyciągu dolnym szerokim chwytem', '3 × 8-10'], ['Ściąganie drążka szerokim chwytem', '3 × 8-10'], ['Face pull na wyciągu', '3 × 12-15'], ['Uginanie ramion z hantlami na ławce skośnej', '3 × 8-12'], ['Uginanie ramion z hantlami chwytem młotkowym', '2 × 10-12'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
   { key: 'legs', abbr: 'Ng', short: 'Cz', name: 'Nogi', note: 'Najpierw przysiad Zerchera – najcięższy, na świeżo.', ex: [
@@ -14,9 +12,7 @@ export const PLAN = [
     ['Pallof press na wyciągu', '3 × 10-12 / stronę, 2 s pauza'],
     ['Unoszenie nóg w podporze na poręczach', '3 × 10-15', null, 'reps'], ['Allahy – spięcia brzucha na wyciągu', '3 × 12-15']] },
   { key: 'chestback', abbr: 'Up', short: 'Pt', name: 'Upper', note: 'Superserie: 1+2, 3+4, 5+6. Odwrotne rozpiętki zaraz po butterfly – ta sama maszyna. Na koniec unoszenie bokiem na wyciągu.', ex: [
-    ['Nauka podciągania', 'Wiszenie + negatywy', 'Plecy', [
-      { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
-      { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }]], ['Wyciskanie sztangi siedząc z oparciem', '3 × 6-8', 'Barki'],
+    ['Nauka podciągania', null, 'Plecy', 'stages'], ['Wyciskanie sztangi siedząc z oparciem', '3 × 6-8', 'Barki'],
     ['Seal row – wiosłowanie leżąc na ławce', '3 × 8-10', 'Plecy'], ['Wyciskanie na skosie na Smithie', '4 × 8-10', 'Klatka'],
     ['Ściąganie drążka szerokim chwytem', '3 × 8-10', 'Plecy'], ['Rozpiętki na maszynie (butterfly)', '3 × 10-15', 'Klatka'],
     ['Odwrotne rozpiętki na maszynie (reverse butterfly)', '3 × 12-15', 'Tył barków'], ['Unoszenie ramienia bokiem na wyciągu', '3 × 10-15 / stronę', 'Boki barków']] }
@@ -44,16 +40,61 @@ export function rangeOf(target) {
 export const INC = {
   'Martwy ciąg rumuński': 5,
   'Wyciskanie hantli na ławce skośnej': 2, 'Wiosłowanie hantlem jednorącz z podparciem': 2,
+  'Nauka podciągania · Ze wspomaganiem': 5,
   'Unoszenie hantli bokiem': 1, 'Unoszenie ramienia bokiem na wyciągu': 1.25, 'Uginanie ramion z hantlami na ławce skośnej': 1, 'Uginanie ramion z hantlami chwytem młotkowym': 1
 }
 // machines where the kg number is help (less = harder)
-export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)'])
+export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)', 'Nauka podciągania · Ze wspomaganiem'])
+export const isAssisted = g => ASSISTED.has(g.key) || ASSISTED.has(g.name)
+export const incOf = g => INC[g.key] || INC[g.name] || 2.5
 // what to do when a bodyweight/time exercise tops out
 export const HARDER = {
   'Unoszenie nóg w podporze na poręczach': 'proste nogi albo hantelek między stopami',
-  'Nauka podciągania · Wiszenie': 'zostań na 30 s i dołóż 1 negatyw',
-  'Nauka podciągania · Negatywy': 'spróbuj 1 pełnego podciągnięcia na początku'
+  'Nauka podciągania · Wiszenie': 'zostań na 30 s. Gdy w jednym treningu zrobisz 3 × 30 s wiszenia i 3 × 5 negatywów, apka sama przejdzie na etap 2 (maszyna ze wspomaganiem)',
+  'Nauka podciągania · Negatywy@1': 'schodź wolniej (5 s). Gdy w jednym treningu zrobisz też 3 × 30 s wiszenia, apka sama przejdzie na etap 2 (maszyna ze wspomaganiem)',
+  'Nauka podciągania · Negatywy@2': 'schodź wolniej (5 s)',
+  'Nauka podciągania · Negatywy@3': 'schodź wolniej (5 s)',
+  'Nauka podciągania · Pełne@3': 'masz 3 × 3 – apka sama przejdzie na etap 4 (samo podciąganie, 3-6 powtórzeń)',
+  'Nauka podciągania · Pełne@4': 'dołóż obciążenie (hantel między stopami / pas) i wróć do 3 powtórzeń'
 }
+
+// Pull-up learning goes through stages; the app moves to the next one by itself when the goal is met
+// (looked up from the workout history, so it follows the backup to a new phone).
+export const PULLUP = 'Nauka podciągania'
+export const PULLUP_STAGES = [
+  { n: 1, title: 'Wiszenie + negatywy', goal: '3 × 30 s wiszenia i 3 × 5 negatywów w jednym treningu', parts: [
+    { label: 'Wiszenie', unit: 's', target: '3 × 20-30 s', sets: 3 },
+    { label: 'Negatywy', unit: 'reps', target: '3 × 3-5', sets: 3 }] },
+  { n: 2, title: 'Ze wspomaganiem + negatywy', goal: '3 × 8 na maszynie z pomocą 15 kg lub mniej', parts: [
+    { label: 'Ze wspomaganiem', unit: 'kg', target: '3 × 6-8', sets: 3 },
+    { label: 'Negatywy', unit: 'reps', target: '2 × 3-5', sets: 2 }] },
+  { n: 3, title: 'Pierwsze pełne + negatywy', goal: '3 serie po 3 pełne podciągnięcia', parts: [
+    { label: 'Pełne', unit: 'reps', target: '3 × 1-3', sets: 3 },
+    { label: 'Negatywy', unit: 'reps', target: '2 × 3-5', sets: 2 }] },
+  { n: 4, title: 'Podciąganie', goal: null, parts: [
+    { label: 'Pełne', unit: 'reps', target: '3 × 3-6', sets: 3 }] }
+]
+// does this workout (one session) meet the goal of stage n?
+export function stageGoalMet(n, ex) {
+  const done = l => (ex?.[PULLUP + ' · ' + l] || []).filter(x => x.d && x.w != null)
+  const all = (l, f) => { const d = done(l); return d.length >= 3 && d.every(f) }
+  if (n === 1) return all('Wiszenie', x => x.w >= 30) && all('Negatywy', x => x.w >= 5)
+  if (n === 2) return all('Ze wspomaganiem', x => x.w <= 15 && (x.r ?? 0) >= 8)
+  if (n === 3) return all('Pełne', x => x.w >= 3)
+  return false
+}
+// stage a stored workout was done in (from the parts it holds); null if it has none
+export function stageOfSession(s) {
+  const has = l => !!s?.ex?.[PULLUP + ' · ' + l]
+  if (has('Pełne')) return has('Negatywy') ? 3 : 4
+  if (has('Ze wspomaganiem')) return 2
+  if (has('Wiszenie') || has('Negatywy')) return 1
+  return null
+}
+// the current stage comes from the store (history); node scripts fall back to stage 1
+let stageFn = () => 1
+export function setStageFn(f) { stageFn = f }
+export const currentStage = () => stageFn()
 
 export function fmtNum(v) { return v == null ? '–' : String(+(+v).toFixed(2)).replace('.', ',') }
 export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].short }
@@ -61,14 +102,32 @@ export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].sh
 // An exercise may be made of parts with their own sets (e.g. Nauka podciągania = Wiszenie + Negatywy).
 // A plain exercise may name its unit instead of parts: [name, target, tag, 'reps'].
 // Each part is stored under its own key "Name · Part"; a plain exercise is stored under its name.
-export function groupsOf(ex) {
+// ctx: a stored workout (its own stage), 'all' (every part reached so far – for progress/history), or nothing (current stage)
+function stagedParts(ctx) {
+  const cur = currentStage()
+  if (ctx === 'all') {
+    const m = new Map()
+    PULLUP_STAGES.filter(st => st.n <= cur).forEach(st => st.parts.forEach(p => m.set(p.label, { ...p, stage: st.n })))
+    return [...m.values()]
+  }
+  const n = (ctx && stageOfSession(ctx)) || cur
+  return PULLUP_STAGES[n - 1].parts.map(p => ({ ...p, stage: n }))
+}
+export function stageOf(ctx) { return (ctx && ctx !== 'all' && stageOfSession(ctx)) || currentStage() }
+export function targetOf(ex, ctx) {
+  if (ex[3] !== 'stages') return ex[1]
+  const n = stageOf(ctx)
+  return `Etap ${n}/4 · ${PULLUP_STAGES[n - 1].title.toLowerCase()}`
+}
+export function groupsOf(ex, ctx) {
   const [name, target, , parts] = ex
+  if (parts === 'stages') return stagedParts(ctx).map(p => ({ key: name + ' · ' + p.label, name, label: p.label, unit: p.unit, target: p.target, sets: p.sets, stage: p.stage }))
   if (typeof parts === 'string') return [{ key: name, name, label: null, unit: parts, target, sets: nSets(target) }]
   return parts
     ? parts.map(p => ({ key: name + ' · ' + p.label, name, label: p.label, unit: p.unit, target: p.target, sets: p.sets }))
     : [{ key: name, name, label: null, unit: 'kg', target, sets: nSets(target) }]
 }
-export function entriesOf(day) { return PLAN[day].ex.flatMap((ex, i) => groupsOf(ex).map(g => ({ ...g, ex: i }))) }
+export function entriesOf(day, ctx) { return PLAN[day].ex.flatMap((ex, i) => groupsOf(ex, ctx).map(g => ({ ...g, ex: i }))) }
 
 // exercises renamed later: old stored name → current name (history keeps working)
 export const RENAMED = {
@@ -94,8 +153,7 @@ export const RENAMED = {
   'Wyciskanie na Smithcie na skosie': 'Wyciskanie na skosie na Smithie',
   'Wyciąg górny szeroki': 'Ściąganie drążka szerokim chwytem',
   'Butterfly': 'Rozpiętki na maszynie (butterfly)',
-  'Triceps + biceps': 'Triceps + biceps na wyciągu',
-  'Wyciskanie na Smithcie na skosie': 'Wyciskanie na skosie na Smithie'
+  'Triceps + biceps': 'Triceps + biceps na wyciągu'
 }
 // rename the exercise keys of one stored workout in place ("Old · Part" → "New · Part"); returns true if changed
 export function migrateNames(s) {

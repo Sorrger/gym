@@ -5,8 +5,8 @@
 // Optional reps in reserve per set (x.q: 0, 1, 2, 3 = "3+") refine it:
 // • every set with 3+ left → too light: add weight now, even below the top of the range
 // • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
-import { UNITS, INC, ASSISTED, HARDER, rangeOf, fmtNum } from './plan'
-import { sorted } from './store'
+import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf } from './plan'
+import { sorted, deloadKg, deloadSets } from './store'
 
 const roundTo = (v, st) => Math.round(v / st) * st
 const gain = q => (q == null ? 1 : q >= 3 ? 2 : q >= 1 ? 1 : 0)
@@ -17,7 +17,7 @@ const repsWord = n => (n === 1 ? 'powtórzenie' : n % 10 >= 2 && n % 10 <= 4 && 
 function history(key, session, max = 3) {
   const out = []
   for (const o of sorted()) {
-    if (o.id === session.id || o.date > session.date || (o.date === session.date && o.started >= session.started)) continue
+    if (o.deload || o.id === session.id || o.date > session.date || (o.date === session.date && o.started >= session.started)) continue
     const done = (o.ex?.[key] || []).filter(x => x.d && x.w != null)
     if (done.length) out.push({ date: o.date, sets: done })
     if (out.length >= max) break
@@ -30,7 +30,17 @@ export function suggest(g, session) {
   if (!range) return null
   const hist = history(g.key, session)
   const { lo, hi } = range
-  if (!hist.length) return { kind: 'first', short: `Zakres ${lo}-${hi}`, text: `Pierwszy raz: dobierz ciężar tak, żeby zrobić ${lo}-${hi} ${repsWord(hi)} w każdej serii.` }
+  if (session.deload) return deload(g, session, hist, range)
+  if (!hist.length) {
+    if (g.name === PULLUP && g.stage > 1) {
+      const st = PULLUP_STAGES[g.stage - 1]
+      const how = g.label === 'Ze wspomaganiem' ? `Na maszynie do podciągania ze wspomaganiem (przeciwwaga pod kolana) dobierz taką pomoc, żeby zrobić ${lo}-${hi} powtórzeń. Im mniej kg, tym trudniej.`
+        : g.label === 'Pełne' ? `Zrób tyle pełnych podciągnięć, ile dasz radę (cel ${lo}-${hi} w serii), z pełnym zwisem na dole.` : `Cel ${lo}-${hi} w serii.`
+      return { kind: 'stage', title: `Nowy etap ${st.n}/4 🎉`, short: `Etap ${st.n}/4`,
+        text: `Przeszedłeś dalej: ${st.title.toLowerCase()}. ${how}` + (st.goal ? ` Następny etap, gdy zrobisz ${st.goal}.` : '') }
+    }
+    return { kind: 'first', short: `Zakres ${lo}-${hi}`, text: `Pierwszy raz: dobierz ciężar tak, żeby zrobić ${lo}-${hi} ${repsWord(hi)} w każdej serii.` }
+  }
   const last = hist[0].sets
   const n = g.sets
 
@@ -40,7 +50,7 @@ export function suggest(g, session) {
     const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= 3 && x.w >= lo)
     const top = vals.length >= n && (vals.every(v => v >= hi) || easy)
     if (top) {
-      const how = HARDER[g.key] || HARDER[g.name]
+      const how = HARDER[g.key + '@' + g.stage] || HARDER[g.key] || HARDER[g.name]
       return { kind: 'up', title: 'Masz cały zakres! 💪', short: how ? 'Utrudnij' : `${hi} ${unit}`,
         text: `Ostatnio: ${vals.join(', ')} ${unit}${qTxt(last)} – ${easy && !vals.every(v => v >= hi) ? 'za łatwo, w każdej serii zostało 3+' : `wszystkie serie na górze zakresu (${lo}-${hi})`}.` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
     }
@@ -52,7 +62,7 @@ export function suggest(g, session) {
       text: `Ostatnio: ${vals.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}${qTxt(last)} Dziś celuj w ${target.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}`, sets: target.map(w => ({ w })) }
   }
 
-  const inc = INC[g.name] || 2.5, assist = ASSISTED.has(g.name)
+  const inc = incOf(g), assist = isAssisted(g)
   const W = assist ? Math.min(...last.map(x => x.w)) : Math.max(...last.map(x => x.w))
   const work = last.filter(x => x.w === W)
   // workouts saved before reps were tracked have no reps: don't guess (it could wrongly say "go lighter")
@@ -94,6 +104,22 @@ export function suggest(g, session) {
     text: `Ostatnio ${lastTxt}. Zostań na ${fmtNum(W)} kg i zrób ${target.join(', ')}. ` +
       (left > 0 ? `Gdy zrobisz ${n} × ${hi}, dodasz ${fmtNum(inc)} kg.` : `Jak się uda, następnym razem ${assist ? 'mniej wspomagania' : 'więcej kilogramów'}.`),
     sets: target.map(r => ({ w: W, r })) }
+}
+
+// light week: same exercises, half the sets, ~10 % lighter, bottom of the range, 3-4 reps left in every set
+function deload(g, session, hist, { lo }) {
+  const n = deloadSets(g.sets || 1), unit = UNITS[g.unit].short
+  const note = 'Tydzień lżejszy (deload): połowa serii, bez dochodzenia do upadku – zostaw 3-4 powtórzenia w zapasie. Mięśnie odpoczywają, siła wraca, a w przyszłym tygodniu wracasz do normalnych ciężarów.'
+  if (!hist.length) return { kind: 'deload', title: 'Tydzień lżejszy', short: `${n} × ${lo}`, note, text: `Dziś ${n} × ${lo}, lekko.` }
+  const last = hist[0].sets
+  if (g.unit !== 'kg') {
+    const v = Math.min(lo, Math.max(...last.map(x => x.w)))
+    return { kind: 'deload', title: 'Tydzień lżejszy', short: `${n} × ${v} ${unit}`, note, text: `Dziś ${n} × ${v} ${unit}${unit.endsWith('.') ? '' : '.'}`, sets: Array.from({ length: n }, () => ({ w: v })) }
+  }
+  const assist = isAssisted(g)
+  const W = assist ? Math.min(...last.map(x => x.w)) : Math.max(...last.map(x => x.w)), w = deloadKg(W, g)
+  return { kind: 'deload', title: 'Tydzień lżejszy', short: `${fmtNum(w)} kg × ${lo}`,
+    note, text: `Dziś ${n} × ${lo} na ${fmtNum(w)} kg (zwykle ${fmtNum(W)} kg).`, sets: Array.from({ length: n }, () => ({ w, r: lo })) }
 }
 
 // put the suggested weight/reps into the sets not ticked yet (adds missing planned sets)

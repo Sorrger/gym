@@ -21,6 +21,7 @@
           </div>
           <BodyMap class="hero-map" v-bind="dayMuscles(day)" />
         </div>
+        <p v-if="dl.active || dl.due" class="tip dl"><ion-icon :icon="trendingDown" /> Tydzień lżejszy (deload): połowa serii, ok. 10% lżej, zostaw 3-4 powtórzenia w zapasie. Apka sama ustawi ciężary.</p>
         <p v-if="plan.note" class="tip"><ion-icon :icon="informationCircle" /> {{ plan.note }}</p>
 
         <div class="card exs">
@@ -28,6 +29,7 @@
             <span class="n num">{{ i + 1 }}</span>
             <div class="ex-body">
               <b>{{ ex.name }}</b>
+              <span v-if="ex.stage" class="stage num">{{ ex.stage }}</span>
               <div v-for="g in ex.groups" :key="g.key" class="g">
                 <span class="tgt num">{{ g.label ? g.label + ': ' : '' }}{{ g.target }}</span>
                 <span class="last num" v-if="g.last">ostatnio {{ g.last }}</span>
@@ -52,10 +54,10 @@
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, useIonRouter } from '@ionic/vue'
-import { chevronBack, statsChart, play, informationCircle } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, groupsOf, fmtNum } from '../plan'
+import { chevronBack, statsChart, play, informationCircle, trendingDown } from 'ionicons/icons'
+import { PLAN, COLORS, UNITS, groupsOf, fmtNum, targetOf, PULLUP_STAGES, stageOf } from '../plan'
 import { dayMuscles } from '../muscles'
-import { state, sorted, lastDoneOf, activeSession, ago } from '../store'
+import { state, sorted, lastDoneOf, activeSession, ago, deloadState, deloadSets } from '../store'
 import { startPlan } from '../startFlow'
 import BodyMap from './BodyMap.vue'
 
@@ -66,7 +68,8 @@ const color = computed(() => (plan.value ? COLORS[plan.value.key] : 'var(--accen
 const active = computed(() => { void state.sessions; return activeSession() })
 const lastTxt = computed(() => { void state.sessions; const l = lastDoneOf(day.value); return l ? 'Ostatnio ' + ago(l.date) : 'Jeszcze nie robiony' })
 // rough time: ~2,5 min per set incl. rest
-const minutes = computed(() => Math.round(plan.value.ex.flatMap(e => groupsOf(e)).reduce((a, g) => a + g.sets, 0) * 2.5 / 5) * 5)
+const dl = computed(() => { void state.sessions; return deloadState() })
+const minutes = computed(() => { void state.sessions; const half = dl.value.active || dl.value.due; return Math.round(plan.value.ex.flatMap(e => groupsOf(e)).reduce((a, g) => a + (half ? deloadSets(g.sets) : g.sets), 0) * 2.5 / 5) * 5 })
 
 function lastOf(g) {
   const s = sorted().find(o => (o.ex?.[g.key] || []).some(x => x.d))
@@ -77,8 +80,9 @@ function lastOf(g) {
   const ws = new Set(done.map(x => x.w))
   return ws.size === 1 ? `${fmtNum(done[0].w)} kg × ${done.map(x => x.r ?? '–').join(', ')}` : done.map(x => `${fmtNum(x.w)}×${x.r ?? '–'}`).join(' · ')
 }
-const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
+const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], stage: e[3] === 'stages' ? stageText() : '', groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
 
+function stageText() { const n = stageOf(); const st = PULLUP_STAGES[n - 1]; return targetOf(['', '', '', 'stages']) + (st.goal ? ` – dalej, gdy: ${st.goal}` : '') }
 function goBack() { if (router.canGoBack()) router.back(); else router.navigate('/tabs/home', 'back', 'replace') }
 const go = () => startPlan(day.value, router)
 </script>
@@ -120,4 +124,6 @@ const go = () => startPlan(day.value, router)
 .go { width: 100%; height: 56px; border: 0; border-radius: 18px; background: var(--c); color: #fff; font: inherit; font-size: 18px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 35%, transparent); }
 .go ion-icon { font-size: 22px; }
+.stage { display: block; font-size: 12.5px; color: var(--c); font-weight: 600; margin: 1px 0 2px; }
+.tip.dl { color: #0a84ff; }
 </style>

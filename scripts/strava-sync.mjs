@@ -4,7 +4,7 @@
 // 3. pulls recent strength activities (heart rate, kcal, time), matches them to workouts by time
 // 4. writes the exercise list into the Strava activity description
 // 5. saves everything to strava.json in the gist; the app shows it
-import { PLAN, groupsOf, UNITS, migrateNames } from '../src/plan.js'
+import { PLAN, groupsOf, UNITS, migrateNames, PULLUP, PULLUP_STAGES } from '../src/plan.js'
 import { musclesOf, MUSCLE_NAMES } from '../src/muscles.js'
 const { GIST_TOKEN, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET } = process.env
 if (!GIST_TOKEN || !STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET) { console.log('Strava secrets not set – nothing to do'); process.exit(0) }
@@ -48,7 +48,8 @@ async function oauth(body) {
   return j
 }
 
-const UNIT = Object.fromEntries(PLAN.flatMap(d => d.ex.flatMap(e => groupsOf(e).map(g => [g.key, g.unit]))))
+const UNIT = Object.fromEntries([...PLAN.flatMap(d => d.ex.flatMap(e => groupsOf(e).map(g => [g.key, g.unit]))),
+  ...PULLUP_STAGES.flatMap(st => st.parts.map(p => [PULLUP + ' · ' + p.label, p.unit]))])
 const PL = Object.fromEntries(Object.entries(MUSCLE_NAMES).map(([k, v]) => [k, v.toLowerCase()]))
 // default names from Strava / Garmin ("Night Weight Training", "Siła", "Trening siłowy"…) may be replaced; a name the user typed stays
 const DEFAULT_NAME = /^((morning|lunch|afternoon|evening|night)\s+)?(weight training|workout|strength( training)?|si[łl]a|trening( si[łl]owy)?|[a-ząćęłńóśźż ]*trening si[łl]owy)$/i
@@ -65,7 +66,7 @@ function setsText(done, unit) {
 // Strava description: only what was really done (skipped exercises and their muscles are left out)
 function describe(s, all = []) {
   const plan = PLAN[s.day]
-  const order = plan ? plan.ex.flatMap(e => groupsOf(e)) : []
+  const order = plan ? plan.ex.flatMap(e => groupsOf(e, s)) : []
   const known = new Set(order.map(g => g.key))
   const extra = Object.keys(s.ex || {}).filter(k => !known.has(k)).map(k => ({ key: k, name: k.split(' · ')[0], label: k.split(' · ')[1] || null, unit: UNIT[k] || 'kg' }))
   const earlier = all.filter(o => o.id !== s.id && (o.started || 0) < (s.started || 0))
@@ -86,7 +87,7 @@ function describe(s, all = []) {
   }
   if (!n) return ''
   // the title already says the plan; Strava shows only ~3 lines before "Read more", so the summary goes first
-  const head = [`${MARK} · ${n} ${plural(n, 'seria', 'serie', 'serii')} · ${blocks.size} ${plural(blocks.size, 'ćwiczenie', 'ćwiczenia', 'ćwiczeń')}` + (vol ? ` · ${vol >= 1000 ? fmt(Math.round(vol / 100) / 10) + ' t' : Math.round(vol) + ' kg'} objętości` : ''),
+  const head = [`${MARK} · ${n} ${plural(n, 'seria', 'serie', 'serii')} · ${blocks.size} ${plural(blocks.size, 'ćwiczenie', 'ćwiczenia', 'ćwiczeń')}` + (vol ? ` · ${vol >= 1000 ? fmt(Math.round(vol / 100) / 10) + ' t' : Math.round(vol) + ' kg'} objętości` : '') + (s.deload ? ' · tydzień lżejszy' : ''),
     `💪 ${[...main].map((x, i) => (i ? MUSCLE_NAMES[x].toLowerCase() : MUSCLE_NAMES[x])).join(', ')}`]
   if (prs.length) head.push(`🏆 ${plural(prs.length, 'Rekord', 'Rekordy', 'Rekordów')}: ${prs.join(', ')}`)
   const body = [...blocks].map(([name, ls], i) => `${i + 1}. ${name}\n` + ls.map(l => '    ' + l).join('\n'))
