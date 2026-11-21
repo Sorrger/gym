@@ -121,18 +121,18 @@ export function live(g, session) {
   const last = arr[li], range = rangeOf(g.target)
   if (!last || last.w == null || !rest.length || !range) return null
   const { lo, hi } = range, r = last.r ?? DEF_REPS, q = last.q, inc = incOf(g), assist = isAssisted(g)
-  const n = li + 1, kg = v => fmtNum(v) + ' kg'
+  const kg = v => fmtNum(v) + ' kg'
   if (r < lo && (q == null || q === 0)) {
     const w = assist ? last.w + inc : Math.max(0, Math.min(last.w - inc, roundTo(last.w * 0.9, inc)))
     if (rest.every(x => x.w != null && (assist ? x.w >= w : x.w <= w))) return null
     return { kind: 'down', w, r: lo, short: `${kg(w)} × ${lo}`,
-      text: `Seria ${n}: ${r} ${r === 1 ? 'powtórzenie' : 'powt.'}${q === 0 ? ' do upadku' : ''} – poniżej zakresu ${lo}-${hi}. ${assist ? 'Więcej pomocy' : 'Trochę lżej'} na kolejne serie: ${kg(w)} × ${lo}.` }
+      text: `Za ciężko (${r} z ${lo}-${hi}). ${assist ? 'Więcej pomocy' : 'Kolejne serie'}: ${kg(w)} × ${lo}` }
   }
   if ((q === 3 && r >= hi) || r >= hi + 3) {
     const w = assist ? Math.max(0, last.w - inc) : last.w + inc
     if (rest.every(x => x.w != null && (assist ? x.w <= w : x.w >= w))) return null
     return { kind: 'up', w, r: lo, short: `${kg(w)} × ${lo}`,
-      text: `Seria ${n}: ${r} powt.${q === 3 ? ' i zostało 3+' : ''} – za lekko. ${assist ? 'Mniej pomocy' : 'Dołóż'} na kolejne serie: ${kg(w)} × ${lo}.` }
+      text: `Za lekko (${r}${q === 3 ? ', zapas 3+' : ''}). ${assist ? 'Mniej pomocy' : 'Kolejne serie'}: ${kg(w)} × ${lo}` }
   }
   return null
 }

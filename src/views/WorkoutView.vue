@@ -63,12 +63,6 @@
                   <div class="warm-row work num"><b>Robocze {{ fmtNum(warm(g).W) }} kg</b><span>{{ warm(g).plates.length ? 'na stronę: ' + warm(g).plates.map(fmtNum).join(' + ') : '' }}</span></div>
                   <p>Spokojnie, bez zmęczenia, ok. 1 min przerwy między seriami.</p>
                 </div>
-                <!-- advice for the sets still to do, after a clearly too heavy / too light set -->
-                <div v-if="liveOf(g)" class="live-tip" :class="liveOf(g).kind">
-                  <ion-icon :icon="liveOf(g).kind === 'up' ? trendingUp : trendingDown" />
-                  <span>{{ liveOf(g).text }}</span>
-                  <button class="press" @click="applyLive(g)">Ustaw</button>
-                </div>
                 <div class="sets">
                   <div class="set" v-for="(x, si) in sets(g.key)" :key="si" :class="{ d: x.d }">
                     <span class="idx num">{{ si + 1 }}</span>
@@ -95,6 +89,12 @@
                       <button v-for="q in [0, 1, 2, 3]" :key="q" class="rir-b num press" :class="{ on: x.q === q }"
                         @click="setRir(g, si, q)" :aria-label="'Zostało ' + q + (q === 3 ? ' lub więcej' : '') + ' powtórzeń do upadku'">{{ q === 3 ? '3+' : q }}</button>
                     </div>
+                    <!-- advice for the sets still to do, right under the set that was clearly too heavy / too light -->
+                        <div v-if="liveOf(g) && si === lastDone(g)" class="live-tip" :class="liveOf(g).kind">
+                          <ion-icon :icon="liveOf(g).kind === 'up' ? trendingUp : trendingDown" />
+                          <span>{{ liveOf(g).text }}</span>
+                          <button class="press" @click="applyLive(g)">Ustaw</button>
+                        </div>
                   </div>
                 </div>
                 <button v-if="g.unit === 's'" class="timer-btn" @click="openTimer(g)">
@@ -300,6 +300,7 @@ function warm(g) {
   const list = warmupSets(W, bar)
   return list.length ? { W, sets: list, plates: platesPerSide(W, bar) } : null
 }
+const lastDone = g => sets(g.key).reduce((k, x, i) => (x.d ? i : k), -1)
 const liveOf = g => (s.value ? live(g, s.value) : null)
 function applyLive(g) {
   const t = liveOf(g)
@@ -603,7 +604,7 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .warm-row span { color: var(--app-muted); font-size: 13px; }
 .warm-row.work b { color: var(--c); }
 .warm p { margin: 4px 0 0; font-size: 12px; color: var(--app-muted); }
-.live-tip { display: flex; align-items: center; gap: 8px; margin: 8px 4px 0; padding: 9px 10px 9px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.3;
+.live-tip { grid-column: 1 / 4; display: flex; align-items: center; gap: 8px; margin: 2px 0 0; padding: 9px 10px 9px 12px; border-radius: 14px; font-size: 13.5px; line-height: 1.3;
   color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 11%, transparent); }
 .live-tip.up { color: var(--app-ok); background: color-mix(in srgb, var(--app-ok) 12%, transparent); }
 .live-tip ion-icon { font-size: 18px; flex: none; }
