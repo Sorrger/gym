@@ -1,6 +1,7 @@
 import './nobounce'
 import { createApp } from 'vue'
 import { IonicVue } from '@ionic/vue'
+import { pageAnim } from './pageAnim'
 import { createRouter, createWebHashHistory } from '@ionic/vue-router'
 import App from './App.vue'
 import Tabs from './views/Tabs.vue'
@@ -58,7 +59,7 @@ load().then(() => {
   initCloud()
   initStrava()
   initWeights()
-  const app = createApp(App).use(IonicVue, { mode: 'ios' }).use(router)
+  const app = createApp(App).use(IonicVue, { mode: 'ios', navAnimation: pageAnim }).use(router)
   router.isReady().then(() => {
     app.mount('#app')
     // warm up every screen in the background, so the first visit of a tab or page doesn't wait for its code
