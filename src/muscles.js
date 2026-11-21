@@ -14,6 +14,8 @@ export const MUSCLES = {
 
   'Nauka podciągania': [['lats'], ['biceps', 'upperback', 'forearms']],
   'Wiosłowanie hantlem jednorącz z podparciem': [['lats', 'upperback'], ['biceps', 'reardelts']],
+  'Wiosłowanie na wyciągu dolnym szerokim chwytem': [['upperback', 'lats'], ['reardelts', 'traps', 'biceps']],
+  // removed from Pull (Nov 2026) – kept so old workouts still count
   'Wiosłowanie sztangą T (T-bar)': [['upperback', 'lats'], ['biceps', 'reardelts', 'lowerback']],
   'Face pull na wyciągu': [['reardelts', 'upperback'], ['traps']],
   'Uginanie ramion z hantlami na ławce skośnej': [['biceps'], ['forearms']],
