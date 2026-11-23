@@ -29,6 +29,7 @@
             <span class="n num">{{ i + 1 }}</span>
             <div class="ex-body">
               <b>{{ ex.name }}</b>
+              <span v-if="ex.alt.length" class="alt">albo: {{ ex.alt.join(', ') }}</span>
               <span v-if="ex.stage" class="stage num">{{ ex.stage.t }}<small v-if="ex.stage.goal">Następny etap: {{ ex.stage.goal }}</small></span>
               <div v-for="g in ex.groups" :key="g.key" class="g">
                 <span class="tgt num">{{ g.label ? g.label + ': ' : '' }}{{ g.target }}</span>
@@ -55,7 +56,7 @@ import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, useIonRouter } from '@ionic/vue'
 import { chevronBack, statsChart, play, informationCircle, trendingDown } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, groupsOf, fmtNum, targetOf, PULLUP_STAGES, stageOf } from '../plan'
+import { PLAN, COLORS, UNITS, groupsOf, fmtNum, targetOf, PULLUP_STAGES, stageOf, altOf } from '../plan'
 import { dayMuscles } from '../muscles'
 import { state, sorted, lastDoneOf, activeSession, ago, deloadState, deloadSets } from '../store'
 import { startPlan } from '../startFlow'
@@ -82,7 +83,7 @@ function lastOf(g) {
   const ws = new Set(done.map(x => x.w))
   return ws.size === 1 ? `${fmtNum(done[0].w)} kg × ${done.map(x => x.r ?? '–').join(', ')}` : done.map(x => `${fmtNum(x.w)}×${x.r ?? '–'}`).join(' · ')
 }
-const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], stage: e[3] === 'stages' ? stageText() : '', groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
+const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], alt: altOf(e[0]), stage: e[3] === 'stages' ? stageText() : '', groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
 
 function stageText() { const st = PULLUP_STAGES[stageOf() - 1]; return { t: targetOf(['', '', '', 'stages']), goal: st.goal } }
 function goBack() { if (router.canGoBack()) router.back(); else router.navigate('/tabs/home', 'back', 'replace') }
@@ -126,6 +127,7 @@ const go = () => startPlan(day.value, router)
 .go { width: 100%; height: 56px; border: 0; border-radius: 18px; background: var(--c); color: #fff; font: inherit; font-size: 18px; font-weight: 700;
   display: flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 8px 22px color-mix(in srgb, var(--c) 35%, transparent); }
 .go ion-icon { font-size: 22px; }
+.alt { display: block; font-size: 12.5px; color: var(--app-muted); margin: 1px 0 2px; }
 .stage { display: block; font-size: 13px; color: var(--c); font-weight: 600; margin: 1px 0 2px; }
 .stage small { display: block; font-size: 12px; font-weight: 400; color: var(--app-muted); margin-top: 1px; }
 .dl-box { display: flex; gap: 12px; align-items: flex-start; margin: 0 16px 14px; padding: 12px 14px; border-radius: 16px; color: #0a84ff; background: color-mix(in srgb, #0a84ff 9%, var(--app-card)); }

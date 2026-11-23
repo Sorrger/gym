@@ -37,6 +37,9 @@
                   <span v-if="exTag" class="tag">{{ exTag }}</span>
                   <button v-if="s.deload" class="tag dl press" @click="deloadInfo">Tydzień lżejszy</button>
                 </div>
+                <button v-if="swapOpts.length > 1" class="swap press" @click="swapAsk">
+                  <ion-icon :icon="swapHorizontal" /> {{ planName !== exName ? 'Zamiennik · zmień' : 'Zajęte? Zamień ćwiczenie' }}
+                </button>
               </div>
               <div class="ex-body"><BodyMap v-bind="exMuscles" /></div>
             </div>
@@ -222,14 +225,14 @@ import BodyMap from './BodyMap.vue'
 import { stravaFor, svText } from '../strava'
 import { suggest, applySuggestion, live } from '../coach'
 import { musclesOf } from '../muscles'
-import { computed, ref, watch, watchEffect, onUnmounted } from 'vue'
+import { computed, ref, watch, watchEffect, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
-import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline } from 'ionicons/icons'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide } from '../plan'
+import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline, swapHorizontal } from 'ionicons/icons'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn } from '../plan'
 import { cloud } from '../cloud'
-import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload } from '../store'
+import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload, swapExercise } from '../store'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -247,7 +250,24 @@ const color = computed(() => COLORS[plan.value?.key] || '#2f4bd8')
 const progPct = computed(() => { const k = counts(s.value); return k.t ? k.n / k.t * 100 : 0 })
 
 const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, plan.value.ex.length - 1) : 0))
-const exName = computed(() => plan.value?.ex[idx.value][0] || '')
+const planName = computed(() => plan.value?.ex[idx.value][0] || '')
+const exName = computed(() => (plan.value ? nameIn(plan.value.ex[idx.value], s.value) : ''))
+// alternatives for a busy machine (ALT in plan.js): the plan's exercise first
+const swapOpts = computed(() => (planName.value ? [planName.value, ...altOf(planName.value)] : []))
+async function swapAsk() {
+  const sess = s.value, cur = exName.value
+  if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) {
+    await ask({ icon: swapHorizontal, color: color.value, title: 'Masz już zaliczone serie', message: `Żeby zamienić ćwiczenie, najpierw odznacz serie ${cur}.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
+    return
+  }
+  const { role } = await ask({ icon: swapHorizontal, color: color.value, title: 'Zamień ćwiczenie',
+    message: 'Zrób to, co jest wolne. Każde ćwiczenie ma swoją historię i swoje podpowiedzi ciężaru.',
+    buttons: [...swapOpts.value.map((n, k) => ({ text: (n === cur ? '✓ ' : '') + n + (k === 0 ? ' (z planu)' : ''), role: n, kind: n === cur ? 'soft' : 'primary' })), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (role === 'cancel' || role === cur || !swapOpts.value.includes(role)) return
+  swapExercise(sess, planName.value, role)
+  state.flash = 'Dziś: ' + role
+  await nextTick(); const l = sugList(); if (l.length) showTip(l)
+}
 const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value], s.value) || '' : ''))
 const exTag = computed(() => plan.value?.ex[idx.value][2])
 const sv = computed(() => s.value && stravaFor(s.value.id))
@@ -587,6 +607,9 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .ex-title { display: flex; gap: 8px; align-items: center; }
 .ex-tt { flex: 1; min-width: 0; }
 .ex-body { flex: none; height: 112px; }
+.swap { display: inline-flex; align-items: center; gap: 6px; margin: 8px 4px 0; padding: 6px 11px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
+.swap ion-icon { font-size: 15px; }
 .ex-sub { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 4px; }
 .target { color: var(--c); font-weight: 600; font-size: 17px; }
 .tag { font-size: 12px; font-weight: 600; color: var(--app-muted); background: var(--app-field); border-radius: 6px; padding: 2px 7px; }

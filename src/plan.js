@@ -121,6 +121,16 @@ export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].sh
 // An exercise may be made of parts with their own sets (e.g. Nauka podciągania = Wiszenie + Negatywy).
 // A plain exercise may name its unit instead of parts: [name, target, tag, 'reps'].
 // Each part is stored under its own key "Name · Part"; a plain exercise is stored under its name.
+// Interchangeable exercises (Nov 23 2026, user): do whichever machine is free. Chosen per workout on the
+// Workout screen (session.swap = { planName: chosenName }); each exercise keeps its own history and progression.
+export const ALT = {
+  'Rozpiętki na bramie z dołu do góry': ['Rozpiętki na maszynie (butterfly)'],
+  'Rozpiętki na maszynie (butterfly)': ['Rozpiętki na bramie z dołu do góry']
+}
+export const altOf = name => ALT[name] || []
+// the exercise a workout really did at this plan position (after a swap)
+export const nameIn = (ex, s) => (s && s !== 'all' && s.swap?.[ex[0]]) || ex[0]
+
 // ctx: a stored workout (its own stage), 'all' (every part reached so far – for progress/history), or nothing (current stage)
 function stagedParts(ctx) {
   const cur = currentStage()
@@ -139,6 +149,9 @@ export function targetOf(ex, ctx) {
   return `Etap ${n}/4 · ${PULLUP_STAGES[n - 1].title.toLowerCase()}`
 }
 export function groupsOf(ex, ctx) {
+  // progress views: the plan's exercise and its alternatives (each with its own history)
+  if (ctx === 'all' && ALT[ex[0]]) return [ex, ...ALT[ex[0]].map(n => [n, ex[1], ex[2]])].flatMap((e, k) => groupsOf(e).map(g => ({ ...g, alt: k > 0 })))
+  if (ctx && ctx !== 'all' && ctx.swap?.[ex[0]]) ex = [ctx.swap[ex[0]], ex[1], ex[2], ex[3]]
   const [name, target, , parts] = ex
   if (parts === 'stages') return stagedParts(ctx).map(p => ({ key: name + ' · ' + p.label, name, label: p.label, unit: p.unit, target: p.target, sets: p.sets, stage: p.stage }))
   if (typeof parts === 'string') return [{ key: name, name, label: null, unit: parts, target, sets: nSets(target) }]

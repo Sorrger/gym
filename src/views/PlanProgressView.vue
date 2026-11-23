@@ -33,9 +33,10 @@
 
         <h3 class="section-title">Ćwiczenia</h3>
         <div class="list">
-          <button v-for="(t, i) in tiles" :key="t.key" class="row-card press" :class="{ empty: !t.pts.length }" :style="{ '--c': COLORS[plan.key] }" @click="open(i)">
+          <template v-for="(t, i) in tiles" :key="t.key">
+          <button v-if="!t.alt || t.pts.length" class="row-card press" :class="{ empty: !t.pts.length }" :style="{ '--c': COLORS[plan.key] }" @click="open(i)">
             <div class="rc-main">
-              <span class="rc-name"><small v-if="t.label" class="rc-parent">{{ t.name }}</small>{{ t.label || t.name }}</span>
+              <span class="rc-name"><small v-if="t.label || t.alt" class="rc-parent">{{ t.alt ? 'Zamiennik' : t.name }}</small>{{ t.label || t.name }}</span>
               <div class="rc-val num" v-if="t.pts.length">
                 <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
                 <span v-if="t.pr" class="pr" title="Nowy rekord">🏆</span>
@@ -57,6 +58,7 @@
               <ion-icon :icon="chevronForward" class="chev" />
             </div>
           </button>
+          </template>
         </div>
       </div>
     </ion-content>
@@ -86,7 +88,7 @@ const tiles = computed(() => {
     const pts = series(g.key)
     const ws = pts.map(p => p.w)
     const prevBest = ws.length > 1 ? (ASS.has(g) ? Math.min(...ws.slice(0, -1)) : Math.max(...ws.slice(0, -1))) : null
-    const t = { ...g, pts, pr: prevBest != null && (ASS.has(g) ? ws[ws.length - 1] < prevBest : ws[ws.length - 1] > prevBest), status: now.has(g.key) ? statusOf(g) : { kind: 'up', text: '✓ Etap zaliczony' },
+    const t = { ...g, pts, pr: prevBest != null && (ASS.has(g) ? ws[ws.length - 1] < prevBest : ws[ws.length - 1] > prevBest), status: now.has(g.key) || g.alt ? statusOf(g) : { kind: 'up', text: '✓ Etap zaliczony' },
       last: ws[ws.length - 1], lastR: pts.length ? pts[pts.length - 1].r : null, best: ws.length ? (ASS.has(g) ? Math.min(...ws) : Math.max(...ws)) : null, diff: ws.length ? ws[ws.length - 1] - ws[0] : 0 }
     if (pts.length > 1) {
       const lo = Math.min(...ws), hi = Math.max(...ws), span = hi - lo || 1

@@ -1,6 +1,6 @@
 import { reactive, watch, computed } from 'vue'
 import { get, set } from 'idb-keyval'
-import { PLAN, entriesOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
+import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -119,6 +119,19 @@ export function startSession(day) {
   state.sessions[s.id] = s
   saveNow()
   return s
+}
+// swap a plan exercise for its alternative in this workout (machine busy). Untouched sets of the old one are dropped,
+// the new one starts from its own history (deload rules too).
+export function swapExercise(s, orig, to) {
+  const ex = PLAN[s.day]?.ex.find(e => e[0] === orig)
+  if (!ex) return
+  const before = groupsOf(ex, s)
+  s.swap = { ...(s.swap || {}) }
+  if (to === orig) delete s.swap[orig]; else s.swap[orig] = to
+  if (!Object.keys(s.swap).length) delete s.swap
+  for (const g of before) if (!(s.ex[g.key] || []).some(x => x.d)) delete s.ex[g.key]
+  for (const g of groupsOf(ex, s)) if (!s.ex[g.key]) { const n = g.sets || 1; s.ex[g.key] = prefill(g, s.deload ? deloadSets(n) : n, !!s.deload, s.id) }
+  s.updated = Date.now()
 }
 // "Trenuj normalnie" in a deload workout: back to the full plan and numbers; the deload waits one more week
 export function cancelDeload(s) {
