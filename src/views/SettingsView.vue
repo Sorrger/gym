@@ -1,12 +1,39 @@
 <template>
   <ion-page>
-    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Kopia</span></div>
+    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Profil</span></div>
     <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
       <header class="big-head">
-        <h1 class="t-large">Kopia</h1>
-        <p class="sub">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona' : 'Twoje treningi są tylko w tym telefonie' }}</p>
+        <h1 class="t-large">Profil</h1>
+        <p class="sub">{{ doneCount }} {{ doneCount === 1 ? 'trening' : doneCount % 10 >= 2 && doneCount % 10 <= 4 && (doneCount % 100 < 12 || doneCount % 100 > 14) ? 'treningi' : 'treningów' }} w apce</p>
       </header>
       <div class="page">
+
+        <!-- body weight (own screen) -->
+        <div class="ios-group">
+          <button class="row press" @click="router.push('/weight')">
+            <span class="r-ico" style="--c: #30b0c7"><ion-icon :icon="scaleOutline" /></span>
+            <div class="grow"><b>Waga</b><span>{{ lastW ? 'Ostatnio ' + String(lastW.kg).replace('.', ',') + ' kg · ' + ago(lastW.date) : 'Zapisuj wagę i patrz na trend' }}</span></div>
+            <ion-icon :icon="chevronForward" class="chev" />
+          </button>
+        </div>
+
+        <!-- look -->
+        <h3 class="section-title">Wygląd</h3>
+        <div class="card look">
+          <span class="lbl">Motyw</span>
+          <div class="seg3">
+            <button v-for="m in MODES" :key="m.v" class="press" :class="{ on: look.mode === m.v }" @click="setLook('mode', m.v)">{{ m.t }}</button>
+          </div>
+          <span class="lbl">Kolor</span>
+          <div class="sw">
+            <button v-for="a in ACCENTS" :key="a.id" class="press" :class="{ on: look.accent === a.id }" @click="setLook('accent', a.id)" :aria-label="a.name">
+              <i :style="{ background: a.light }"></i><small>{{ a.name }}</small>
+            </button>
+          </div>
+        </div>
+
+        <h3 class="section-title">Kopia zapasowa</h3>
+        <p class="kop">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona.' : 'Twoje treningi są tylko w tym telefonie.' }}</p>
 
         <!-- automatic GitHub backup -->
         <div class="card hero" v-if="!cloud.token">
@@ -113,14 +140,21 @@ import { useScrolled } from '../useScrolled'
 import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
-import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline } from 'ionicons/icons'
+import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, scaleOutline } from 'ionicons/icons'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { wstate, importWeights } from '../weight'
 import { planData, importPlan } from '../customPlan'
 import { cloud, connect, syncNow, restoreNow, disconnect } from '../cloud'
+import { weights } from '../weight'
+import { look, setLook, ACCENTS } from '../theme'
+import { useIonRouter } from '@ionic/vue'
 import { strava, status as stravaStatus, startConnect, sendCode, pull, disconnectStrava, STRAVA_ICON } from '../strava'
 
 const { scrolled, onScroll } = useScrolled()
+const router = useIonRouter()
+const MODES = [{ v: 'system', t: 'Jak telefon' }, { v: 'light', t: 'Jasny' }, { v: 'dark', t: 'Ciemny' }]
+const lastW = computed(() => weights.value[weights.value.length - 1] || null)
+const doneCount = computed(() => { void state.sessions; return doneSessions().length })
 const fileInput = ref(null)
 const msg = ref('')
 const count = computed(() => { void state.sessions; return doneSessions().length })
@@ -242,4 +276,20 @@ async function askDisconnect() {
 .stats + .ios-group { margin-top: 0; }
 .row.danger b { color: var(--app-bad); text-align: center; }
 .row:disabled { opacity: .5; }
+.r-ico { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; color: #fff; background: var(--c); font-size: 18px; }
+.row .grow b { display: block; font-size: 16px; font-weight: 600; }
+.row .grow span { display: block; font-size: 13px; color: var(--app-muted); }
+.chev { color: var(--app-faint); font-size: 18px; }
+.look .lbl { display: block; font-size: 13px; color: var(--app-muted); margin: 0 2px 6px; }
+.look .lbl + .seg3 { margin-bottom: 14px; }
+.seg3 { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--app-field); margin-bottom: 14px; }
+.seg3 button { flex: 1; border: 0; border-radius: 8px; padding: 8px 2px; font: inherit; font-size: 14px; font-weight: 600; background: none; color: var(--ion-text-color); }
+.seg3 button.on { background: var(--app-card); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+.sw { display: flex; gap: 6px; }
+.sw button { flex: 1 1 0; min-width: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 2px 0; font: inherit; color: var(--app-muted); }
+.sw i { width: 34px; height: 34px; border-radius: 50%; display: block; box-shadow: 0 0 0 2px var(--app-card), 0 0 0 2px transparent; }
+.sw button.on i { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--ion-text-color); }
+.sw small { font-size: 11px; }
+.sw button.on small { color: var(--ion-text-color); font-weight: 600; }
+.kop { margin: -2px 20px 10px; font-size: 13.5px; color: var(--app-muted); }
 </style>

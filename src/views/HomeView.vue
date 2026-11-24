@@ -11,7 +11,7 @@
           <ion-icon :icon="alertCircle" />
           <div><b>Nie udało się wczytać treningów</b><span>Nic nie zostało usunięte. Dotknij, żeby spróbować ponownie.</span></div>
         </div>
-        <div v-else-if="backupWarn" class="card warn" @click="router.push('/tabs/settings')">
+        <div v-else-if="backupWarn" class="card warn" @click="router.push('/tabs/profile')">
           <ion-icon :icon="cloudOfflineOutline" />
           <div><b>Kopia na GitHub nie działa</b><span>{{ cloud.error || 'Nie wysłano od kilku dni' }}</span></div>
         </div>
@@ -56,13 +56,14 @@
           <div><b>Tydzień lżejszy (deload)</b>
             <span>{{ dl.active ? 'Do ' + dlEnd + ': połowa serii, ok. 10% lżej, 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. Połowa serii, ok. 10% lżej, potem wracasz do normy.' }}</span></div>
         </div>
-        <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Zacznij trening' }}</h3>
+        <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Twój trening' }}</h3>
         <button v-if="!active" class="off-link press" @click="markOff">
           <template v-if="sug.kind === 'missed'">Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? </template><template v-else>Trening zrobiony bez apki? </template><b>Oznacz</b>
         </button>
-        <div class="plans">
+        <!-- only the suggested training here; all of them are in the Trening tab -->
+        <div class="plans solo">
           <template v-for="(d, i) in PLAN" :key="d.key">
-          <button v-if="!d.hidden" class="plan press" :class="{ next: i === next && !active }"
+          <button v-if="!d.hidden && i === next && !active" class="plan press" :class="{ next: i === next && !active }"
             :style="{ '--c': COLORS[d.key] }" @click="start(i)">
             <div class="plan-top">
               <div class="plan-l">
@@ -76,6 +77,7 @@
           </button>
           </template>
         </div>
+        <button class="all-link press" @click="router.push('/tabs/train')">Wszystkie treningi ({{ nVisible }}) <ion-icon :icon="chevronForward" /></button>
 
         <div class="stats foot">
           <div><span>Ten miesiąc</span><b>{{ monthCount }}</b></div>
@@ -180,6 +182,7 @@ function open(id) { router.push('/workout/' + id) }
 
 // tapping a plan opens its preview (exercises, last results) – the workout starts from there
 function start(day) { router.push('/plan/' + day) }
+const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 </script>
 
 <style scoped>
@@ -231,6 +234,9 @@ function start(day) { router.push('/plan/' + day) }
 
 .section-title { margin-top: 20px; }
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px; }
+.plans.solo { grid-template-columns: 1fr; }
+.plans.solo .plan-body { height: 96px; }
+.all-link { display: flex; align-items: center; justify-content: center; gap: 4px; width: calc(100% - 32px); margin: 12px 16px 4px; padding: 13px; border: 0; border-radius: var(--r-md); font: inherit; font-size: 15.5px; font-weight: 600; color: var(--accent); background: var(--app-card); }
 .plan { text-align: left; border: 0; color: var(--ion-text-color); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column;
   gap: 2px; font: inherit; min-height: 128px; background: var(--app-card); box-shadow: var(--app-shadow); }
 .plan.next { box-shadow: inset 0 0 0 2px var(--c), var(--app-shadow); }

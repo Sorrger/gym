@@ -35,8 +35,8 @@
   --r-md: 16px;
   --r-sm: 12px;
 }
-@media (prefers-color-scheme: dark) {
-  :root, :root.ios, :root.md {
+/* dark: class set by src/theme.js (Profil → Wygląd: system / jasny / ciemny) */
+:root.ion-palette-dark, :root.ion-palette-dark.ios, :root.ion-palette-dark.md {
     --accent: #9d7dff;
     --accent-rgb: 157, 125, 255;
     --accent-2: #b89cff;
@@ -58,7 +58,6 @@
     --ion-background-color-rgb: 0, 0, 0;
     --ion-text-color: #ffffff;
     --ion-item-background: #1c1c1e;
-  }
 }
 
 /* ---------- feel like an app, not a web page ---------- */

@@ -11,6 +11,8 @@ import { initStrava } from './strava'
 import { initWeights } from './weight'
 import { initUpdater } from './updater'
 import { initPlan } from './customPlan'
+import { applyLook } from './theme'
+applyLook() // before anything is drawn, so there is no flash of the wrong colours
 
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'
@@ -19,7 +21,7 @@ import '@ionic/vue/css/typography.css'
 import '@ionic/vue/css/padding.css'
 import '@ionic/vue/css/flex-utils.css'
 import '@ionic/vue/css/display.css'
-import '@ionic/vue/css/palettes/dark.system.css'
+import '@ionic/vue/css/palettes/dark.class.css'
 import './theme.css'
 
 const router = createRouter({
@@ -31,15 +33,18 @@ const router = createRouter({
     { path: '/workout/:id', component: () => import('./views/WorkoutView.vue') },
     { path: '/plan/:day/edit', component: () => import('./views/PlanEditView.vue') },
     { path: '/plan/:day', component: () => import('./views/PlanView.vue') },
+    { path: '/plans', component: () => import('./views/PlansView.vue') },
+    { path: '/weight', component: () => import('./views/WeightView.vue') },
     { path: '/session/:id', component: () => import('./views/SessionView.vue') },
     { path: '/tabs/', component: Tabs, children: [
       { path: '', redirect: '/tabs/home' },
       { path: 'home', component: () => import('./views/HomeView.vue') },
-      { path: 'plans', component: () => import('./views/PlansView.vue') },
+      { path: 'train', component: () => import('./views/TrainView.vue') },
       { path: 'progress', component: () => import('./views/ProgressView.vue') },
       { path: 'history', component: () => import('./views/HistoryView.vue') },
-      { path: 'weight', component: () => import('./views/WeightView.vue') },
-      { path: 'settings', component: () => import('./views/SettingsView.vue') }
+      { path: 'weight', redirect: '/weight' },
+      { path: 'profile', component: () => import('./views/SettingsView.vue') },
+      { path: 'settings', redirect: '/tabs/profile' }
     ] }
   ]
 })

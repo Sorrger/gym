@@ -95,7 +95,7 @@ const day = isNew ? PLAN.length : +route.params.day
 const plan = PLAN[day]
 const color = COLORS[plan?.key] || '#af52de'
 const fromPlans = route.query.from === 'plans' || isNew
-const back = () => (fromPlans ? '#/tabs/plans' : '#/plan/' + day)
+const back = () => (fromPlans ? '#/plans' : '#/plan/' + day)
 const WDS = [1, 2, 3, 4, 5, 6, 0].map(js => ({ js, t: ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][js] }))
 const wdSel = ref(Object.keys(WEEKDAY_TO_DAY).filter(k => WEEKDAY_TO_DAY[k] === day).map(Number))
 const toggleWd = js => { const i = wdSel.value.indexOf(js); if (i >= 0) wdSel.value.splice(i, 1); else wdSel.value.push(js) }
@@ -176,7 +176,7 @@ async function removePlan() {
   if (role !== 'del') return
   const days = Array.from({ length: PLAN.length }, (_, i) => custom.data?.days?.[i] || null)
   days[day] = { name: plan.name, note: plan.note, ex: plan.ex, hidden: true }
-  await savePlan({ ...(custom.data || {}), days, wd: wdMap(true) }, '#/tabs/plans')
+  await savePlan({ ...(custom.data || {}), days, wd: wdMap(true) }, '#/plans')
 }
 async function reset() {
   const { role } = await ask({ icon: trashOutline, color, title: 'Przywrócić domyślny plan?', message: `Plan „${DEFAULT_PLAN[day].name}” wróci do wersji z apki. Historia treningów zostaje.`, buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })

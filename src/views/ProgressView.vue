@@ -225,7 +225,7 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 <style scoped>
 .period { margin: 4px 16px 14px; width: auto; --background: var(--app-field); }
 .period ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
-@media (prefers-color-scheme: dark) { .period { --seg-on: #636366; } }
+:global(.ion-palette-dark) .period { --seg-on: #636366; }
 .hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: #fff;
   background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 75%, #fff) 0%, var(--accent) 55%, color-mix(in srgb, var(--accent) 80%, #000) 100%);
   box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 30%, transparent); }

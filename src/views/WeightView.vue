@@ -1,8 +1,9 @@
 <template>
   <ion-page>
-    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Waga</span></div>
+    <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>Waga</span></div>
     <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
-      <header class="big-head">
+      <header class="big-head sub-page">
+        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> Profil</button>
         <h1 class="t-large">Waga</h1>
         <p class="sub">{{ list.length ? 'Ostatni pomiar ' + ago(last.date) : 'Zapisuj wagę rano, na czczo' }}</p>
       </header>
@@ -55,6 +56,8 @@
 </template>
 
 <script setup>
+import { useIonRouter } from '@ionic/vue'
+import { chevronBack } from 'ionicons/icons'
 import { useScrolled } from '../useScrolled'
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { IonPage, IonContent, IonSegment, IonSegmentButton, IonLabel, IonIcon, onIonViewDidEnter } from '@ionic/vue'
@@ -66,6 +69,8 @@ import { weights, setWeight, delWeight, parseList, smooth, trend } from '../weig
 import { ask } from '../dialog'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, Tooltip)
+const ionRouter = useIonRouter()
+const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/profile', 'back', 'replace'))
 const { scrolled, onScroll } = useScrolled()
 const dnum = s => Math.round(new Date(s + 'T12:00').getTime() / 864e5) // x axis = real days, so gaps show as gaps
 const dstr = n => fmtShort(iso(new Date(n * 864e5)))
@@ -179,7 +184,7 @@ onBeforeUnmount(() => chart?.destroy())
 .verdict p { margin: 2px 0 0; color: var(--app-muted); font-size: 14px; line-height: 1.35; }
 .period { margin: 4px 16px 12px; width: auto; }
 .period ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
-@media (prefers-color-scheme: dark) { .period { --seg-on: #636366; } }
+:global(.ion-palette-dark) .period { --seg-on: #636366; }
 .card-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; letter-spacing: -.2px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .leg { font-size: 12px; font-weight: 500; color: var(--app-muted); display: flex; align-items: center; gap: 5px; }
 .leg .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--app-muted); }
@@ -202,4 +207,10 @@ onBeforeUnmount(() => chart?.destroy())
 .r-right small.ok { color: var(--app-ok); margin-right: 8px; }
 .r-right small.bad { color: var(--app-bad); margin-right: 8px; }
 .note { margin: 4px 22px 0; color: var(--app-muted); font-size: 13px; line-height: 1.4; }
+.big-head.sub-page { padding-top: calc(env(safe-area-inset-top) + 6px); }
+.back { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 10px 10px; padding: 6px 8px; border: 0; background: none; font: inherit; font-size: 17px; color: var(--accent); }
+.back ion-icon { font-size: 22px; }
+.mb-back { position: absolute; left: 8px; bottom: 4px; width: 36px; height: 36px; border: 0; background: none; color: var(--accent); font-size: 24px; display: grid; place-items: center; pointer-events: auto; }
+.mini-bar { pointer-events: none; }
+.mini-bar.on .mb-back { pointer-events: auto; }
 </style>
