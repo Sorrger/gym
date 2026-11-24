@@ -7,12 +7,17 @@
         <p class="sub">{{ periodLabel }}</p>
       </header>
       <div class="page">
-        <ion-segment class="period" :value="String(ui.period ?? 'all')" @ionChange="e => (ui.period = e.detail.value === 'all' ? null : +e.detail.value)">
+        <!-- three parts instead of one long scroll -->
+        <nav class="ptabs" role="tablist">
+          <button v-for="t in TABS" :key="t.v" role="tab" class="press" :class="{ on: tab === t.v }" @click="ui.ptab = t.v">{{ t.t }}</button>
+        </nav>
+        <ion-segment v-if="tab !== 'plans'" class="period" :value="String(ui.period ?? 'all')" @ionChange="e => (ui.period = e.detail.value === 'all' ? null : +e.detail.value)">
           <ion-segment-button value="28"><ion-label>4 tygodnie</ion-label></ion-segment-button>
           <ion-segment-button value="91"><ion-label>3 miesiące</ion-label></ion-segment-button>
           <ion-segment-button value="all"><ion-label>Całość</ion-label></ion-segment-button>
         </ion-segment>
 
+        <template v-if="tab === 'all'">
         <!-- hero: strength since start + trend line, then the period numbers -->
         <div class="hero">
           <div class="h-top">
@@ -67,8 +72,10 @@
           </div>
         </template>
 
+        </template>
+
+        <template v-if="tab === 'plans'">
         <!-- per plan -->
-        <h3 class="section-title">Treningi</h3>
         <div class="plans">
           <button v-for="p in plans" :key="p.key" class="pcard press" :style="{ '--c': COLORS[p.key] }" @click="router.push('/progress/' + p.i)">
             <div class="pc-top">
@@ -89,6 +96,19 @@
         </div>
         <p class="section-foot">Słupki = siła z ostatnich treningów. ↑ = ile ćwiczeń poprawiłeś ostatnim razem.</p>
 
+        </template>
+
+        <template v-if="tab === 'body'">
+        <!-- body weight (log in Profil → Waga) -->
+        <button class="card wcard press" @click="router.push('/weight')">
+          <div class="wc-l">
+            <small>Waga · średnia 7 dni</small>
+            <b class="num">{{ wNow == null ? 'Dodaj pomiar' : fmt(wNow) + ' kg' }}</b>
+            <span v-if="wTr != null" class="num" :class="wTr < -0.05 ? 'dn' : wTr > 0.05 ? 'upw' : ''">{{ wTr > 0 ? '+' : '' }}{{ fmt(wTr, 2) }} kg / tydzień</span>
+          </div>
+          <svg v-if="wLine" class="wc-spark" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true"><path :d="wLine" /></svg>
+          <ion-icon :icon="chevronForward" class="pc-chev" />
+        </button>
         <!-- per body part -->
         <h3 class="section-title">Partie ciała · serie na tydzień</h3>
         <div class="card muscles">
@@ -129,6 +149,7 @@
           </div>
         </div>
         <p class="section-foot">Przerywana linia = rozkład z Twojego planu (nogi mniej – celowo). 100% = trenujesz dokładnie wg planu.</p>
+        </template>
 
       </div>
     </ion-content>
@@ -145,6 +166,19 @@ import { state, ui, ago } from '../store'
 import { overview, planSummary, muscleWeek, muscleSets, plansDone, planMuscleSets, recentPRs, weekly, strengthTrend, fmtTon } from '../stats'
 import { MUSCLE_NAMES } from '../muscles'
 import BodyMap from './BodyMap.vue'
+import { weights, smooth, trend as wTrendOf } from '../weight'
+
+const TABS = [{ v: 'all', t: 'Przegląd' }, { v: 'plans', t: 'Treningi' }, { v: 'body', t: 'Ciało' }]
+const tab = computed(() => ui.ptab || 'all')
+const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',')
+const wS = computed(() => smooth(weights.value).slice(-30))
+const wNow = computed(() => (wS.value.length ? wS.value.at(-1).avg : null))
+const wTr = computed(() => wTrendOf(weights.value))
+const wLine = computed(() => {
+  const v = wS.value.map(p => p.avg); if (v.length < 2) return ''
+  const lo = Math.min(...v), hi = Math.max(...v, lo + 0.5)
+  return v.map((y, i) => (i ? 'L' : 'M') + (i / (v.length - 1) * 116 + 2).toFixed(1) + ' ' + (40 - (y - lo) / (hi - lo) * 36).toFixed(1)).join(' ')
+})
 
 const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
@@ -223,6 +257,18 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 </script>
 
 <style scoped>
+.ptabs { display: flex; gap: 6px; margin: 2px 16px 10px; padding: 4px; border-radius: 14px; background: var(--app-card); }
+.ptabs button { flex: 1; border: 0; padding: 9px 4px; border-radius: 10px; font: inherit; font-size: 15px; font-weight: 600; color: var(--app-muted); background: transparent; transition: background .2s, color .2s; }
+.ptabs button.on { color: #fff; background: var(--accent); box-shadow: 0 3px 10px rgba(var(--accent-rgb), .35); }
+.wcard { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 0 16px 6px; padding: 14px 14px 14px 16px; border: 0; text-align: left; font: inherit; color: inherit; }
+.wc-l { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.wc-l small { font-size: 13px; color: var(--app-muted); }
+.wc-l b { font-size: 24px; font-weight: 700; letter-spacing: -.3px; }
+.wc-l span { font-size: 13px; color: var(--app-muted); font-weight: 600; }
+.wc-l span.dn { color: var(--app-ok); }
+.wc-l span.upw { color: var(--app-bad); }
+.wc-spark { width: 96px; height: 40px; flex: none; }
+.wc-spark path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
 .period { margin: 4px 16px 14px; width: auto; --background: var(--app-field); }
 .period ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
 :global(.ion-palette-dark) .period { --seg-on: #636366; }

@@ -51,6 +51,15 @@
           </div>
         </div>
 
+        <!-- quick numbers: streak, body weight, all trainings -->
+        <div class="stats home-stats">
+          <div><span>🔥 Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
+          <div class="press" @click="router.push('/weight')"><span>⚖️ Waga</span>
+            <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>kg</small></b><b v-else class="add">Dodaj</b>
+            <em v-if="wTrend != null" class="num" :class="wTrend < -0.05 ? 'dn' : wTrend > 0.05 ? 'upw' : ''">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
+          <div><span>🏋️ Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
+        </div>
+
         <div v-if="dl.active || dl.due" class="card warn dl-card">
           <ion-icon :icon="trendingDown" />
           <div><b>Tydzień lżejszy (deload)</b>
@@ -99,6 +108,8 @@ import { IonPage, IonContent, IonIcon, IonToast, useIonRouter  } from '@ionic/vu
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
+import { weights, smooth, trend } from '../weight'
+import { weekStreak } from '../stats'
 import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove } from '../store'
 import { ask } from '../dialog'
 
@@ -155,6 +166,12 @@ async function dayTap(d) {
     buttons: [...d.offs.map(s => ({ text: 'Usuń: ' + PLAN[s.day].name, role: s.id, kind: 'danger' })), { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
   if (role !== 'cancel' && state.sessions[role]?.offApp) remove(role)
 }
+const streak = computed(() => { void state.sessions; return weekStreak() })
+const wNow = computed(() => { const l = weights.value; return l.length ? smooth(l).at(-1).avg : null })
+const wTrend = computed(() => trend(weights.value))
+const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',')
+const totalDone = computed(() => doneSessions().length)
+const monthDone = computed(() => { const m = iso(new Date()).slice(0, 7); return doneSessions().filter(s => s.date.startsWith(m)).length })
 const week = computed(() => {
   void state.sessions
   const now = new Date(), today = iso(now)
@@ -236,6 +253,14 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px; }
 .plans.solo { grid-template-columns: 1fr; }
 .plans.solo .plan-body { height: 96px; }
+.home-stats { margin: 0 16px 12px; padding: 13px 0; }
+.home-stats > div { padding: 0 12px; }
+.home-stats span { font-size: 12.5px; }
+.home-stats b { font-size: 21px; }
+.home-stats b.add { color: var(--accent); font-size: 17px; padding-top: 3px; }
+.home-stats em { display: block; font-style: normal; font-size: 11.5px; color: var(--app-muted); margin-top: 1px; white-space: nowrap; }
+.home-stats em.dn { color: var(--app-ok); }
+.home-stats em.upw { color: var(--app-bad); }
 .all-link { display: flex; align-items: center; justify-content: center; gap: 4px; width: calc(100% - 32px); margin: 12px 16px 4px; padding: 13px; border: 0; border-radius: var(--r-md); font: inherit; font-size: 15.5px; font-weight: 600; color: var(--accent); background: var(--app-card); }
 .plan { text-align: left; border: 0; color: var(--ion-text-color); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column;
   gap: 2px; font: inherit; min-height: 128px; background: var(--app-card); box-shadow: var(--app-shadow); }

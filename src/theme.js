@@ -27,5 +27,11 @@ export function applyLook() {
   }
   document.querySelectorAll('meta[name="theme-color"]').forEach(m => m.setAttribute('content', dark ? '#000000' : '#f2f2f7'))
 }
-export function setLook(k, v) { look[k] = v; try { localStorage.setItem('look', JSON.stringify(look)) } catch {} applyLook() }
-mq?.addEventListener?.('change', () => look.mode === 'system' && applyLook())
+const isDark = () => look.mode === 'dark' || (look.mode === 'system' && !!mq?.matches)
+export function setLook(k, v) {
+  const was = isDark(); look[k] = v
+  // iOS takes the status bar style only when the page loads → reload when dark/light flips (workout data is already saved)
+  if (k === 'mode' && was !== isDark() && navigator.standalone) { try { localStorage.setItem('look', JSON.stringify(look)) } catch {} location.reload(); return }
+ try { localStorage.setItem('look', JSON.stringify(look)) } catch {} applyLook()
+}
+mq?.addEventListener?.('change', () => { if (look.mode !== 'system') return; if (navigator.standalone) location.reload(); else applyLook() })

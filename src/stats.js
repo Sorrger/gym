@@ -213,3 +213,11 @@ export function planMuscleSets() {
   })
   return out
 }
+// weeks in a row (Mon–Sun) with at least one training; the current week only adds once it has one (it never breaks the streak)
+export function weekStreak() {
+  const w = weekly(104)
+  let n = 0, i = w.length - 1
+  if (w[i].n) n++
+  for (i--; i >= 0 && w[i].n; i--) n++
+  return n
+}
