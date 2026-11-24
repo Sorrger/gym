@@ -9,6 +9,7 @@ import { load } from './store'
 import { initCloud } from './cloud'
 import { initStrava } from './strava'
 import { initWeights } from './weight'
+import { initAccount } from './account'
 import { initUpdater } from './updater'
 import { initPlan } from './customPlan'
 import { applyLook } from './theme'
@@ -35,6 +36,7 @@ const router = createRouter({
     { path: '/plan/:day', component: () => import('./views/PlanView.vue') },
     { path: '/plans', component: () => import('./views/PlansView.vue') },
     { path: '/weight', component: () => import('./views/WeightView.vue') },
+    { path: '/settings', component: () => import('./views/SettingsView.vue') },
     { path: '/session/:id', component: () => import('./views/SessionView.vue') },
     { path: '/tabs/', component: Tabs, children: [
       { path: '', redirect: '/tabs/home' },
@@ -43,8 +45,8 @@ const router = createRouter({
       { path: 'progress', component: () => import('./views/ProgressView.vue') },
       { path: 'history', component: () => import('./views/HistoryView.vue') },
       { path: 'weight', redirect: '/weight' },
-      { path: 'profile', component: () => import('./views/SettingsView.vue') },
-      { path: 'settings', redirect: '/tabs/profile' },
+      { path: 'profile', component: () => import('./views/ProfileView.vue') },
+      { path: 'settings', redirect: '/settings' },
       { path: 'plans', redirect: '/plans' },
       { path: ':rest(.*)', redirect: '/tabs/home' }
     ] },
@@ -70,6 +72,7 @@ initPlan().then(load).then(() => {
   initCloud()
   initStrava()
   initWeights()
+  initAccount()
   const app = createApp(App).use(IonicVue, { mode: 'ios', navAnimation: pageAnim }).use(router)
   router.isReady().then(() => {
     app.mount('#app')

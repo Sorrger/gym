@@ -11,7 +11,7 @@
           <ion-icon :icon="alertCircle" />
           <div><b>Nie udało się wczytać treningów</b><span>Nic nie zostało usunięte. Dotknij, żeby spróbować ponownie.</span></div>
         </div>
-        <div v-else-if="backupWarn" class="card warn" @click="router.push('/tabs/profile')">
+        <div v-else-if="backupWarn" class="card warn" @click="router.push('/settings')">
           <ion-icon :icon="cloudOfflineOutline" />
           <div><b>Kopia na GitHubie nie działa</b><span>{{ cloud.error || 'Nie wysłano od kilku dni' }}</span></div>
         </div>

@@ -1,21 +1,13 @@
 <template>
   <ion-page>
-    <div class="mini-bar" :class="{ on: scrolled }" aria-hidden="true"><span>Profil</span></div>
+    <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>Ustawienia</span></div>
     <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
-      <header class="big-head">
-        <h1 class="t-large">Profil</h1>
-        <p class="sub">{{ doneCount }} {{ doneCount === 1 ? 'trening' : doneCount % 10 >= 2 && doneCount % 10 <= 4 && (doneCount % 100 < 12 || doneCount % 100 > 14) ? 'treningi' : 'treningów' }} w apce</p>
+      <header class="big-head sub-page">
+        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> Profil</button>
+        <h1 class="t-large">Ustawienia</h1>
+        <p class="sub">Wygląd, kopia danych, Strava</p>
       </header>
       <div class="page">
-
-        <!-- body weight (own screen) -->
-        <div class="ios-group">
-          <button class="row press" @click="router.push('/weight')">
-            <span class="r-ico" style="--c: #30b0c7"><ion-icon :icon="scaleOutline" /></span>
-            <div class="grow"><b>Waga</b><span>{{ lastW ? 'Ostatnio ' + String(lastW.kg).replace('.', ',') + ' kg · ' + ago(lastW.date) : 'Zapisuj wagę i patrz na trend' }}</span></div>
-            <ion-icon :icon="chevronForward" class="chev" />
-          </button>
-        </div>
 
         <!-- look -->
         <h3 class="section-title">Wygląd</h3>
@@ -137,10 +129,11 @@
 
 <script setup>
 import { useScrolled } from '../useScrolled'
+import { accountData, importAccount } from '../account'
 import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
-import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, scaleOutline } from 'ionicons/icons'
+import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, chevronBack } from 'ionicons/icons'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { wstate, importWeights } from '../weight'
 import { planData, importPlan } from '../customPlan'
@@ -152,6 +145,7 @@ import { strava, status as stravaStatus, startConnect, sendCode, pull, disconnec
 
 const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
+const goBack = () => (router.canGoBack() ? router.back() : router.navigate('/tabs/profile', 'back', 'replace'))
 const MODES = [{ v: 'system', t: 'Jak telefon' }, { v: 'light', t: 'Jasny' }, { v: 'dark', t: 'Ciemny' }]
 const lastW = computed(() => weights.value[weights.value.length - 1] || null)
 const doneCount = computed(() => { void state.sessions; return doneSessions().length })
@@ -165,7 +159,7 @@ const backupOld = computed(() => !lastBackup.value || (Date.now() - new Date(las
 function markBackup() { lastBackup.value = iso(new Date()); try { localStorage.setItem('lastBackup', lastBackup.value) } catch {} }
 
 async function exportData() {
-  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, weights: wstate.entries, plan: await planData() }, null, 1)
+  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, weights: wstate.entries, plan: await planData(), profile: accountData() }, null, 1)
   const name = 'silownia-' + iso(new Date()) + '.json'
   try {
     const f = new File([json], name, { type: 'application/json' })
@@ -186,6 +180,7 @@ function importData(e) {
       if (!d?.sessions) throw 0
       const n = mergeSessions(d.sessions)
       const w = d.weights ? importWeights(d.weights) : 0
+      if (d.profile) importAccount(d.profile)
       if (d.plan && await importPlan(d.plan)) setTimeout(() => location.reload(), 1500)
       msg.value = 'Wczytano ' + n + ' treningów' + (w ? ' i ' + w + ' pomiarów wagi' : '')
     } catch { msg.value = 'To nie jest plik kopii z tej aplikacji' }
@@ -292,4 +287,9 @@ async function askDisconnect() {
 .sw small { font-size: 11px; }
 .sw button.on small { color: var(--ion-text-color); font-weight: 600; }
 .kop { margin: -2px 20px 10px; font-size: 13.5px; color: var(--app-muted); }
+.big-head.sub-page { padding-top: calc(env(safe-area-inset-top) + 6px); }
+.back { display: inline-flex; align-items: center; gap: 2px; margin: 0 0 10px 10px; padding: 6px 8px; border: 0; background: none; font: inherit; font-size: 17px; color: var(--accent); }
+.back ion-icon { font-size: 22px; }
+.mb-back { position: absolute; left: 8px; bottom: 4px; width: 36px; height: 36px; border: 0; background: none; color: var(--accent); font-size: 24px; display: grid; place-items: center; pointer-events: auto; }
+.mini-bar { pointer-events: none; }
 </style>

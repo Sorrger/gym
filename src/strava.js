@@ -85,7 +85,7 @@ export async function initStrava() {
     if (!cloud.token) {
       const code = strava.code
       const { role } = await ask({ icon: STRAVA_ICON, color: '#fc4c02', title: 'Jeszcze jeden krok',
-        message: 'Strava otworzyła się w Safari, a nie w apce Gym. Skopiuj kod, otwórz Gym z ekranu głównego i wejdź w Kopia → Strava → Wklej kod.',
+        message: 'Strava otworzyła się w Safari, a nie w apce Gym. Skopiuj kod, otwórz Gym z ekranu głównego i wejdź w Profil → Ustawienia → Strava → Wklej kod.',
         buttons: [{ text: 'Kopiuj kod', role: 'copy', kind: 'primary' }, { text: 'Zamknij', role: 'cancel' }] })
       if (role === 'copy') { try { await navigator.clipboard.writeText(code) } catch { prompt('Skopiuj kod:', code) } }
       return
