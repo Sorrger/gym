@@ -5,6 +5,7 @@
 import { reactive, watch } from 'vue'
 import { get, set } from 'idb-keyval'
 import { cloud, readGistFile, writeGistFile } from './cloud'
+import { prefs, setPrefsLocal, prefsData } from './prefs'
 
 export const account = reactive({ uid: '', nick: '', created: 0, updated: 0, provider: 'local', email: '', loaded: false })
 
@@ -25,7 +26,7 @@ export async function syncAccount() {
     let up = !r?.uid
     if (r?.uid) {
       if (r.uid !== account.uid) { account.uid = r.uid; account.created = Math.min(r.created || Infinity, account.created || Infinity) }
-      if ((r.updated || 0) > (account.updated || 0)) { account.nick = r.nick || ''; account.updated = r.updated } else if ((account.updated || 0) > (r.updated || 0)) up = true
+      if ((r.updated || 0) > (account.updated || 0)) { account.nick = r.nick || ''; setPrefsLocal(r.prefs); account.updated = r.updated } else if ((account.updated || 0) > (r.updated || 0)) up = true
       save()
     }
     if (up) await writeGistFile(FILE, accountData())
@@ -36,11 +37,13 @@ export async function initAccount() {
   let a = null
   try { a = await get('profile') } catch {}
   if (!a?.uid) { a = { uid: newId(), nick: '', created: Date.now(), updated: Date.now(), provider: 'local' }; await set('profile', a).catch(() => {}) }
-  Object.assign(account, a, { loaded: true })
+  setPrefsLocal(a.prefs)
+  const { prefs: _p, ...rest } = a
+  Object.assign(account, rest, { loaded: true })
   watch(() => cloud.gistId, id => { if (id) syncAccount() })
   setTimeout(syncAccount, 3500)
 }
-export const accountData = () => ({ uid: account.uid, nick: account.nick, created: account.created, updated: account.updated, provider: account.provider, ...(account.email ? { email: account.email } : {}) })
+export const accountData = () => ({ uid: account.uid, nick: account.nick, created: account.created, updated: account.updated, provider: account.provider, prefs: prefsData(), ...(account.email ? { email: account.email } : {}) })
 
 export function setNick(nick) {
   account.nick = String(nick || '').trim().replace(/\s+/g, ' ').slice(0, 24)
@@ -50,9 +53,11 @@ export function setNick(nick) {
 // from the Kopia file (or later the server): keep this phone's id, take the newer nickname
 export function importAccount(a) {
   if (!a || typeof a !== 'object') return false
-  if ((a.updated || 0) <= (account.updated || 0) || !a.nick) return false
-  account.nick = a.nick; account.updated = a.updated; save(); return true
+  if ((a.updated || 0) <= (account.updated || 0)) return false
+  account.nick = a.nick; setPrefsLocal(a.prefs); account.updated = a.updated; save(); return true
 }
+// change one preference (per account; goes to the backup like the nickname)
+export function setPref(k, v) { prefs[k] = v; account.updated = Date.now(); save(); syncAccount() }
 export const initials = n => (String(n || '').trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2) || '?').toUpperCase()
 
 // placeholder for the future: returns a message for the UI until a backend exists

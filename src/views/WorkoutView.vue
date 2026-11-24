@@ -52,7 +52,7 @@
                   <ion-icon :icon="timeOutline" />
                   {{ lastText(g) }}
                 </div>
-                <button v-if="sugOf(g)" class="tip-chip press" :class="sugOf(g).kind" @click="showTip(sugList())">
+                <button v-if="prefs.coach !== 'off' && sugOf(g)" class="tip-chip press" :class="sugOf(g).kind" @click="showTip(sugList())">
                   <ion-icon :icon="kindIcon(sugOf(g).kind)" />
                   <span>{{ { up: 'Dodaj', down: 'Lżej', deload: 'Lżej', stage: 'Nowy' }[sugOf(g).kind] || 'Cel' }}: <b>{{ sugOf(g).short }}</b></span>
                 </button>
@@ -87,7 +87,7 @@
                       <ion-icon :icon="checkmark" />
                     </button>
                     <!-- reps in reserve: optional, shown once the set is ticked; the coach uses it -->
-                    <div v-if="x.d && g.unit !== 's'" class="rir">
+                    <div v-if="x.d && g.unit !== 's' && prefs.rir" class="rir">
                       <span>Zapas</span>
                       <button v-for="q in [0, 1, 2, 3]" :key="q" class="rir-b num press" :class="{ on: x.q === q }"
                         @click="setRir(g, si, q)" :aria-label="'Zostało ' + q + (q === 3 ? ' lub więcej' : '') + ' powtórzeń do upadku'">{{ q === 3 ? '3+' : q }}</button>
@@ -230,6 +230,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
 import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline, swapHorizontal } from 'ionicons/icons'
+import { prefs } from '../prefs'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload, swapExercise, dropEmptyManual } from '../store'
@@ -271,7 +272,7 @@ async function swapAsk() {
   if (role === 'cancel' || role === cur || !swapOpts.value.includes(role)) return
   swapExercise(sess, planName.value, role)
   state.flash = 'Dziś: ' + role
-  await nextTick(); const l = sugList(); if (l.length) showTip(l)
+  await nextTick(); const l = sugList(); if (l.length && prefs.coach === 'auto') showTip(l)
 }
 const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value], s.value) || '' : ''))
 const exTag = computed(() => plan.value?.ex[idx.value][2])
@@ -317,6 +318,7 @@ async function showTip(list) {
 }
 
 function warm(g) {
+  if (!prefs.warmup) return null
   const bar = WARMUP[g.name]
   if (bar == null || g.label) return null
   const arr = sets(g.key)
@@ -326,7 +328,7 @@ function warm(g) {
   return list.length ? { W, sets: list, plates: platesPerSide(W, bar) } : null
 }
 const lastDone = g => sets(g.key).reduce((k, x, i) => (x.d ? i : k), -1)
-const liveOf = g => (s.value ? live(g, s.value) : null)
+const liveOf = g => (s.value && prefs.live ? live(g, s.value) : null)
 function applyLive(g) {
   const t = liveOf(g)
   if (!t) return
@@ -360,12 +362,12 @@ function toggle(g, si) {
   touch()
   // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine);
   // when the reps-in-reserve chips are shown, give time to tap one first (jumps right after the tap, or after 5 s)
-  if (x.d) autoNext(g.unit !== 's' ? 5000 : 650)
+  if (x.d) autoNext(g.unit !== 's' && prefs.rir ? 5000 : 650)
 }
 let nextT = 0
 function autoNext(ms) {
   clearTimeout(nextT)
-  if (!isComplete(idx.value)) return
+  if (!prefs.autoNext || !isComplete(idx.value)) return
   const at = idx.value, n = plan.value.ex.length
   const to = [...Array(n - 1)].map((_, k) => (at + 1 + k) % n).find(i => !isComplete(i))
   if (to != null) nextT = setTimeout(() => { if (idx.value === at && !summary.value && isComplete(at)) go(to) }, ms)
@@ -538,7 +540,7 @@ onUnmounted(closeTimer)
 const summary = ref(false)
 watch(() => [s.value?.id, idx.value, summary.value], () => {
   const sess = s.value
-  if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout')) return
+  if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout') || prefs.coach !== 'auto') return
   const k = sess.id + ':' + idx.value
   if (tipsShown.has(k)) return
   tipsShown.add(k)

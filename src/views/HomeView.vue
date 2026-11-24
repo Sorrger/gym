@@ -56,7 +56,7 @@
           <div><span><Ico name="flame" /> Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
           <div class="press" @click="router.push('/weight')"><span><Ico name="scale" /> Waga</span>
             <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>kg</small></b><b v-else class="add">Dodaj</b>
-            <em v-if="wTrend != null" class="num" :class="wTrend < -0.05 ? 'dn' : wTrend > 0.05 ? 'upw' : ''">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
+            <em v-if="wTrend != null" class="num" :class="weightTone(wTrend)">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
           <div><span><Ico name="dumbbell" /> Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
         </div>
 
@@ -96,6 +96,7 @@
 </template>
 
 <script setup>
+import { weightTone } from '../prefs'
 import Ico from './Ico.vue'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'

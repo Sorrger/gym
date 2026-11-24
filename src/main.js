@@ -68,11 +68,10 @@ router.onError(err => {
 
 initUpdater()
 
-initPlan().then(load).then(() => {
+initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => {
   initCloud()
   initStrava()
   initWeights()
-  initAccount()
   const app = createApp(App).use(IonicVue, { mode: 'ios', navAnimation: pageAnim }).use(router)
   router.isReady().then(() => {
     app.mount('#app')

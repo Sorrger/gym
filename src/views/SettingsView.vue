@@ -24,6 +24,39 @@
           </div>
         </div>
 
+        <!-- coaching: each person can switch it to taste (defaults = how the app always worked) -->
+        <h3 class="section-title">Trening</h3>
+        <div class="card look">
+          <span class="lbl">Podpowiedzi ciężaru i powtórzeń</span>
+          <div class="seg3">
+            <button v-for="m in COACH" :key="m.v" class="press" :class="{ on: prefs.coach === m.v }" @click="setPref('coach', m.v)">{{ m.t }}</button>
+          </div>
+          <p class="hint">{{ COACH.find(m => m.v === prefs.coach).d }}</p>
+        </div>
+        <div class="ios-group toggles">
+          <button v-for="t in TOGGLES" :key="t.k" class="row press" role="switch" :aria-checked="!!prefs[t.k]" @click="setPref(t.k, !prefs[t.k])">
+            <div class="grow"><b>{{ t.t }}</b><span>{{ t.d }}</span></div>
+            <span class="sw-t" :class="{ on: prefs[t.k] }"><i></i></span>
+          </button>
+          <div v-if="prefs.deload" class="row every">
+            <div class="grow"><b>Lżejszy tydzień co</b><span>tygodni treningu (wcześniej, gdy wyniki stoją)</span></div>
+            <div class="stepper num">
+              <button class="press" :disabled="prefs.deloadEvery <= 4" @click="setPref('deloadEvery', prefs.deloadEvery - 1)" aria-label="Mniej">−</button>
+              <b>{{ prefs.deloadEvery }}</b>
+              <button class="press" :disabled="prefs.deloadEvery >= 12" @click="setPref('deloadEvery', prefs.deloadEvery + 1)" aria-label="Więcej">+</button>
+            </div>
+          </div>
+        </div>
+
+        <h3 class="section-title">Waga ciała</h3>
+        <div class="card look">
+          <span class="lbl">Twój cel</span>
+          <div class="seg3">
+            <button v-for="g in GOALS" :key="g.v" class="press" :class="{ on: prefs.goal === g.v }" @click="setPref('goal', g.v)">{{ g.t }}</button>
+          </div>
+          <p class="hint">{{ GOALS.find(g => g.v === prefs.goal).d }}</p>
+        </div>
+
         <h3 class="section-title">Kopia zapasowa</h3>
         <p class="kop">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona.' : 'Twoje treningi są tylko w tym telefonie.' }}</p>
 
@@ -129,7 +162,8 @@
 
 <script setup>
 import { useScrolled } from '../useScrolled'
-import { accountData, importAccount } from '../account'
+import { accountData, importAccount, setPref } from '../account'
+import { prefs } from '../prefs'
 import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
@@ -146,6 +180,20 @@ import { strava, status as stravaStatus, startConnect, sendCode, pull, disconnec
 const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
 const goBack = () => (router.canGoBack() ? router.back() : router.navigate('/tabs/profile', 'back', 'replace'))
+const COACH = [
+  { v: 'auto', t: 'Same', d: 'Po otwarciu ćwiczenia apka sama pokazuje, ile dziś dźwignąć.' },
+  { v: 'chip', t: 'Na dotyk', d: 'Podpowiedź tylko pod „Ostatnio…” – otwierasz ją, kiedy chcesz.' },
+  { v: 'off', t: 'Wyłączone', d: 'Bez podpowiedzi. Ciężary i tak wpisują się z ostatniego treningu.' }]
+const TOGGLES = [
+  { k: 'live', t: 'Rady w trakcie serii', d: 'Za ciężko / za lekko – pod serią' },
+  { k: 'rir', t: 'Zapas powtórzeń', d: 'Ile zostało do upadku (0, 1, 2, 3+)' },
+  { k: 'warmup', t: 'Rozgrzewka', d: 'Serie rozgrzewkowe przy sztandze' },
+  { k: 'autoNext', t: 'Przejdź dalej sam', d: 'Po ostatniej serii następne ćwiczenie' },
+  { k: 'deload', t: 'Lżejszy tydzień (deload)', d: 'Apka sama ustawia lżejszy tydzień' }]
+const GOALS = [
+  { v: 'cut', t: 'Redukcja', d: 'Powoli w dół: 0,2–0,7 % wagi na tydzień, mięśnie zostają.' },
+  { v: 'maintain', t: 'Utrzymanie', d: 'Waga stabilna: zmiana do ±0,25 % na tydzień.' },
+  { v: 'bulk', t: 'Masa', d: 'Powoli w górę: 0,1–0,5 % wagi na tydzień, mało tłuszczu.' }]
 const MODES = [{ v: 'system', t: 'Jak telefon' }, { v: 'light', t: 'Jasny' }, { v: 'dark', t: 'Ciemny' }]
 const lastW = computed(() => weights.value[weights.value.length - 1] || null)
 const doneCount = computed(() => { void state.sessions; return doneSessions().length })
@@ -292,4 +340,14 @@ async function askDisconnect() {
 .back ion-icon { font-size: 22px; }
 .mb-back { position: absolute; left: 8px; bottom: 4px; width: 36px; height: 36px; border: 0; background: none; color: var(--accent); font-size: 24px; display: grid; place-items: center; pointer-events: auto; }
 .mini-bar { pointer-events: none; }
+.hint { margin: -6px 2px 0; font-size: 13px; color: var(--app-muted); line-height: 1.35; }
+.toggles { margin-top: 10px; }
+.sw-t { width: 51px; height: 31px; border-radius: 999px; background: var(--app-field); position: relative; flex: none; transition: background .2s; }
+.sw-t i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform .2s; }
+.sw-t.on { background: #34c759; }
+.sw-t.on i { transform: translateX(20px); }
+.stepper { display: flex; align-items: center; gap: 4px; flex: none; }
+.stepper button { width: 34px; height: 34px; border: 0; border-radius: 9px; background: var(--app-field); font: inherit; font-size: 20px; color: var(--accent); }
+.stepper button:disabled { opacity: .4; }
+.stepper b { min-width: 26px; text-align: center; font-size: 18px; }
 </style>

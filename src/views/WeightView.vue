@@ -12,10 +12,16 @@
         <div class="card stats4 num">
           <div><small>Teraz</small><b>{{ last ? fmtKg(last.kg) : '–' }}<i v-if="last"> kg</i></b></div>
           <div><small>Śr. 7 dni</small><b>{{ avg7 == null ? '–' : fmtKg(avg7.toFixed(1)) }}</b></div>
-          <div><small>Od startu</small><b :class="{ ok: total < 0, bad: total > 0 }">{{ list.length > 1 ? sign(total) : '–' }}</b></div>
-          <div><small>Na tydzień</small><b :class="{ ok: wk != null && wk < -0.05, bad: wk != null && wk > 0.05 }">{{ wk == null ? '–' : sign(wk) }}</b></div>
+          <div><small>Od startu</small><b :class="tone(total)">{{ list.length > 1 ? sign(total) : '–' }}</b></div>
+          <div><small>Na tydzień</small><b :class="wk == null ? '' : tone(wk)">{{ wk == null ? '–' : sign(wk) }}</b></div>
         </div>
 
+        <div class="goal">
+          <span>Cel</span>
+          <div class="seg3">
+            <button v-for="g in GOALS" :key="g.v" class="press" :class="{ on: prefs.goal === g.v }" @click="setPref('goal', g.v)">{{ g.t }}</button>
+          </div>
+        </div>
         <div v-if="verdict" class="card verdict" :class="verdict.cls">
           <span class="v-ico"><Ico :name="verdict.ico" /></span>
           <div><b>{{ verdict.title }}</b><p>{{ verdict.text }}</p></div>
@@ -57,6 +63,8 @@
 
 <script setup>
 import Ico from './Ico.vue'
+import { prefs } from '../prefs'
+import { setPref } from '../account'
 import { useIonRouter } from '@ionic/vue'
 import { chevronBack } from 'ionicons/icons'
 import { useScrolled } from '../useScrolled'
@@ -92,10 +100,25 @@ const rows = computed(() => list.value.map((p, k) => ({ ...p, d: k ? +(p.kg - li
 const sign = v => { const r = Math.round(v * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) }
 const dayName = s => new Date(s + 'T12:00').toLocaleDateString('pl-PL', { weekday: 'long' })
 
-// goal: slow cut that keeps (and still builds) muscle – about 0.2–0.7 % of body weight per week
+// verdict for the chosen goal (Ustawienia / here): cut = slow cut keeping muscle (0,2–0,7 %/week),
+// maintain = within ±0,25 %/week, bulk = lean gain (0,1–0,5 %/week)
+const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
+const tone = v => { const g = prefs.goal; if (g === 'maintain' || Math.abs(v) < 0.05) return ''; return (g === 'bulk' ? v > 0 : v < 0) ? 'ok' : 'bad' }
 const verdict = computed(() => {
   if (wk.value == null) return list.value.length ? { ico: 'chart', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 3 pomiarach z ostatnich 3 tygodni. Najlepiej waż się 3–4× w tygodniu.' } : null
   const pct = (wk.value / (avg7.value || 1)) * 100
+  if (prefs.goal === 'maintain') {
+    if (pct < -0.25) return { ico: 'bolt', cls: 'warn', title: 'Waga spada', text: 'Chcesz utrzymać wagę – dorzuć ok. 100–200 kcal dziennie.' }
+    if (pct > 0.25) return { ico: 'up', cls: 'warn', title: 'Waga rośnie', text: 'Chcesz utrzymać wagę – ok. 100–200 kcal mniej albo więcej kroków.' }
+    return { ico: 'check', cls: 'good', title: 'Waga stabilna', text: 'Trzymasz wagę. Siła na treningu dalej może rosnąć.' }
+  }
+  if (prefs.goal === 'bulk') {
+    if (pct > 1) return { ico: 'warn', cls: 'warn', title: 'Za szybko w górę', text: 'Ponad 1 % wagi na tydzień – przybywa głównie tłuszczu. Zjedz trochę mniej.' }
+    if (pct > 0.5) return { ico: 'bolt', cls: 'warn', title: 'Dość szybko', text: 'Szybciej niż trzeba. Mięśnie rosną wolno – ok. 100–200 kcal mniej da czystszą masę.' }
+    if (pct >= 0.1) return { ico: 'check', cls: 'good', title: 'Idealne tempo', text: 'Powoli w górę – mięśnie rosną, tłuszczu przybywa niewiele. Pilnuj progresu na treningu.' }
+    if (pct >= -0.1) return { ico: 'pause', cls: '', title: 'Waga stoi', text: 'Na masie dorzuć ok. 150–250 kcal dziennie.' }
+    return { ico: 'warn', cls: 'warn', title: 'Waga spada', text: 'Na masie waga powinna powoli rosnąć – jedz więcej.' }
+  }
   if (pct < -1) return { ico: 'warn', cls: 'warn', title: 'Za szybko w dół', text: 'Ponad 1 % wagi na tydzień – duże ryzyko utraty mięśni i siły. Dorzuć trochę jedzenia.' }
   if (pct < -0.7) return { ico: 'bolt', cls: 'warn', title: 'Dość szybko', text: 'Szybciej niż trzeba, żeby budować mięśnie. Pilnuj białka i siły – jeśli ciężary spadają, zjedz trochę więcej.' }
   if (pct <= -0.2) return { ico: 'check', cls: 'good', title: 'Idealne tempo', text: 'Powoli w dół – tłuszcz schodzi, a mięśnie dalej mogą rosnąć. Trzymaj kalorie, białko i progres na treningu.' }
@@ -214,4 +237,9 @@ onBeforeUnmount(() => chart?.destroy())
 .mb-back { position: absolute; left: 8px; bottom: 4px; width: 36px; height: 36px; border: 0; background: none; color: var(--accent); font-size: 24px; display: grid; place-items: center; pointer-events: auto; }
 .mini-bar { pointer-events: none; }
 .mini-bar.on .mb-back { pointer-events: auto; }
+.goal { display: flex; align-items: center; gap: 10px; margin: 0 16px 10px; }
+.goal > span { font-size: 14px; color: var(--app-muted); flex: none; }
+.seg3 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; border-radius: 10px; background: var(--app-field); }
+.seg3 button { border: 0; padding: 7px 4px; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ion-text-color); background: transparent; }
+.seg3 button.on { background: var(--app-card); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 </style>

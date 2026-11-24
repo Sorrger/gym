@@ -104,7 +104,7 @@
           <div class="wc-l">
             <small>Waga · średnia 7 dni</small>
             <b class="num">{{ wNow == null ? 'Dodaj pomiar' : fmt(wNow) + ' kg' }}</b>
-            <span v-if="wTr != null" class="num" :class="wTr < -0.05 ? 'dn' : wTr > 0.05 ? 'upw' : ''">{{ wTr > 0 ? '+' : '' }}{{ fmt(wTr, 2) }} kg / tydzień</span>
+            <span v-if="wTr != null" class="num" :class="weightTone(wTr)">{{ wTr > 0 ? '+' : '' }}{{ fmt(wTr, 2) }} kg / tydzień</span>
           </div>
           <svg v-if="wLine" class="wc-spark" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true"><path :d="wLine" /></svg>
           <ion-icon :icon="chevronForward" class="pc-chev" />
@@ -157,6 +157,7 @@
 </template>
 
 <script setup>
+import { weightTone } from '../prefs'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { computed } from 'vue'

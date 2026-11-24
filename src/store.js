@@ -1,3 +1,4 @@
+import { prefs } from './prefs'
 import { reactive, watch, computed } from 'vue'
 import { get, set } from 'idb-keyval'
 import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
@@ -155,10 +156,12 @@ export const DELOAD_EVERY = 6, DELOAD_MIN = 4
 const dayN = d => Math.round(new Date(d + 'T12:00:00').getTime() / 864e5)
 const addDays = (d, n) => iso(new Date(new Date(d + 'T12:00:00').getTime() + n * 864e5))
 export function deloadState(today = iso(new Date())) {
+  if (!prefs.deload) return { active: false, due: false, weeks: 0, left: 0, off: true }
+  const EVERY = prefs.deloadEvery || DELOAD_EVERY, MIN = Math.min(DELOAD_MIN, EVERY - 1)
   // an open workout counts too (a deload workout just started makes the week light; "Trenuj normalnie" postpones it)
   // trainings marked as done without the app count as training too (not a break)
   const list = sorted().filter(s => hasData(s) || !s.finished || s.offApp).reverse() // oldest first
-  if (!list.length) return { active: false, due: false, weeks: 0, left: DELOAD_EVERY }
+  if (!list.length) return { active: false, due: false, weeks: 0, left: EVERY }
   let block = list[0].date, dl = null, prev = null, skip = ''
   for (const s of list) {
     if (s.date > today) break
@@ -170,12 +173,12 @@ export function deloadState(today = iso(new Date())) {
     prev = s.date
   }
   if (dl && dayN(today) - dayN(dl) < 7) return { active: true, due: false, start: dl, end: addDays(dl, 6) }
-  if (dayN(today) - dayN(prev) >= 8) return { active: false, due: false, weeks: 0, left: DELOAD_EVERY } // back after a break
+  if (dayN(today) - dayN(prev) >= 8) return { active: false, due: false, weeks: 0, left: EVERY } // back after a break
   const weeks = (dayN(today) - dayN(block)) / 7
-  const st = weeks >= DELOAD_MIN ? stalled(block) : null
-  const due = today >= skip && (weeks >= DELOAD_EVERY || !!st?.many)
-  return { active: false, due, weeks: Math.floor(weeks), left: Math.max(0, Math.ceil(DELOAD_EVERY - weeks)),
-    reason: due ? (weeks >= DELOAD_EVERY ? `${Math.floor(weeks)} tygodni ciężkich treningów` : `w ${st.n} z ${st.t} ćwiczeń wyniki stoją`) : '' }
+  const st = weeks >= MIN ? stalled(block) : null
+  const due = today >= skip && (weeks >= EVERY || !!st?.many)
+  return { active: false, due, weeks: Math.floor(weeks), left: Math.max(0, Math.ceil(EVERY - weeks)),
+    reason: due ? (weeks >= EVERY ? `${Math.floor(weeks)} tygodni ciężkich treningów` : `w ${st.n} z ${st.t} ćwiczeń wyniki stoją`) : '' }
 }
 // exercises with no new best in their last 2 workouts since `from` (needs 3+ workouts of that exercise)
 function stalled(from) {
