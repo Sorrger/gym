@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+import { weekStreak } from '../stats'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { ask as askDialog } from '../dialog'
@@ -98,14 +99,7 @@ const monthSets = computed(() => monthList.value.reduce((a, s) => a + counts(s).
 const shown = computed(() => (selected.value ? monthList.value.filter(s => s.date === selected.value) : monthList.value))
 
 // consecutive weeks (Mon–Sun) with at least one workout, counting back from this week (or last week if none yet this week)
-const streak = computed(() => {
-  const weeks = new Set(all.value.map(s => { const d = new Date(s.date + 'T12:00:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d) }))
-  const d = new Date(); d.setDate(d.getDate() - ((d.getDay() + 6) % 7))
-  if (!weeks.has(iso(d))) d.setDate(d.getDate() - 7)
-  let n = 0
-  while (weeks.has(iso(d))) { n++; d.setDate(d.getDate() - 7) }
-  return n
-})
+const streak = computed(() => { void state.sessions; return weekStreak() }) // same as Start (marks without sets count too)
 
 function shift(k) { selected.value = null; view.value = new Date(view.value.getFullYear(), view.value.getMonth() + k, 1) }
 function pick(c) {

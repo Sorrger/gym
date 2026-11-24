@@ -44,8 +44,11 @@ const router = createRouter({
       { path: 'history', component: () => import('./views/HistoryView.vue') },
       { path: 'weight', redirect: '/weight' },
       { path: 'profile', component: () => import('./views/SettingsView.vue') },
-      { path: 'settings', redirect: '/tabs/profile' }
-    ] }
+      { path: 'settings', redirect: '/tabs/profile' },
+      { path: 'plans', redirect: '/plans' },
+      { path: ':rest(.*)', redirect: '/tabs/home' }
+    ] },
+    { path: '/:rest(.*)*', redirect: '/tabs/home' }
   ]
 })
 

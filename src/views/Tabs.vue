@@ -42,4 +42,5 @@ ion-tab-bar { overflow: visible !important; contain: none !important; }
 .center:active .c-ico { transform: scale(.92); }
 .center.tab-selected .c-ico { box-shadow: 0 8px 22px rgba(var(--accent-rgb), .6), 0 0 0 4px var(--app-bg); }
 .center ion-label { font-weight: 600; }
+:global(ion-tabs ion-content) { --padding-bottom: 30px; } /* room for the round Trening button sticking up */
 </style>

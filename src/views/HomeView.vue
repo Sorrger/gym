@@ -67,7 +67,7 @@
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Twój trening' }}</h3>
         <button v-if="!active" class="off-link press" @click="markOff">
-          <ion-icon :icon="addCircle" /><template v-if="sug.kind === 'missed'">{{ PLAN[next].name }} zrobiony, ale niezapisany? <b>Dodaj</b></template><template v-else><b>Dodaj zrobiony trening</b></template>
+          <ion-icon :icon="addCircle" /><template v-if="sug.kind === 'missed'">Trening {{ PLAN[next].name }} zrobiony bez zapisu? <b>Dodaj</b></template><template v-else><b>Dodaj zrobiony trening</b></template>
         </button>
         <!-- only the suggested training here; all of them are in the Trening tab -->
         <div class="plans solo">
@@ -164,7 +164,7 @@ async function markOff() {
   if (role !== 'mark') return
   markDoneOff(picks.day, picks.date)
   const x = days.find(y => y.date === picks.date)
-  state.flash = `${PLAN[picks.day].name} dodany (${x.label.toLowerCase()} ${x.d.getDate()}.${picks.date.slice(5, 7)}) – bez serii, nie wchodzi do statystyk`
+  state.flash = `Dodano: ${PLAN[picks.day].name}, ${x.label.toLowerCase()} ${x.d.getDate()}.${picks.date.slice(5, 7)} (bez serii)`
 }
 // tapping a day with "done without the app" marks: remove one
 async function dayTap(d) {
