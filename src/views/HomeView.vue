@@ -57,8 +57,8 @@
             <span>{{ dl.active ? 'Do ' + dlEnd + ': połowa serii, ok. 10% lżej, 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. Połowa serii, ok. 10% lżej, potem wracasz do normy.' }}</span></div>
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Zacznij trening' }}</h3>
-        <button v-if="sug.kind === 'missed' && !active" class="off-link press" @click="markOff">
-          Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? <b>Oznacz</b>
+        <button v-if="!active" class="off-link press" @click="markOff">
+          <template v-if="sug.kind === 'missed'">Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? </template><template v-else>Trening zrobiony bez apki? </template><b>Oznacz</b>
         </button>
         <div class="plans">
           <button v-for="(d, i) in PLAN" :key="d.key" class="plan press" :class="{ next: i === next && !active }"

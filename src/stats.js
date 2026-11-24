@@ -11,7 +11,12 @@ export function volumeOf(s) {
   // assisted machine kg is help, not load → not volume
   const kg = new Set(entriesOf(s.day, s).filter(g => g.unit === 'kg' && !isAssisted(g)).map(g => g.key))
   let v = 0
-  for (const [k, arr] of Object.entries(s.ex || {})) if (kg.has(k)) for (const x of arr) if (x.d && x.w != null) v += x.w * (x.r || 0)
+  const inPlan = new Set(entriesOf(s.day, s).map(g => g.key))
+  for (const [k, arr] of Object.entries(s.ex || {})) {
+    // an exercise later removed from the plan still counts if it was done with kg × reps
+    const count = kg.has(k) || (!inPlan.has(k) && !k.includes('wspomag') && arr.some(x => x.r != null))
+    if (count) for (const x of arr) if (x.d && x.w != null) v += x.w * (x.r || 0)
+  }
   return Math.round(v)
 }
 export const setsOf = s => Object.values(s.ex || {}).reduce((a, arr) => a + arr.filter(x => x.d).length, 0)

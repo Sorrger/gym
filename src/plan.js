@@ -173,6 +173,12 @@ export function groupsOf(ex, ctx) {
     ? parts.map(p => ({ key: name + ' · ' + p.label, name, label: p.label, unit: p.unit, target: p.target, sets: p.sets }))
     : [{ key: name, name, label: null, unit: 'kg', target, sets: nSets(target) }]
 }
+// unit of a stored exercise key that may no longer be in the plan (default plan + pull-up stage parts)
+export function unitOfKey(k, arr = []) {
+  for (const d of DEFAULT_PLAN) for (const e of d.ex) for (const g of groupsOf(e, 'all')) if (g.key === k) return g.unit
+  for (const st of PULLUP_STAGES) for (const p of st.parts) if (PULLUP + ' · ' + p.label === k) return p.unit
+  return arr.some(x => x.r != null) ? 'kg' : 'reps'
+}
 export function entriesOf(day, ctx) { return PLAN[day].ex.flatMap((ex, i) => groupsOf(ex, ctx).map(g => ({ ...g, ex: i }))) }
 
 // exercises renamed later: old stored name → current name (history keeps working)

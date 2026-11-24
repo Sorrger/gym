@@ -77,7 +77,7 @@ import { createOutline, trashOutline, chevronBack } from 'ionicons/icons'
 import { ask } from '../dialog'
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip } from 'chart.js'
 import { state, counts, fmtDate, sorted, remove } from '../store'
-import { PLAN, COLORS, UNITS, isAssisted, entriesOf, fmtNum } from '../plan'
+import { PLAN, COLORS, UNITS, isAssisted, entriesOf, fmtNum, unitOfKey } from '../plan'
 import { musclesOf } from '../muscles'
 import { volumeOf, fmtTon } from '../stats'
 import { strava, stravaFor } from '../strava'
@@ -110,7 +110,7 @@ const exList = computed(() => {
   const groups = entriesOf(s.value.day, s.value)
   const known = new Set(groups.map(g => g.key))
   const extra = Object.keys(s.value.ex || {}).filter(k => !known.has(k) && (s.value.ex[k] || []).some(x => x.d))
-    .map(k => ({ key: k, name: k, label: null, unit: s.value.ex[k].some(x => x.r != null) ? 'kg' : 'reps' }))
+    .map(k => ({ key: k, name: k, label: null, unit: unitOfKey(k, s.value.ex[k]) }))
   const earlier = sorted().filter(o => o.id !== s.value.id && (o.date < s.value.date || (o.date === s.value.date && (o.started || 0) < (s.value.started || 0))))
   // plan exercises that were not part of this workout at all (plan changed later) are left out
   return [...groups.filter(g => g.key in (s.value.ex || {})), ...extra].map(g => {
