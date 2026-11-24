@@ -23,7 +23,7 @@
           <div class="ex" :key="exName">
             <div class="ex-meta">
               <span>Ćwiczenie {{ idx + 1 }} z {{ plan.ex.length }}</span>
-              <span v-if="s.finished" class="edit-chip"><ion-icon :icon="createOutline" /> Edycja · {{ fmtDate(s.date) }}</span>
+              <span v-if="s.finished" class="edit-chip"><ion-icon :icon="createOutline" /> {{ s.manual && !c.n ? 'Odhacz zrobione serie' : 'Edycja' }} · {{ fmtDate(s.date) }}</span>
               <span v-else class="saved" :class="{ cloudok: cloud.token && !cloud.dirty && !cloud.error }">
                 <ion-icon :icon="cloud.token && !cloud.dirty && !cloud.error ? cloudDoneOutline : checkmarkCircle" />
                 {{ cloud.token ? (cloud.dirty || cloud.error ? 'Zapisano · kopia gdy będzie internet' : 'Zapisano · kopia na GitHub') : 'Zapisano w telefonie' }}
@@ -232,7 +232,7 @@ import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBu
 import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline, swapHorizontal } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn } from '../plan'
 import { cloud } from '../cloud'
-import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload, swapExercise } from '../store'
+import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload, swapExercise, dropEmptyManual } from '../store'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -549,7 +549,7 @@ watch(() => [s.value?.id, idx.value, summary.value], () => {
   if (list.length) setTimeout(() => { if (s.value?.id === sess.id && idx.value === +k.split(':')[1]) showTip(list) }, 450)
 }, { immediate: true })
 function finish() {
-  if (s.value.finished) { router.back(); return }
+  if (s.value.finished) { if (s.value.manual) dropEmptyManual(); router.back(); return }
   summary.value = true
 }
 const c = computed(() => counts(s.value))

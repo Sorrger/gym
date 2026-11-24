@@ -41,7 +41,7 @@
                 <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
                 <span v-if="t.pr" class="pr" title="Nowy rekord"><Ico name="trophy" /></span>
               </div>
-              <div class="rc-val none" v-else>Jeszcze nie robione</div>
+              <div class="rc-val none" v-else>Jeszcze nie było</div>
               <div class="rc-meta" v-if="t.pts.length">
                 <span class="status" :class="t.status.kind">{{ t.status.text }}</span>
                 <span class="num">Rekord {{ fmtVal(t.best, t.unit) }}</span>

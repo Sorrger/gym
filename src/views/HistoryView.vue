@@ -57,7 +57,7 @@
         <div v-else class="card empty">
           {{ selected ? 'Tego dnia nie było treningu.' : 'W tym miesiącu nie ma jeszcze treningów.' }}
         </div>
-        <p class="hint" v-if="shown.length">Stuknij trening: szczegóły, tętno, edycja. Przesuń w lewo, żeby usunąć.</p>
+        <p class="hint" v-if="shown.length">Dotknij trening: szczegóły, tętno, edycja. Przesuń w lewo, żeby usunąć.</p>
       </div>
     </ion-content>
   </ion-page>

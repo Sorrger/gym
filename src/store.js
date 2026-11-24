@@ -286,6 +286,21 @@ export function markDoneOff(day, date = null, now = new Date()) {
   saveNow()
   return state.sessions[id]
 }
+// "Dodaj zrobiony trening" with sets: a finished workout on a past day, sets prefilled from last time (unticked).
+// Opens in edit mode; the user ticks what was done. Left without any ticked set → removed (dropEmptyManual).
+export function addPastSession(day, date) {
+  const now = Date.now(), started = new Date(date + 'T18:00:00').getTime()
+  const s = { id: now.toString(36), date, day, ex: {}, started, finished: true, updated: now, manual: true }
+  entriesOf(day).forEach(g => { s.ex[g.key] = prefill(g, g.sets || 1, false) })
+  state.sessions[s.id] = s
+  saveNow()
+  return s
+}
+export function dropEmptyManual() {
+  let n = 0
+  for (const s of Object.values(state.sessions)) if (s.manual && s.finished && !hasData(s)) { delete state.sessions[s.id]; n++ }
+  if (n) saveNow()
+}
 export const offMarks = () => Object.values(state.sessions).filter(s => s.offApp)
 
 export function series(name) {

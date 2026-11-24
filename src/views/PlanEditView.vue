@@ -11,7 +11,7 @@
     </ion-header>
     <ion-content :fullscreen="true">
       <div class="page" :style="{ '--c': color }">
-        <p class="info">Zmiany są tylko na tym telefonie (i w Twojej kopii na GitHub). Ćwiczenie z nową nazwą zaczyna własną historię – stare treningi zostają.</p>
+        <p class="info">Zmiany są tylko na tym telefonie (i w Twojej kopii na GitHubie). Ćwiczenie z nową nazwą zaczyna własną historię – stare treningi zostają.</p>
         <p v-if="openHere" class="info warn">Masz otwarty trening tego planu. Zaliczone serie zostaną, ale ćwiczenia usunięte z planu znikną z ekranu treningu.</p>
 
         <div class="card fields">
@@ -70,7 +70,7 @@
         </div>
 
         <button class="add press" @click="addEx"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
-        <button v-if="isCustom && DEFAULT_PLAN[day]" class="reset press" @click="reset">Przywróć domyślny plan „{{ DEFAULT_PLAN[day].name }}”</button>
+        <button v-if="isCustom && DEFAULT_PLAN[day]" class="reset press" @click="reset">Przywróć wersję podstawową „{{ DEFAULT_PLAN[day].name }}”</button>
         <button v-if="!isNew" class="reset press" @click="removePlan">Usuń ten trening</button>
         <datalist id="known"><option v-for="k in known" :key="k" :value="k" /></datalist>
       </div>
@@ -179,7 +179,7 @@ async function removePlan() {
   await savePlan({ ...(custom.data || {}), days, wd: wdMap(true) }, '#/plans')
 }
 async function reset() {
-  const { role } = await ask({ icon: trashOutline, color, title: 'Przywrócić domyślny plan?', message: `Plan „${DEFAULT_PLAN[day].name}” wróci do wersji z apki. Historia treningów zostaje.`, buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  const { role } = await ask({ icon: trashOutline, color, title: 'Przywrócić wersję podstawową?', message: `Plan „${DEFAULT_PLAN[day].name}” wróci do wersji z planu podstawowego. Historia treningów zostaje.`, buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role !== 'ok') return
   const days = Array.from({ length: PLAN.length }, (_, i) => (i === day ? null : custom.data?.days?.[i] || null))
   await savePlan({ ...(custom.data || {}), days }, back())

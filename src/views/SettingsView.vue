@@ -61,7 +61,7 @@
             </button>
             <button class="row" @click="pullNow" :disabled="cloud.busy">
               <span class="sq" style="--c: #2f8cff"><ion-icon :icon="arrowDownOutline" /></span>
-              <div class="grow"><b>Przywróć z GitHub</b></div>
+              <div class="grow"><b>Przywróć z GitHuba</b></div>
             </button>
           </div>
           <p class="section-foot">Kopia wysyła się sama kilka sekund po każdej zmianie. Bez internetu poczeka i wyśle się później.</p>

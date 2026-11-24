@@ -13,7 +13,7 @@
         </div>
         <div v-else-if="backupWarn" class="card warn" @click="router.push('/tabs/profile')">
           <ion-icon :icon="cloudOfflineOutline" />
-          <div><b>Kopia na GitHub nie działa</b><span>{{ cloud.error || 'Nie wysłano od kilku dni' }}</span></div>
+          <div><b>Kopia na GitHubie nie działa</b><span>{{ cloud.error || 'Nie wysłano od kilku dni' }}</span></div>
         </div>
 
         <!-- workout in progress -->
@@ -67,7 +67,7 @@
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Twój trening' }}</h3>
         <button v-if="!active" class="off-link press" @click="markOff">
-          <template v-if="sug.kind === 'missed'">Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? </template><template v-else>Trening zrobiony bez apki? </template><b>Oznacz</b>
+          <ion-icon :icon="addCircle" /><template v-if="sug.kind === 'missed'">{{ PLAN[next].name }} zrobiony, ale niezapisany? <b>Dodaj</b></template><template v-else><b>Dodaj zrobiony trening</b></template>
         </button>
         <!-- only the suggested training here; all of them are in the Trening tab -->
         <div class="plans solo">
@@ -100,13 +100,13 @@ import Ico from './Ico.vue'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
-import { IonPage, IonContent, IonIcon, IonToast, useIonRouter  } from '@ionic/vue'
-import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown } from 'ionicons/icons'
+import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
+import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, addCircle } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
 import { weights, smooth, trend } from '../weight'
 import { weekStreak } from '../stats'
-import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove } from '../store'
+import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove, addPastSession, dropEmptyManual } from '../store'
 import { ask } from '../dialog'
 
 const router = useIonRouter()
@@ -114,7 +114,8 @@ const active = computed(() => { void state.sessions; return activeSession() })
 const activeCounts = computed(() => (active.value ? counts(active.value) : { n: 0, t: 0 }))
 const activePct = computed(() => (activeCounts.value.t ? activeCounts.value.n / activeCounts.value.t : 0))
 const nowTick = ref(Date.now()); let tk
-onMounted(() => { tk = setInterval(() => (nowTick.value = Date.now()), 30000) })
+onIonViewWillEnter(() => dropEmptyManual())
+onMounted(() => { dropEmptyManual(); tk = setInterval(() => (nowTick.value = Date.now()), 30000) })
 onUnmounted(() => clearInterval(tk))
 const activeMinutes = computed(() => {
   if (!active.value) return ''
@@ -138,27 +139,37 @@ const greeting = computed(() => {
 })
 
 // "done without the app": the user picks which plan and on which day of this week (maybe another plan was done that day)
+// "Dodaj zrobiony trening": a training done but not logged (forgot the phone, before the app…).
+// With sets → a finished workout on that day, opened to tick the sets; without → just marked as done.
 async function markOff() {
-  const day = next.value
-  const days = week.value.filter(d => !d.future)
+  const day = next.value, now = new Date()
+  const WD = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb']
+  const days = Array.from({ length: 7 }, (_, k) => { const d = new Date(now); d.setDate(now.getDate() - 6 + k); return d }).map(d => {
+    const date = iso(d), real = done.value.filter(s => s.date === date), offs = offMarks().filter(s => s.date === date)
+    return { date, d, real, offs, label: date === iso(now) ? 'Dziś' : WD[d.getDay()] }
+  })
   const js = +Object.keys(WEEKDAY_TO_DAY).find(k => WEEKDAY_TO_DAY[k] === day)
-  const sched = days.find(d => d.k === (js + 6) % 7)
-  const def = (sched && !sched.real.length ? sched : days.find(d => !d.real.length && !d.offs.length) || days[days.length - 1]).date
-  const { role, picks } = await ask({ icon: checkmark, title: 'Trening zrobiony bez apki',
-    message: 'Wybierz, który trening i kiedy. Nie będzie już pokazywany jako zaległy. Serie się nie zapiszą i nie wejdą do statystyk.',
+  const sched = sug.value.kind === 'missed' ? days.filter(x => x.d.getDay() === js).at(-1) : null
+  const def = (sched && !sched.real.length ? sched : days.slice().reverse().find(x => !x.real.length && !x.offs.length) || days[6]).date
+  const { role, picks } = await ask({ icon: addCircle, title: 'Dodaj zrobiony trening',
+    message: 'Zapomniałeś zapisać? Wybierz trening i dzień. Możesz wpisać serie albo tylko zaznaczyć, że trening był.',
     choices: [
       { key: 'day', label: 'Trening', value: day, options: PLAN.map((p, i) => ({ value: i, label: p.name, hidden: p.hidden })).filter(o => !o.hidden) },
-      { key: 'date', label: 'Kiedy', value: def, options: days.map(d => ({ value: d.date, label: d.wd, sub: d.real.length ? PLAN[d.real[0].day].name : String(d.n) })) }],
-    buttons: [{ text: 'Oznacz jako zrobiony', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role !== 'ok') return
+      { key: 'date', label: 'Kiedy', value: def, options: days.map(x => ({ value: x.date, label: x.label, sub: x.real.length ? PLAN[x.real[0].day].name : x.d.getDate() + '.' + String(x.d.getMonth() + 1).padStart(2, '0') })) }],
+    buttons: [
+      { text: 'Wpisz serie i ciężary', role: 'sets', kind: 'primary' },
+      { text: 'Bez serii – tylko zaznacz, że był', role: 'mark', kind: 'soft' },
+      { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (role === 'sets') { const s = addPastSession(picks.day, picks.date); router.push('/workout/' + s.id); return }
+  if (role !== 'mark') return
   markDoneOff(picks.day, picks.date)
-  const d = days.find(x => x.date === picks.date)
-  state.flash = `${PLAN[picks.day].name} oznaczony jako zrobiony (${d.wd.toLowerCase()} ${d.n}.${picks.date.slice(5, 7)})`
+  const x = days.find(y => y.date === picks.date)
+  state.flash = `${PLAN[picks.day].name} dodany (${x.label.toLowerCase()} ${x.d.getDate()}.${picks.date.slice(5, 7)}) – bez serii, nie wchodzi do statystyk`
 }
 // tapping a day with "done without the app" marks: remove one
 async function dayTap(d) {
   if (!d.offs.length) return
-  const { role } = await ask({ icon: checkmark, title: 'Zrobione bez apki', message: `${d.wd} ${d.n}.${d.date.slice(5, 7)}: ` + d.offs.map(s => PLAN[s.day].name).join(', ') + '. Usunąć oznaczenie?',
+  const { role } = await ask({ icon: checkmark, title: 'Trening bez serii', message: `${d.wd} ${d.n}.${d.date.slice(5, 7)}: ` + d.offs.map(s => PLAN[s.day].name).join(', ') + ' – zaznaczony jako zrobiony, bez wpisanych serii. Usunąć?',
     buttons: [...d.offs.map(s => ({ text: 'Usuń: ' + PLAN[s.day].name, role: s.id, kind: 'danger' })), { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
   if (role !== 'cancel' && state.sessions[role]?.offApp) remove(role)
 }
@@ -183,7 +194,7 @@ const week = computed(() => {
 const weekCount = computed(() => week.value.reduce((a, d) => a + d.real.length + d.offs.length, 0))
 const monthCount = computed(() => { const p = iso(new Date()).slice(0, 7); return done.value.filter(s => s.date.startsWith(p)).length })
 
-function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? ago(l.date) : 'jeszcze nie robiony' }
+function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? ago(l.date) : 'jeszcze nie było' }
 
 // warn only when the backup has been failing for a while, not after one missed upload at the gym
 const backupWarn = computed(() => cloud.token && cloud.dirty && cloud.error && cloud.error !== 'Brak połączenia' ||
@@ -231,8 +242,9 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .week { padding: 14px 12px; }
 .day.off .dot { opacity: .5; }
 .day.both .dot { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 3.5px color-mix(in srgb, var(--c) 45%, transparent); }
-.off-link { display: block; width: calc(100% - 40px); margin: 0 20px 12px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13.5px; color: var(--app-muted); }
+.off-link { display: flex; align-items: center; gap: 6px; width: calc(100% - 40px); margin: 0 20px 12px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13.5px; color: var(--app-muted); }
 .off-link b { color: var(--accent); font-weight: 600; }
+.off-link ion-icon { font-size: 19px; color: var(--accent); flex: none; }
 .week-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px 12px; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); }
 .day { display: flex; flex-direction: column; align-items: center; gap: 6px; }

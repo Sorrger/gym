@@ -35,7 +35,7 @@
               <div v-for="g in ex.groups" :key="g.key" class="g">
                 <span class="tgt num">{{ g.label ? g.label + ': ' : '' }}{{ g.target }}</span>
                 <span class="last num" v-if="g.last">ostatnio {{ g.last }}</span>
-                <span class="last none" v-else>jeszcze nie robione</span>
+                <span class="last none" v-else>jeszcze nie było</span>
               </div>
             </div>
           </div>
