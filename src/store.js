@@ -108,9 +108,9 @@ function prefill(g, n, deload, self = null) {
   })
 }
 const roundTo = (v, st) => Math.round(v / st) * st
-// light week: ~10 % less (assisted machine: one step more help)
-export function deloadKg(w, g) { const inc = incOf(g); return isAssisted(g) ? w + inc : Math.max(0, roundTo(w * 0.9, inc)) }
-export const deloadSets = n => Math.max(1, Math.ceil(n / 2))
+// light week: prefs.deloadPct less (default 10 %) (assisted machine: one step more help)
+export function deloadKg(w, g) { const inc = incOf(g, prefs.stepKg); return isAssisted(g) ? w + inc : Math.max(0, roundTo(w * (1 - prefs.deloadPct / 100), inc)) }
+export const deloadSets = n => (prefs.deloadHalf ? Math.max(1, Math.ceil(n / 2)) : n)
 
 export function startSession(day) {
   const now = Date.now()

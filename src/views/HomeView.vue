@@ -63,7 +63,7 @@
         <div v-if="dl.active || dl.due" class="card warn dl-card">
           <ion-icon :icon="trendingDown" />
           <div><b>Tydzień lżejszy (deload)</b>
-            <span>{{ dl.active ? 'Do ' + dlEnd + ': połowa serii, ok. 10% lżej, 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. Połowa serii, ok. 10% lżej, potem wracasz do normy.' }}</span></div>
+            <span>{{ dl.active ? 'Do ' + dlEnd + ': ' + deloadWords() + ', 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. ' + cap(deloadWords()) + ', potem wracasz do normy.' }}</span></div>
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Twój trening' }}</h3>
         <button v-if="!active" class="off-link press" @click="markOff">
@@ -96,7 +96,8 @@
 </template>
 
 <script setup>
-import { weightTone } from '../prefs'
+import { weightTone, deloadWords } from '../prefs'
+const cap = t => t.charAt(0).toUpperCase() + t.slice(1)
 import Ico from './Ico.vue'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'

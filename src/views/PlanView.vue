@@ -22,7 +22,7 @@
           </div>
           <BodyMap class="hero-map" v-bind="dayMuscles(day)" />
         </div>
-        <div v-if="dl.active || dl.due" class="dl-box"><ion-icon :icon="trendingDown" /><div><b>Tydzień lżejszy (deload)</b><span>Połowa serii, ok. 10% lżej, zostaw 3-4 powtórzenia w zapasie. Apka sama ustawi ciężary.</span></div></div>
+        <div v-if="dl.active || dl.due" class="dl-box"><ion-icon :icon="trendingDown" /><div><b>Tydzień lżejszy (deload)</b><span>{{ cap(deloadWords()) }}, zostaw 3-4 powtórzenia w zapasie. Apka sama ustawi ciężary.</span></div></div>
         <p v-if="plan.note" class="tip"><ion-icon :icon="informationCircle" /> {{ plan.note }}</p>
 
         <div class="card exs">
@@ -53,6 +53,8 @@
 </template>
 
 <script setup>
+import { deloadWords } from '../prefs'
+const cap = t => t.charAt(0).toUpperCase() + t.slice(1)
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, useIonRouter } from '@ionic/vue'

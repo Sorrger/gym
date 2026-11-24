@@ -7,10 +7,11 @@
 // • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
 import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf, DEF_REPS } from './plan'
 import { sorted, deloadKg, deloadSets } from './store'
+import { prefs, rirLabel, deloadWords } from './prefs'
 
 const roundTo = (v, st) => Math.round(v / st) * st
-const gain = q => (q == null ? 1 : q >= 3 ? 2 : q >= 1 ? 1 : 0)
-const qTxt = sets => (sets.some(x => x.q != null) ? ` (zapas ${sets.map(x => (x.q == null ? '?' : x.q >= 3 ? '3+' : x.q)).join(', ')})` : '')
+const gain = q => (q == null ? prefs.repsGain : q >= prefs.rirUp ? prefs.repsGain + 1 : q >= 1 ? prefs.repsGain : 0)
+const qTxt = sets => (sets.some(x => x.q != null) ? ` (zapas ${sets.map(x => (x.q == null ? '?' : rirLabel(x.q))).join(', ')})` : '')
 const repsWord = n => (n === 1 ? 'powtórzenie' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'powtórzenia' : 'powtórzeń')
 
 // done sets of this exercise in earlier workouts, newest first
@@ -30,7 +31,7 @@ function history(key, session, max = 3, unit = null) {
 export function suggest(g, session) {
   const range = rangeOf(g.target)
   if (!range) return null
-  const hist = history(g.key, session, 3, g.unit)
+  const hist = history(g.key, session, Math.max(3, prefs.failN + 1), g.unit)
   const { lo, hi } = range
   if (session.deload) return deload(g, session, hist, range)
   if (!hist.length) {
@@ -49,12 +50,12 @@ export function suggest(g, session) {
   if (g.unit !== 'kg') {
     const unit = UNITS[g.unit].short, plus = g.unit === 's' ? 5 : 1
     const vals = last.map(x => x.w)
-    const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= 3 && x.w >= lo)
+    const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= prefs.rirUp && x.w >= lo)
     const top = vals.length >= n && (vals.every(v => v >= hi) || easy)
     if (top) {
       const how = HARDER[g.key + '@' + g.stage] || HARDER[g.key] || HARDER[g.name]
       return { kind: 'up', title: 'Masz cały zakres!', short: how ? 'Utrudnij' : `${hi} ${unit}`,
-        text: `Ostatnio: ${vals.join(', ')} ${unit}${qTxt(last)} – ${easy && !vals.every(v => v >= hi) ? 'za łatwo, w każdej serii zostało 3+' : `wszystkie serie na górze zakresu (${lo}-${hi})`}.` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
+        text: `Ostatnio: ${vals.join(', ')} ${unit}${qTxt(last)} – ${easy && !vals.every(v => v >= hi) ? `za łatwo, w każdej serii zostało ${prefs.rirUp}+` : `wszystkie serie na górze zakresu (${lo}-${hi})`}.` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
     }
     const target = Array.from({ length: n }, (_, i) => {
       const v = vals[i] ?? vals[vals.length - 1], q = g.unit === 's' ? null : (last[i] ?? last[last.length - 1]).q
@@ -64,7 +65,7 @@ export function suggest(g, session) {
       text: `Ostatnio: ${vals.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}${qTxt(last)} Dziś celuj w ${target.join(', ')} ${unit}${unit.endsWith('.') ? '' : '.'}`, sets: target.map(w => ({ w })) }
   }
 
-  const inc = incOf(g), assist = isAssisted(g)
+  const inc = incOf(g, prefs.stepKg), assist = isAssisted(g)
   const W = assist ? Math.min(...last.map(x => x.w)) : Math.max(...last.map(x => x.w))
   const work = last.filter(x => x.w === W)
   // workouts saved before reps were tracked have no reps: don't guess (it could wrongly say "go lighter")
@@ -75,26 +76,27 @@ export function suggest(g, session) {
   }
   const reps = work.map(x => x.r ?? lo)
   const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}${qTxt(work)}`
-  const easy = work.length >= n && work.every(x => x.q != null && x.q >= 3 && (x.r ?? 0) >= lo) // 3+ left in every set, at least the bottom of the range
+  const easy = work.length >= n && work.every(x => x.q != null && x.q >= prefs.rirUp && (x.r ?? 0) >= lo) // rirUp+ left in every set, at least the bottom of the range
   const top = work.length >= n && (reps.every(r => r >= hi) || easy)
   if (top) {
     // way above the range (every set 3+ reps over the top) → a double step, otherwise one step
     const step = reps.every(r => r >= hi + 3) ? 2 * inc : inc
     const w = Math.max(0, W + (assist ? -step : step))
     return { kind: 'up', title: assist ? 'Mniej wspomagania' : 'Dodaj ciężar', short: `${fmtNum(w)} kg × ${lo}`,
-      text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? 'za lekko, w każdej serii zostało 3+ powtórzenia' : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
+      text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? `za lekko, w każdej serii zostało ${prefs.rirUp}+ powtórzeń` : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
   // stuck: two workouts in a row at this weight with a set under the bottom of the range AND no more total reps
   // than the time before (a normal 8, 7, 6 right after adding weight, then 8, 8, 7, is progress – not a reason to go lighter)
-  const prev = hist[1]?.sets.filter(x => x.w === W)
+  // failN workouts in a row (default 2) at this weight with a set under the range, and total reps not improving
   const sum = a => a.reduce((t, r) => t + (r ?? 0), 0)
-  const failed = reps.some(r => r < lo) && prev?.length && prev.some(x => x.r != null && x.r < lo) &&
-    sum(reps.slice(0, prev.length)) <= sum(prev.map(x => x.r).slice(0, reps.length))
+  const runs = hist.slice(0, prefs.failN).map(h => h.sets.filter(x => x.w === W))
+  const failed = reps.some(r => r < lo) && runs.length === prefs.failN && runs.every(a => a.length && a.some(x => x.r != null && x.r < lo)) &&
+    runs.every((a, k) => !k || sum(runs[k - 1].map(x => x.r).slice(0, a.length)) <= sum(a.map(x => x.r).slice(0, runs[k - 1].length)))
   if (failed) {
-    const w = assist ? W + 2 * inc : Math.max(0, roundTo(W * 0.9, inc))
+    const w = assist ? W + 2 * inc : Math.max(0, Math.min(W - inc, roundTo(W * (1 - prefs.dropPct / 100), inc)))
     return { kind: 'down', title: 'Lżej, żeby ruszyć dalej', short: `${fmtNum(w)} kg × ${lo}`,
-      text: `Dwa treningi z rzędu poniżej ${lo} powtórzeń na ${fmtNum(W)} kg. Zejdź na ${fmtNum(w)} kg, zrób ${lo}-${hi} czysto i buduj od nowa.`,
+      text: `${prefs.failN === 1 ? 'Trening' : prefs.failN + ' treningi z rzędu'} poniżej ${lo} powtórzeń na ${fmtNum(W)} kg. Zejdź na ${fmtNum(w)} kg, zrób ${lo}-${hi} czysto i buduj od nowa.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
   const target = Array.from({ length: n }, (_, i) => {
@@ -122,19 +124,19 @@ export function live(g, session) {
   const rest = arr.filter(x => !x.d)
   const last = arr[li], range = rangeOf(g.target)
   if (!last || last.w == null || !rest.length || !range) return null
-  const { lo, hi } = range, r = last.r ?? DEF_REPS, q = last.q, inc = incOf(g), assist = isAssisted(g)
+  const { lo, hi } = range, r = last.r ?? DEF_REPS, q = last.q, inc = incOf(g, prefs.stepKg), assist = isAssisted(g)
   const kg = v => fmtNum(v) + ' kg'
   if (r < lo && (q == null || q === 0)) {
-    const w = assist ? last.w + inc : Math.max(0, Math.min(last.w - inc, roundTo(last.w * 0.9, inc)))
+    const w = assist ? last.w + inc : Math.max(0, Math.min(last.w - inc, roundTo(last.w * (1 - prefs.dropPct / 100), inc)))
     if (rest.every(x => x.w != null && (assist ? x.w >= w : x.w <= w))) return null
     return { kind: 'down', w, r: lo, short: `${kg(w)} × ${lo}`,
       text: `Za ciężko (${r} z ${lo}-${hi}). ${assist ? 'Więcej pomocy' : 'Kolejne serie'}: ${kg(w)} × ${lo}` }
   }
-  if ((q === 3 && r >= hi) || r >= hi + 3) {
+  if ((q != null && q >= prefs.rirUp && r >= hi) || r >= hi + 3) {
     const w = assist ? Math.max(0, last.w - inc) : last.w + inc
     if (rest.every(x => x.w != null && (assist ? x.w <= w : x.w >= w))) return null
     return { kind: 'up', w, r: lo, short: `${kg(w)} × ${lo}`,
-      text: `Za lekko (${r}${q === 3 ? ', zapas 3+' : ''}). ${assist ? 'Mniej pomocy' : 'Kolejne serie'}: ${kg(w)} × ${lo}` }
+      text: `Za lekko (${r}${q != null && q >= prefs.rirUp ? ', zapas ' + rirLabel(q) : ''}). ${assist ? 'Mniej pomocy' : 'Kolejne serie'}: ${kg(w)} × ${lo}` }
   }
   return null
 }
@@ -142,7 +144,7 @@ export function live(g, session) {
 // light week: same exercises, half the sets, ~10 % lighter, bottom of the range, 3-4 reps left in every set
 function deload(g, session, hist, { lo }) {
   const n = deloadSets(g.sets || 1), unit = UNITS[g.unit].short
-  const note = 'Tydzień lżejszy (deload): połowa serii, bez dochodzenia do upadku – zostaw 3-4 powtórzenia w zapasie. Mięśnie odpoczywają, siła wraca, a w przyszłym tygodniu wracasz do normalnych ciężarów.'
+  const note = `Tydzień lżejszy (deload): ${deloadWords()}, bez dochodzenia do upadku – zostaw 3-4 powtórzenia w zapasie. Mięśnie odpoczywają, siła wraca, a w przyszłym tygodniu wracasz do normalnych ciężarów.`
   if (!hist.length) return { kind: 'deload', title: 'Tydzień lżejszy', short: `${n} × ${lo}`, note, text: `Dziś ${n} × ${lo}, lekko.` }
   const last = hist[0].sets
   if (g.unit !== 'kg') {

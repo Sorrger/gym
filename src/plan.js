@@ -83,7 +83,7 @@ export const INC = {
 // machines where the kg number is help (less = harder)
 export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)', 'Nauka podciągania · Ze wspomaganiem'])
 export const isAssisted = g => ASSISTED.has(g.key) || ASSISTED.has(g.name)
-export const incOf = g => INC[g.key] || INC[g.name] || 2.5
+export const incOf = (g, def = 2.5) => INC[g.key] || INC[g.name] || def
 // what to do when a bodyweight/time exercise tops out
 export const HARDER = {
   'Unoszenie nóg w podporze na poręczach': 'proste nogi albo hantelek między stopami',

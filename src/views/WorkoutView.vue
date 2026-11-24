@@ -89,8 +89,8 @@
                     <!-- reps in reserve: optional, shown once the set is ticked; the coach uses it -->
                     <div v-if="x.d && g.unit !== 's' && prefs.rir" class="rir">
                       <span>Zapas</span>
-                      <button v-for="q in [0, 1, 2, 3]" :key="q" class="rir-b num press" :class="{ on: x.q === q }"
-                        @click="setRir(g, si, q)" :aria-label="'Zostało ' + q + (q === 3 ? ' lub więcej' : '') + ' powtórzeń do upadku'">{{ q === 3 ? '3+' : q }}</button>
+                      <button v-for="q in rirTop() + 1" :key="q" class="rir-b num press" :class="{ on: x.q === q - 1 || (q - 1 === rirTop() && x.q > q - 1) }"
+                        @click="setRir(g, si, q - 1)" :aria-label="'Zostało ' + (q - 1) + (q - 1 === rirTop() ? ' lub więcej' : '') + ' powtórzeń do upadku'">{{ rirLabel(q - 1) }}</button>
                     </div>
                     <!-- advice for the sets still to do, right under the set that was clearly too heavy / too light -->
                         <div v-if="liveOf(g) && si === lastDone(g)" class="live-tip" :class="liveOf(g).kind">
@@ -230,7 +230,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
 import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline, swapHorizontal } from 'ionicons/icons'
-import { prefs } from '../prefs'
+import { prefs, rirTop, rirLabel, deloadWords } from '../prefs'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload, swapExercise, dropEmptyManual } from '../store'
@@ -338,7 +338,7 @@ function applyLive(g) {
 function kindIcon(k) { return k === 'up' ? trendingUp : k === 'down' || k === 'deload' ? trendingDown : k === 'stage' ? trophyOutline : bulbOutline }
 async function deloadInfo() {
   const { role } = await ask({ icon: trendingDown, color: '#0a84ff', title: 'Tydzień lżejszy (deload)',
-    message: 'Co kilka tygodni apka sama robi lżejszy tydzień: te same ćwiczenia, połowa serii, ok. 10% lżej i 3-4 powtórzenia w zapasie. Zmęczenie schodzi, stawy odpoczywają, a po nim wracasz do normalnych ciężarów – zwykle z nową siłą.',
+    message: 'Co kilka tygodni apka sama robi lżejszy tydzień: te same ćwiczenia, ' + deloadWords() + ' i 3-4 powtórzenia w zapasie. Zmęczenie schodzi, stawy odpoczywają, a po nim wracasz do normalnych ciężarów – zwykle z nową siłą.',
     buttons: s.value.finished ? [{ text: 'OK', role: 'ok', kind: 'primary' }]
       : [{ text: 'OK', role: 'ok', kind: 'primary' }, { text: 'Dziś trenuj normalnie', role: 'normal', kind: 'soft' }] })
   if (role === 'normal') { cancelDeload(s.value); state.flash = 'Normalny trening – lżejszy tydzień za tydzień' }
