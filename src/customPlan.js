@@ -2,7 +2,7 @@
 // (newer `t` wins). Changes take effect after a reload, so every screen and cache starts from the same plan.
 import { reactive } from 'vue'
 import { get, set } from 'idb-keyval'
-import { applyPlan } from './plan'
+import { applyPlan, ALT } from './plan'
 import { MUSCLES } from './muscles'
 import { cloud, readGistFile, writeGistFile } from './cloud'
 
@@ -15,6 +15,8 @@ function apply(c) {
   applyPlan(custom.data)
   for (const k of Object.keys(MUSCLES)) if (!(k in DEF_MUSCLES)) delete MUSCLES[k]
   Object.assign(MUSCLES, DEF_MUSCLES, custom.data?.muscles || {})
+  // an alternative nobody described works the same muscles as the exercise it replaces
+  for (const [orig, alts] of Object.entries(ALT)) for (const n of alts) if (!MUSCLES[n] && MUSCLES[orig]) MUSCLES[n] = MUSCLES[orig]
 }
 
 export async function initPlan() {

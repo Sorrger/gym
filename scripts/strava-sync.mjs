@@ -4,7 +4,7 @@
 // 3. pulls recent strength activities (heart rate, kcal, time), matches them to workouts by time
 // 4. writes the exercise list into the Strava activity description
 // 5. saves everything to strava.json in the gist; the app shows it
-import { PLAN, groupsOf, UNITS, migrateNames, PULLUP, PULLUP_STAGES, isAssisted, applyPlan } from '../src/plan.js'
+import { PLAN, groupsOf, UNITS, migrateNames, PULLUP, PULLUP_STAGES, isAssisted, applyPlan, ensurePlans } from '../src/plan.js'
 import { musclesOf, MUSCLE_NAMES, MUSCLES } from '../src/muscles.js'
 const { GIST_TOKEN, STRAVA_CLIENT_ID, STRAVA_CLIENT_SECRET } = process.env
 if (!GIST_TOKEN || !STRAVA_CLIENT_ID || !STRAVA_CLIENT_SECRET) { console.log('Strava secrets not set – nothing to do'); process.exit(0) }
@@ -106,7 +106,8 @@ const g = await gh('/gists/' + gistId)
 const backup = await fileOf(g, BACKUP)
 // the phone's own plan, if the user edited it in the app
 const own = await fileOf(g, 'gym-plan.json').catch(() => null)
-if (own?.days) { applyPlan(own); Object.assign(MUSCLES, own.muscles || {}) }
+if (own?.days) { applyPlan(own); Object.assign(MUSCLES, own.muscles || {}); for (const [o, a] of Object.entries(own.alts || {})) for (const n of a) if (!MUSCLES[n] && MUSCLES[o]) MUSCLES[n] = MUSCLES[o] }
+ensurePlans(Math.max(0, ...Object.values(backup?.sessions || {}).map(x => x.day || 0)))
 Object.values(backup?.sessions || {}).forEach(migrateNames) // old exercise names → current ones
 let auth = (await fileOf(g, AUTH)) || {}
 const prev = (await fileOf(g, OUT)) || {}

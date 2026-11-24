@@ -37,11 +37,11 @@
         <h3 class="section-title">Regularność</h3>
         <div class="card weeks">
           <div class="w-head">
-            <div><b class="num">{{ wk[wk.length - 1].n }}</b><span> z {{ PLAN.length }} w tym tygodniu</span></div>
+            <div><b class="num">{{ wk[wk.length - 1].n }}</b><span> z {{ nPlans }} w tym tygodniu</span></div>
             <span class="w-avg num">śr. {{ wkAvg }} / tydz.</span>
           </div>
           <div class="w-bars" aria-hidden="true">
-            <div v-for="w in wk" :key="w.from" class="w-col" :class="{ now: w.now, full: w.n >= PLAN.length }">
+            <div v-for="w in wk" :key="w.from" class="w-col" :class="{ now: w.now, full: w.n >= nPlans }">
               <span class="w-n num">{{ w.n || '' }}</span>
               <i :style="{ height: Math.max(4, w.n / wkMax * 100) + '%' }"></i>
               <small class="num">{{ w.label }}</small>
@@ -70,7 +70,7 @@
         <!-- per plan -->
         <h3 class="section-title">Treningi</h3>
         <div class="plans">
-          <button v-for="(p, i) in plans" :key="p.key" class="pcard press" :style="{ '--c': COLORS[p.key] }" @click="router.push('/progress/' + i)">
+          <button v-for="p in plans" :key="p.key" class="pcard press" :style="{ '--c': COLORS[p.key] }" @click="router.push('/progress/' + p.i)">
             <div class="pc-top">
               <span class="pc-name">{{ p.name }}</span>
               <ion-icon :icon="chevronForward" class="pc-chev" />
@@ -151,7 +151,8 @@ const router = useIonRouter()
 const period = computed(() => ui.period) // days or null = all time
 const periodLabel = computed(() => (period.value === 28 ? 'Ostatnie 4 tygodnie' : period.value === 91 ? 'Ostatnie 3 miesiące' : 'Od początku'))
 const ov = computed(() => { void state.sessions; return overview(period.value) })
-const plans = computed(() => { void state.sessions; return PLAN.map((p, i) => ({ ...p, s: planSummary(i) })) })
+const plans = computed(() => { void state.sessions; return PLAN.map((p, i) => ({ ...p, i, s: planSummary(i) })).filter(p => !p.hidden) })
+const nPlans = computed(() => plans.value.length)
 const avgGain = computed(() => { const g = plans.value.map(p => p.s.gain).filter(x => x != null); return g.length ? Math.round(g.reduce((a, b) => a + b, 0) / g.length) : null })
 const all = computed(() => { void state.sessions; return muscleSets(period.value) })
 const done = computed(() => { void state.sessions; return plansDone(period.value) })
@@ -161,7 +162,7 @@ const prs = computed(() => { void state.sessions; return recentPRs(5, period.val
 const MONTHS = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru']
 const prDate = d => +d.slice(8) + ' ' + MONTHS[+d.slice(5, 7) - 1]
 const wk = computed(() => { void state.sessions; return weekly(8) })
-const wkMax = computed(() => Math.max(PLAN.length, ...wk.value.map(w => w.n)))
+const wkMax = computed(() => Math.max(nPlans.value, ...wk.value.map(w => w.n)))
 const wkAvg = computed(() => { const a0 = wk.value.slice(0, -1), f = a0.findIndex(x => x.n > 0); const past = f < 0 ? [] : a0.slice(f); return past.length ? String(Math.round(past.reduce((a, w) => a + w.n, 0) / past.length * 10) / 10).replace('.', ',') : '–' })
 const trend = computed(() => {
   void state.sessions
@@ -213,10 +214,10 @@ const radar = computed(() => {
   const strong = axes.slice().sort((a, b) => b.v - a.v)[0]
   let text
   if (!max) text = 'Jeszcze brak treningów – wykres pojawi się po pierwszym.'
-  else if (done.value < PLAN.length) text = `${period.value ? 'W tym okresie zrobiłeś' : 'Zrobiłeś'} ${done.value} z ${PLAN.length} treningów planu (${PLAN.map(p => p.name).join(', ')}). Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans.`
+  else if (done.value < nPlans.value) text = `${period.value ? 'W tym okresie zrobiłeś' : 'Zrobiłeś'} ${done.value} z ${nPlans.value} treningów planu (${plans.value.map(p => p.name).join(', ')}). Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans.`
   else if (!weak.length) text = `Trenujesz zgodnie z planem. Najwięcej pracy: ${strong.name.toLowerCase()} – tak jak chcesz. Nogi mniej, bo tak jest zaplanowane.`
   else text = `Mniej niż zakłada plan: ${weak.map(a => a.name + ' ' + Math.round(a.fit * 100) + '%').join(', ')}. Pewnie pomijasz tam serie albo ćwiczenia.`
-  return { axes, shape, planShape, ring, balance, text, early: done.value < PLAN.length }
+  return { axes, shape, planShape, ring, balance, text, early: done.value < nPlans.value }
 })
 const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 </script>

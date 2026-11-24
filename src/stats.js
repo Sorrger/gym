@@ -183,7 +183,7 @@ export function muscleSets(days = null) {
   return out
 }
 // distinct plans (Push, Pull…) trained at least once, all time
-export const plansDone = (days = null) => { const cut = days ? daysAgoIso(days) : ''; return new Set(sorted().filter(s => s.date >= cut && ticked(s)).map(s => s.day)).size }
+export const plansDone = (days = null) => { const cut = days ? daysAgoIso(days) : ''; return new Set(sorted().filter(s => s.date >= cut && ticked(s) && !PLAN[s.day]?.hidden).map(s => s.day)).size }
 
 // sets per muscle per week, averaged over the last 4 weeks
 // sets per muscle per week in a period (days = null → all time)
@@ -201,7 +201,8 @@ export const fmtTon = v => (v >= 10000 ? (Math.round(v / 100) / 10).toFixed(1).r
 // sets per muscle in one week of the plan (same weighting as muscleSets: main 1, helping ½)
 export function planMuscleSets() {
   const out = {}
-  PLAN.forEach((_, d) => {
+  PLAN.forEach((p, d) => {
+    if (p.hidden) return
     const perEx = {}
     entriesOf(d).forEach(g => (perEx[g.name] = Math.max(perEx[g.name] || 0, g.sets || 0)))
     for (const [base, n] of Object.entries(perEx)) {

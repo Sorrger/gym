@@ -1,6 +1,6 @@
 import { reactive, watch, computed } from 'vue'
 import { get, set } from 'idb-keyval'
-import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
+import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -31,6 +31,7 @@ export async function load() {
     if (s.finished == null) s.finished = s.date < iso(new Date())
     migrateNames(s)
   })
+  ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0)))
   closeStale()
   state.ready = true
   saveNow() // persist what closeStale / migration changed during loading
@@ -252,6 +253,12 @@ export function suggestion(now = new Date()) {
   const monday = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - wd))
   const doneWeek = new Set(Object.values(state.sessions).filter(s => s.date >= monday && s.date <= today && (hasData(s) || s.offApp)).map(s => s.day))
   const sched = Object.entries(WEEKDAY_TO_DAY).map(([js, day]) => ({ wd: (+js + 6) % 7, day })).sort((a, b) => a.wd - b.wd)
+  // no fixed weekdays (own plan): just the next training in order after the last one done
+  if (!sched.length) {
+    const vis = visiblePlans(), last = sorted().find(s => hasData(s) || s.offApp)
+    const k = last ? vis.findIndex(i => i > last.day) : 0
+    return { day: vis[k < 0 ? 0 : k] ?? 0, kind: 'next' }
+  }
   const todays = sched.find(x => x.wd === wd)
   if (todays && !doneWeek.has(todays.day)) return { day: todays.day, kind: 'today' }
   const missed = sched.find(x => x.wd < wd && !doneWeek.has(x.day))

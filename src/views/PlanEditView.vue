@@ -4,7 +4,7 @@
       <ion-toolbar>
         <div class="sh-bar" :style="{ '--c': color }">
           <button class="rb press" @click="cancel" aria-label="Anuluj"><ion-icon :icon="close" /></button>
-          <div class="sh-title"><b>Edytuj plan</b><span>{{ name || 'Plan' }}</span></div>
+          <div class="sh-title"><b>{{ isNew ? 'Nowy trening' : 'Edytuj trening' }}</b><span>{{ name || 'Plan' }}</span></div>
           <div class="sh-right"><button class="save press" @click="save">Zapisz</button></div>
         </div>
       </ion-toolbar>
@@ -17,6 +17,12 @@
         <div class="card fields">
           <label>Nazwa planu<input v-model="name" maxlength="20" /></label>
           <label>Notatka<textarea v-model="note" rows="2" placeholder="np. kolejność, wskazówki" /></label>
+          <span class="lbl">Dni tygodnia (apka podpowie ten trening w te dni)</span>
+          <div class="wds">
+            <button v-for="w in WDS" :key="w.js" class="wd press" :class="{ on: wdSel.includes(w.js) }" @click="toggleWd(w.js)">
+              <b>{{ w.t }}</b><small>{{ wdOwner(w.js) }}</small>
+            </button>
+          </div>
         </div>
 
         <div v-for="(e, i) in list" :key="e.id" class="card ex">
@@ -43,6 +49,16 @@
             <div class="seg">
               <button v-for="u in UNITS_ED" :key="u.v" class="press" :class="{ on: e.unit === u.v }" @click="e.unit = u.v">{{ u.t }}</button>
             </div>
+            <div class="alts">
+              <span class="lbl">Zamienniki (gdy maszyna zajęta)</span>
+              <div class="alt-chips">
+                <span v-for="(a, k) in e.alts" :key="a" class="alt-chip">{{ a }}<button class="press" @click="e.alts.splice(k, 1)" aria-label="Usuń zamiennik">×</button></span>
+              </div>
+              <div class="alt-add">
+                <input v-model="e.altNew" list="known" placeholder="Dodaj zamiennik…" @keyup.enter="addAlt(e)" />
+                <button class="press" :disabled="!e.altNew.trim()" @click="addAlt(e)">Dodaj</button>
+              </div>
+            </div>
             <button class="mus press" @click="e.open = !e.open">
               <span>Mięśnie: <b>{{ musText(e) }}</b></span><ion-icon :icon="e.open ? chevronUp : chevronDown" />
             </button>
@@ -54,7 +70,8 @@
         </div>
 
         <button class="add press" @click="addEx"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
-        <button v-if="isCustom" class="reset press" @click="reset">Przywróć domyślny plan „{{ DEFAULT_PLAN[day].name }}”</button>
+        <button v-if="isCustom && DEFAULT_PLAN[day]" class="reset press" @click="reset">Przywróć domyślny plan „{{ DEFAULT_PLAN[day].name }}”</button>
+        <button v-if="!isNew" class="reset press" @click="removePlan">Usuń ten trening</button>
         <datalist id="known"><option v-for="k in known" :key="k" :value="k" /></datalist>
       </div>
     </ion-content>
@@ -66,18 +83,26 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
 import { close, chevronUp, chevronDown, trashOutline, add } from 'ionicons/icons'
-import { PLAN, COLORS, DEFAULT_PLAN, rangeOf, nSets } from '../plan'
+import { PLAN, COLORS, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { MUSCLES, MUSCLE_NAMES } from '../muscles'
 import { custom, savePlan } from '../customPlan'
 import { activeSession } from '../store'
 import { ask } from '../dialog'
 
 const route = useRoute(), router = useIonRouter()
-const day = +route.params.day
+const isNew = route.params.day === 'new'
+const day = isNew ? PLAN.length : +route.params.day
 const plan = PLAN[day]
-const color = COLORS[plan?.key] || 'var(--accent)'
+const color = COLORS[plan?.key] || '#af52de'
+const fromPlans = route.query.from === 'plans' || isNew
+const back = () => (fromPlans ? '#/tabs/plans' : '#/plan/' + day)
+const WDS = [1, 2, 3, 4, 5, 6, 0].map(js => ({ js, t: ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][js] }))
+const wdSel = ref(Object.keys(WEEKDAY_TO_DAY).filter(k => WEEKDAY_TO_DAY[k] === day).map(Number))
+const toggleWd = js => { const i = wdSel.value.indexOf(js); if (i >= 0) wdSel.value.splice(i, 1); else wdSel.value.push(js) }
+// which other training this weekday belongs to now (picking it here moves it)
+const wdOwner = js => { const o = WEEKDAY_TO_DAY[js]; return wdSel.value.includes(js) ? '✓' : o != null && o !== day && PLAN[o] ? PLAN[o].name : '' }
 const UNITS_ED = [{ v: 'kg', t: 'Ciężar (kg)' }, { v: 'reps', t: 'Powtórzenia' }, { v: 's', t: 'Czas (s)' }]
-const known = Object.keys(MUSCLES).sort((a, b) => a.localeCompare(b, 'pl'))
+const known = [...new Set([...Object.keys(MUSCLES), ...Object.values(ALT).flat()])].sort((a, b) => a.localeCompare(b, 'pl'))
 const openHere = activeSession()?.day === day
 const isCustom = !!custom.data?.days?.[day]
 
@@ -89,10 +114,11 @@ function toRow(ex) {
   if (parts && typeof parts !== 'string' || parts === 'stages') return { id: ++uid, special: true, raw: ex, name: nm, specialText: parts === 'stages' ? 'Etapy zmieniają się same' : 'Ćwiczenie z kilku części' }
   const r = rangeOf(target) || { lo: 8, hi: 12 }
   const rest = String(target || '').replace(/^\s*\d+(?:-\d+)?\s*×\s*\d+(?:\s*-\s*\d+)?\s*s?/, '') // e.g. " / stronę"
-  return { id: ++uid, name: nm, orig: nm, tag, sets: nSets(target || '3'), lo: r.lo, hi: r.hi, unit: typeof parts === 'string' ? parts : 'kg', rest, m: musOf(nm), mTouched: false, open: !MUSCLES[nm] }
+  return { id: ++uid, alts: [...altOf(nm)], altNew: '', name: nm, orig: nm, tag, sets: nSets(target || '3'), lo: r.lo, hi: r.hi, unit: typeof parts === 'string' ? parts : 'kg', rest, m: musOf(nm), mTouched: false, open: !MUSCLES[nm] }
 }
-const name = ref(plan.name), note = ref(plan.note || '')
-const list = ref(plan.ex.map(toRow))
+const name = ref(plan?.name || ''), note = ref(plan?.note || '')
+const list = ref(plan ? plan.ex.map(toRow) : [])
+if (!list.value.length) addEx()
 
 function nameChanged(e) { if (!e.mTouched) { e.m = musOf(e.name.trim()); if (!MUSCLES[e.name.trim()]) e.open = true } }
 function cycle(e, id) { e.mTouched = true; e.m = { ...e.m, [id]: ((e.m[id] || 0) + 1) % 3 }; if (!e.m[id]) delete e.m[id] }
@@ -103,10 +129,11 @@ async function removeAt(i) {
   const { role } = await ask({ icon: trashOutline, color, title: 'Usunąć z planu?', message: `${e.name || 'To ćwiczenie'} zniknie z planu. Historia zostaje.`, buttons: [{ text: 'Usuń', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role === 'del') list.value.splice(i, 1)
 }
-function addEx() { list.value.push({ id: ++uid, name: '', sets: 3, lo: 8, hi: 12, unit: 'kg', rest: '', m: {}, mTouched: false, open: true }) }
+function addAlt(e) { const n = e.altNew.trim().replace(/\s+/g, ' '); if (n && n !== e.name.trim() && !e.alts.includes(n)) e.alts.push(n); e.altNew = '' }
+function addEx() { list.value.push({ id: ++uid, alts: [], altNew: '', name: '', sets: 3, lo: 8, hi: 12, unit: 'kg', rest: '', m: {}, mTouched: false, open: true }) }
 
 function build() {
-  const names = new Set(), muscles = { ...(custom.data?.muscles || {}) }
+  const names = new Set(), muscles = { ...(custom.data?.muscles || {}) }, alts = JSON.parse(JSON.stringify(ALT))
   const ex = []
   for (const e of list.value) {
     if (e.special) { ex.push(e.raw); names.add(e.name); continue }
@@ -123,25 +150,40 @@ function build() {
     const m = Object.keys(e.m).filter(k => e.m[k] === 1), h = Object.keys(e.m).filter(k => e.m[k] === 2)
     const def = MUSCLES[nm]
     if (e.mTouched || !def) { if (m.length || h.length) muscles[nm] = [m, h] }
+    alts[nm] = e.alts.filter(a => a !== nm)
   }
-  if (!ex.length) throw new Error('Plan musi mieć choć jedno ćwiczenie.')
-  return { ex, muscles }
+  if (!ex.length) throw new Error('Trening musi mieć choć jedno ćwiczenie.')
+  return { ex, muscles, alts }
 }
 
 async function save() {
   let b
   try { b = build() } catch (err) { await ask({ icon: close, color, title: 'Popraw plan', message: err.message, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
+  const days = Array.from({ length: Math.max(PLAN.length, day + 1) }, (_, i) => custom.data?.days?.[i] || null)
+  days[day] = { name: name.value.trim() || DEFAULT_PLAN[day]?.name || 'Trening ' + (day + 1), note: note.value.trim(), ex: b.ex }
+  await savePlan({ ...(custom.data || {}), days, muscles: b.muscles, alts: b.alts, wd: wdMap() }, back())
+}
+function wdMap(without = false) {
+  const wd = { ...WEEKDAY_TO_DAY }
+  for (const k of Object.keys(wd)) if (wd[k] === day) delete wd[k]
+  if (!without) for (const js of wdSel.value) wd[js] = day
+  return wd
+}
+async function removePlan() {
+  if (visiblePlans().length <= 1) { await ask({ icon: close, color, title: 'To jedyny trening', message: 'Musi zostać choć jeden trening. Dodaj inny, zanim usuniesz ten.', buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
+  const { role } = await ask({ icon: trashOutline, color, title: `Usunąć trening „${plan.name}”?`, message: 'Zniknie ze Startu i z planu. Zrobione treningi zostają w historii.', buttons: [{ text: 'Usuń trening', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (role !== 'del') return
   const days = Array.from({ length: PLAN.length }, (_, i) => custom.data?.days?.[i] || null)
-  days[day] = { name: name.value.trim() || DEFAULT_PLAN[day].name, note: note.value.trim(), ex: b.ex }
-  await savePlan({ days, muscles: b.muscles }, '#/plan/' + day)
+  days[day] = { name: plan.name, note: plan.note, ex: plan.ex, hidden: true }
+  await savePlan({ ...(custom.data || {}), days, wd: wdMap(true) }, '#/tabs/plans')
 }
 async function reset() {
   const { role } = await ask({ icon: trashOutline, color, title: 'Przywrócić domyślny plan?', message: `Plan „${DEFAULT_PLAN[day].name}” wróci do wersji z apki. Historia treningów zostaje.`, buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role !== 'ok') return
   const days = Array.from({ length: PLAN.length }, (_, i) => (i === day ? null : custom.data?.days?.[i] || null))
-  await savePlan(days.some(Boolean) ? { days, muscles: custom.data?.muscles || {} } : null, '#/plan/' + day)
+  await savePlan({ ...(custom.data || {}), days }, back())
 }
-function cancel() { if (router.canGoBack()) router.back(); else router.navigate('/plan/' + day, 'back', 'replace') }
+function cancel() { if (router.canGoBack()) router.back(); else router.navigate(back().slice(1), 'back', 'replace') }
 </script>
 
 <style scoped>
@@ -189,6 +231,22 @@ function cancel() { if (router.canGoBack()) router.back(); else router.navigate(
 .legend { width: 100%; margin: 4px 2px 0; font-size: 12px; color: var(--app-muted); }
 .legend i { font-style: normal; font-weight: 600; }
 .legend .m, .legend .h { color: var(--c); }
+.lbl { display: block; font-size: 13px; color: var(--app-muted); margin: 2px 0 6px; }
+.wds { display: flex; gap: 4px; }
+.wd { flex: 1 1 0; min-width: 0; min-height: 46px; border: 0; border-radius: 10px; padding: 4px 1px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font: inherit; background: var(--app-field); color: var(--ion-text-color); }
+.wd b { font-size: 14px; }
+.wd small { font-size: 9.5px; color: var(--app-muted); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wd.on { background: var(--c); color: #fff; }
+.wd.on small { color: rgba(255,255,255,.85); }
+.alts { margin-top: 12px; }
+.alt-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.alt-chip { display: inline-flex; align-items: center; gap: 4px; padding: 5px 6px 5px 11px; border-radius: 999px; font-size: 13px; background: color-mix(in srgb, var(--c) 13%, transparent); }
+.alt-chip button { border: 0; background: none; font-size: 17px; line-height: 1; color: var(--app-muted); padding: 0 4px; }
+.alt-add { display: flex; gap: 6px; margin-top: 6px; }
+.alt-add input { flex: 1; min-width: 0; border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 15px; color: var(--ion-text-color); background: var(--app-field); outline: none; }
+.alt-add button { border: 0; border-radius: 10px; padding: 0 14px; font: inherit; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 13%, var(--app-card)); }
+.alt-add button:disabled { opacity: .4; }
 .add, .reset { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); margin: 4px 16px 10px; padding: 13px; border: 0; border-radius: 14px; font: inherit; font-size: 16px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 13%, var(--app-card)); }
 .reset { color: var(--app-bad); background: none; font-size: 14.5px; }
 </style>

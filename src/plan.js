@@ -27,15 +27,38 @@ export function nSets(t) { const m = t.match(/^(\d+)(?:-(\d+))?/); return m ? +(
 // The plan above is the default. A phone can keep its own version: { t, days: [{ name, note, ex } | null], muscles: { name: [[main],[help]] } }
 // stored in IndexedDB (key `plan`) and the backup gist (gym-plan.json). applyPlan() swaps it into PLAN in place
 // (everything imports the same PLAN), null = back to the default.
+// Nov 24 2026: any number of trainings (extra ones get keys 'p4', 'p5'…), a removed one stays as { hidden: true }
+// (workouts store the plan by its index, so indices never shift), own weekdays `wd` ({ jsWeekday: index }) and
+// own alternatives `alts` ({ name: [names] }). The default plan above is the basic one for everybody.
 export const DEFAULT_PLAN = JSON.parse(JSON.stringify(PLAN))
+const DEFAULT_WD = { ...WEEKDAY_TO_DAY }
+const PALETTE = ['#ff5a4f', '#2f8cff', '#22b864', '#ff9500', '#af52de', '#ff2d55', '#30b0c7', '#e6a700']
+export const abbrOf = name => { const w = String(name || '?').trim().split(/\s+/); return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).replace(/^./, c => c.toUpperCase()) }
+function blank(i) { return { key: 'p' + i, abbr: '', short: '', name: 'Trening ' + (i + 1), note: '', ex: [] } }
 export function applyPlan(c) {
-  PLAN.forEach((p, i) => {
-    const d = c?.days?.[i], def = DEFAULT_PLAN[i]
+  const n = Math.max(DEFAULT_PLAN.length, c?.days?.length || 0, PLAN.length)
+  for (let i = 0; i < n; i++) {
+    const d = c?.days?.[i], def = DEFAULT_PLAN[i] || blank(i)
+    const p = PLAN[i] || (PLAN[i] = {})
+    p.key = def.key
     p.ex = JSON.parse(JSON.stringify(d?.ex?.length ? d.ex : def.ex))
     p.name = d?.name || def.name
     p.note = d ? (d.note ?? '') : def.note
-  })
+    p.abbr = d?.name && d.name !== def.name || !def.abbr ? abbrOf(p.name) : def.abbr
+    p.hidden = !!d?.hidden || (i >= DEFAULT_PLAN.length && !d)
+    if (!COLORS[p.key]) COLORS[p.key] = PALETTE[i % PALETTE.length]
+  }
+  for (const k of Object.keys(WEEKDAY_TO_DAY)) delete WEEKDAY_TO_DAY[k]
+  Object.assign(WEEKDAY_TO_DAY, c?.wd || DEFAULT_WD)
+  for (const k of Object.keys(WEEKDAY_TO_DAY)) if (!PLAN[WEEKDAY_TO_DAY[k]] || PLAN[WEEKDAY_TO_DAY[k]].hidden) delete WEEKDAY_TO_DAY[k]
+  for (const k of Object.keys(ALT)) delete ALT[k]
+  Object.assign(ALT, JSON.parse(JSON.stringify(DEFAULT_ALT)), c?.alts || {})
+  for (const k of Object.keys(ALT)) if (!ALT[k]?.length) delete ALT[k]
 }
+// a workout may point at a training this phone doesn't know (e.g. restored from another phone): add a hidden placeholder
+export function ensurePlans(maxDay) { for (let i = PLAN.length; i <= maxDay; i++) { PLAN[i] = { ...blank(i), hidden: true }; if (!COLORS[PLAN[i].key]) COLORS[PLAN[i].key] = PALETTE[i % PALETTE.length] } }
+// indices of the trainings shown on Start / Plan / Postępy
+export const visiblePlans = () => PLAN.map((p, i) => i).filter(i => !PLAN[i].hidden)
 
 export const UNITS = {
   kg: { step: 2.5, max: 300, frac: true, short: 'kg', best: 'Najcięższa seria (kg)' },
@@ -141,6 +164,7 @@ export const ALT = {
   'Rozpiętki na bramie z dołu do góry': ['Rozpiętki na maszynie (butterfly)'],
   'Rozpiętki na maszynie (butterfly)': ['Rozpiętki na bramie z dołu do góry']
 }
+const DEFAULT_ALT = JSON.parse(JSON.stringify(ALT))
 export const altOf = name => ALT[name] || []
 // the exercise a workout really did at this plan position (after a swap)
 export const nameIn = (ex, s) => (s && s !== 'all' && s.swap?.[ex[0]]) || ex[0]

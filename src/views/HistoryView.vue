@@ -24,7 +24,7 @@
             </button>
           </div>
           <div class="legend">
-            <span v-for="d in PLAN" :key="d.key"><i :style="{ background: COLORS[d.key] }"></i>{{ d.name }}</span>
+            <span v-for="d in PLAN.filter(x => !x.hidden)" :key="d.key"><i :style="{ background: COLORS[d.key] }"></i>{{ d.name }}</span>
           </div>
         </div>
 

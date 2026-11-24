@@ -35,6 +35,7 @@ const router = createRouter({
     { path: '/tabs/', component: Tabs, children: [
       { path: '', redirect: '/tabs/home' },
       { path: 'home', component: () => import('./views/HomeView.vue') },
+      { path: 'plans', component: () => import('./views/PlansView.vue') },
       { path: 'progress', component: () => import('./views/ProgressView.vue') },
       { path: 'history', component: () => import('./views/HistoryView.vue') },
       { path: 'weight', component: () => import('./views/WeightView.vue') },

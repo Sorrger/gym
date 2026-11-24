@@ -61,7 +61,8 @@
           <template v-if="sug.kind === 'missed'">Zrobiłeś już {{ PLAN[next].name }} w tym tygodniu bez apki? </template><template v-else>Trening zrobiony bez apki? </template><b>Oznacz</b>
         </button>
         <div class="plans">
-          <button v-for="(d, i) in PLAN" :key="d.key" class="plan press" :class="{ next: i === next && !active }"
+          <template v-for="(d, i) in PLAN" :key="d.key">
+          <button v-if="!d.hidden" class="plan press" :class="{ next: i === next && !active }"
             :style="{ '--c': COLORS[d.key] }" @click="start(i)">
             <div class="plan-top">
               <div class="plan-l">
@@ -73,6 +74,7 @@
             <b>{{ d.name }}</b>
             <span class="meta">{{ d.ex.length }} ćwiczeń · {{ lastText(i) }}</span>
           </button>
+          </template>
         </div>
 
         <div class="stats foot">
@@ -136,7 +138,7 @@ async function markOff() {
   const { role, picks } = await ask({ icon: checkmark, title: 'Trening zrobiony bez apki',
     message: 'Wybierz, który trening i kiedy. Nie będzie już pokazywany jako zaległy. Serie się nie zapiszą i nie wejdą do statystyk.',
     choices: [
-      { key: 'day', label: 'Trening', value: day, options: PLAN.map((p, i) => ({ value: i, label: p.name })) },
+      { key: 'day', label: 'Trening', value: day, options: PLAN.map((p, i) => ({ value: i, label: p.name, hidden: p.hidden })).filter(o => !o.hidden) },
       { key: 'date', label: 'Kiedy', value: def, options: days.map(d => ({ value: d.date, label: d.wd, sub: d.real.length ? PLAN[d.real[0].day].name : String(d.n) })) }],
     buttons: [{ text: 'Oznacz jako zrobiony', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role !== 'ok') return
