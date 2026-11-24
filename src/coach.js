@@ -14,11 +14,13 @@ const qTxt = sets => (sets.some(x => x.q != null) ? ` (zapas ${sets.map(x => (x.
 const repsWord = n => (n === 1 ? 'powtórzenie' : n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14) ? 'powtórzenia' : 'powtórzeń')
 
 // done sets of this exercise in earlier workouts, newest first
-function history(key, session, max = 3) {
+// unit = the exercise's unit now: sets logged with another unit (plan edited kg ↔ reps) are left out
+function history(key, session, max = 3, unit = null) {
   const out = []
   for (const o of sorted()) {
     if (o.deload || o.id === session.id || o.date > session.date || (o.date === session.date && o.started >= session.started)) continue
-    const done = (o.ex?.[key] || []).filter(x => x.d && x.w != null)
+    let done = (o.ex?.[key] || []).filter(x => x.d && x.w != null)
+    if (unit && done.length && (unit === 'kg') !== done.some(x => x.r != null)) done = []
     if (done.length) out.push({ date: o.date, sets: done })
     if (out.length >= max) break
   }
@@ -28,7 +30,7 @@ function history(key, session, max = 3) {
 export function suggest(g, session) {
   const range = rangeOf(g.target)
   if (!range) return null
-  const hist = history(g.key, session)
+  const hist = history(g.key, session, 3, g.unit)
   const { lo, hi } = range
   if (session.deload) return deload(g, session, hist, range)
   if (!hist.length) {

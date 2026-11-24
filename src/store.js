@@ -92,7 +92,9 @@ export function lastFor(name, session) {
 // values a new set list starts with: from the newest earlier workout with a value (deload workouts don't count,
 // so after the light week the old numbers come back)
 function prefill(g, n, deload, self = null) {
-  const find = key => sorted().find(o => o.id !== self && !o.deload && (o.ex?.[key] || []).some(x => x.w != null))?.ex[key]
+  // same unit only (kg sets carry reps; a plan edited kg ↔ reps must not prefill 60 kg as 60 reps)
+  const fits = arr => (g.unit === 'kg') === arr.some(x => x.r != null)
+  const find = key => sorted().find(o => o.id !== self && !o.deload && (o.ex?.[key] || []).some(x => x.w != null) && fits(o.ex[key]))?.ex[key]
   // first time on the assisted machine in pull-up stage 2: start from the old assisted pull-up numbers, if any
   const prev = find(g.key) || (g.key === 'Nauka podciągania · Ze wspomaganiem' ? find('Podciąganie nachwytem (wspomagane)') : null)
   const lo = rangeOf(g.target)?.lo
@@ -237,7 +239,7 @@ export function mergeSessions(src) {
       n++
     }
   })
-  if (n) saveNow()
+  if (n) { ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0))); saveNow() }
   return n
 }
 

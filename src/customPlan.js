@@ -29,7 +29,7 @@ export async function savePlan(c, go) {
   const data = c ? { ...c, t: Date.now() } : { t: Date.now(), days: null }
   await set('plan', JSON.parse(JSON.stringify(data)))
   try { if (cloud.token && cloud.gistId && navigator.onLine) await writeGistFile(FILE, data) } catch {}
-  if (go) location.hash = go
+  if (go) history.replaceState(history.state, '', go) // no hashchange: the router must not start navigating right before the reload
   location.reload()
 }
 

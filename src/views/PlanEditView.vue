@@ -129,7 +129,7 @@ async function removeAt(i) {
   const { role } = await ask({ icon: trashOutline, color, title: 'Usunąć z planu?', message: `${e.name || 'To ćwiczenie'} zniknie z planu. Historia zostaje.`, buttons: [{ text: 'Usuń', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role === 'del') list.value.splice(i, 1)
 }
-function addAlt(e) { const n = e.altNew.trim().replace(/\s+/g, ' '); if (n && n !== e.name.trim() && !e.alts.includes(n)) e.alts.push(n); e.altNew = '' }
+function addAlt(e) { const n = e.altNew.trim().replace(/\s+/g, ' ').replace(/·/g, '-'); if (n && n !== e.name.trim() && !e.alts.includes(n)) e.alts.push(n); e.altNew = '' }
 function addEx() { list.value.push({ id: ++uid, alts: [], altNew: '', name: '', sets: 3, lo: 8, hi: 12, unit: 'kg', rest: '', m: {}, mTouched: false, open: true }) }
 
 function build() {
@@ -142,14 +142,15 @@ function build() {
     if (nm.includes('·')) throw new Error('Nazwa nie może zawierać znaku „·”.')
     if (names.has(nm)) throw new Error(`„${nm}” jest w planie dwa razy.`)
     names.add(nm)
-    let lo = Math.max(1, Math.round(+e.lo || 1)), hi = Math.max(lo, Math.round(+e.hi || lo))
+    let lo = Math.max(1, Math.round(+e.lo || 1)), hi = Math.max(1, Math.round(+e.hi || lo))
+    if (hi < lo) [lo, hi] = [hi, lo] // typed 12–8
     const target = `${e.sets} × ${lo}${hi > lo ? '-' + hi : ''}${e.unit === 's' ? ' s' : ''}${e.rest || ''}`
     const row = [nm, target, nm === e.orig ? e.tag ?? null : null]
     if (e.unit !== 'kg') row.push(e.unit)
     ex.push(row)
     const m = Object.keys(e.m).filter(k => e.m[k] === 1), h = Object.keys(e.m).filter(k => e.m[k] === 2)
     const def = MUSCLES[nm]
-    if (e.mTouched || !def) { if (m.length || h.length) muscles[nm] = [m, h] }
+    if (e.mTouched || !def) { if (m.length || h.length || def) muscles[nm] = [m, h] }
     alts[nm] = e.alts.filter(a => a !== nm)
   }
   if (!ex.length) throw new Error('Trening musi mieć choć jedno ćwiczenie.')

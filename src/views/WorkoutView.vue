@@ -253,7 +253,12 @@ const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, plan.value.
 const planName = computed(() => plan.value?.ex[idx.value][0] || '')
 const exName = computed(() => (plan.value ? nameIn(plan.value.ex[idx.value], s.value) : ''))
 // alternatives for a busy machine (ALT in plan.js): the plan's exercise first
-const swapOpts = computed(() => (planName.value ? [planName.value, ...altOf(planName.value)] : []))
+// alternatives already done at another place of this workout are left out (two places can't share one exercise)
+const swapOpts = computed(() => {
+  if (!planName.value) return []
+  const taken = new Set(plan.value.ex.filter((e, i) => i !== idx.value).flatMap(e => [e[0], nameIn(e, s.value)]))
+  return [planName.value, ...altOf(planName.value).filter(n => !taken.has(n))]
+})
 async function swapAsk() {
   const sess = s.value, cur = exName.value
   if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) {
