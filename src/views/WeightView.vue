@@ -17,7 +17,7 @@
         </div>
 
         <div v-if="verdict" class="card verdict" :class="verdict.cls">
-          <span class="v-ico">{{ verdict.ico }}</span>
+          <span class="v-ico"><Ico :name="verdict.ico" /></span>
           <div><b>{{ verdict.title }}</b><p>{{ verdict.text }}</p></div>
         </div>
 
@@ -56,6 +56,7 @@
 </template>
 
 <script setup>
+import Ico from './Ico.vue'
 import { useIonRouter } from '@ionic/vue'
 import { chevronBack } from 'ionicons/icons'
 import { useScrolled } from '../useScrolled'
@@ -93,13 +94,13 @@ const dayName = s => new Date(s + 'T12:00').toLocaleDateString('pl-PL', { weekda
 
 // goal: slow cut that keeps (and still builds) muscle – about 0.2–0.7 % of body weight per week
 const verdict = computed(() => {
-  if (wk.value == null) return list.value.length ? { ico: '📈', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 3 pomiarach z ostatnich 3 tygodni. Najlepiej waż się 3–4× w tygodniu.' } : null
+  if (wk.value == null) return list.value.length ? { ico: 'chart', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 3 pomiarach z ostatnich 3 tygodni. Najlepiej waż się 3–4× w tygodniu.' } : null
   const pct = (wk.value / (avg7.value || 1)) * 100
-  if (pct < -1) return { ico: '⚠️', cls: 'warn', title: 'Za szybko w dół', text: 'Ponad 1 % wagi na tydzień – duże ryzyko utraty mięśni i siły. Dorzuć trochę jedzenia.' }
-  if (pct < -0.7) return { ico: '⚡', cls: 'warn', title: 'Dość szybko', text: 'Szybciej niż trzeba, żeby budować mięśnie. Pilnuj białka i siły – jeśli ciężary spadają, zjedz trochę więcej.' }
-  if (pct <= -0.2) return { ico: '✅', cls: 'good', title: 'Idealne tempo', text: 'Powoli w dół – tłuszcz schodzi, a mięśnie dalej mogą rosnąć. Trzymaj kalorie, białko i progres na treningu.' }
-  if (pct <= 0.15) return { ico: '⏸️', cls: '', title: 'Waga stoi', text: 'Jeśli siła rośnie, to może być rekompozycja. Jeśli stoi dłużej niż 3 tygodnie – ok. 100–200 kcal mniej albo więcej kroków.' }
-  return { ico: '⬆️', cls: 'warn', title: 'Waga rośnie', text: 'Średnia idzie w górę. Sprawdź, czy kalorie się zgadzają.' }
+  if (pct < -1) return { ico: 'warn', cls: 'warn', title: 'Za szybko w dół', text: 'Ponad 1 % wagi na tydzień – duże ryzyko utraty mięśni i siły. Dorzuć trochę jedzenia.' }
+  if (pct < -0.7) return { ico: 'bolt', cls: 'warn', title: 'Dość szybko', text: 'Szybciej niż trzeba, żeby budować mięśnie. Pilnuj białka i siły – jeśli ciężary spadają, zjedz trochę więcej.' }
+  if (pct <= -0.2) return { ico: 'check', cls: 'good', title: 'Idealne tempo', text: 'Powoli w dół – tłuszcz schodzi, a mięśnie dalej mogą rosnąć. Trzymaj kalorie, białko i progres na treningu.' }
+  if (pct <= 0.15) return { ico: 'pause', cls: '', title: 'Waga stoi', text: 'Jeśli siła rośnie, to może być rekompozycja. Jeśli stoi dłużej niż 3 tygodnie – ok. 100–200 kcal mniej albo więcej kroków.' }
+  return { ico: 'up', cls: 'warn', title: 'Waga rośnie', text: 'Średnia idzie w górę. Sprawdź, czy kalorie się zgadzają.' }
 })
 
 const parseKg = v => { const n = +String(v || '').replace(',', '.').replace(/[^\d.]/g, ''); return n >= 30 && n <= 300 ? Math.round(n * 10) / 10 : null }

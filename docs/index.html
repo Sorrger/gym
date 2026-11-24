@@ -6,26 +6,23 @@
   <title>Gym</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" id="sbs">
-  <script>
-    // iOS reads the status bar style when the app starts: dark theme chosen in the app → translucent bar over our dark background
-    try { var l = JSON.parse(localStorage.getItem('look') || '{}'), d = l.mode === 'dark' || ((!l.mode || l.mode === 'system') && matchMedia('(prefers-color-scheme: dark)').matches)
-      if (d) { document.getElementById('sbs').setAttribute('content', 'black-translucent'); document.documentElement.style.background = '#000' } } catch (e) {}
-  </script>
+  <!-- iOS keeps this from the moment the app is added to the home screen: translucent = our own background under the clock -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-title" content="Gym">
   <meta name="format-detection" content="telephone=no">
   <link rel="apple-touch-icon" href="icon-180.png">
   <link rel="icon" href="icon-192.png">
-  <script type="module" crossorigin src="./assets/index-rX91xzhX.js"></script>
+  <script type="module" crossorigin src="./assets/index-BlUquNto.js"></script>
   <link rel="modulepreload" crossorigin href="./assets/store-D-i5_y49.js">
   <link rel="modulepreload" crossorigin href="./assets/p-DZnVmCdW-DGKOL5sM.js">
   <link rel="modulepreload" crossorigin href="./assets/p-ZjP4CjeZ-DJ1DGIsW.js">
   <link rel="modulepreload" crossorigin href="./assets/p-CEQhyzEV-BjeKsWJr.js">
-  <link rel="stylesheet" crossorigin href="./assets/index-DEM1PiMC.css">
+  <link rel="stylesheet" crossorigin href="./assets/index-x8xfft0m.css">
 <link rel="manifest" href="./manifest.webmanifest"></head>
 <body>
   <div id="app"></div>
+  <div class="sb-scrim" aria-hidden="true"></div>
 </body>
 </html>

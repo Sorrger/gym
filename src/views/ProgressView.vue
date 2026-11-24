@@ -33,7 +33,7 @@
           <div class="h-stats num">
             <div><b>{{ ov.workouts }}</b><small>treningi</small></div>
             <div><b>{{ ov.sets }}</b><small>serie</small></div>
-            <div><b>{{ ov.prs }}</b><small>rekordy 🏆</small></div>
+            <div><b>{{ ov.prs }}</b><small>rekordy <Ico name="trophy" /></small></div>
             <div><b>{{ fmtTon(ov.vol) }}</b><small>objętość</small></div>
           </div>
         </div>
@@ -59,7 +59,7 @@
           <h3 class="section-title">Ostatnie rekordy</h3>
           <div class="ios-group prs">
             <button v-for="r in prs" :key="r.key + r.date" class="row press" @click="router.push('/exercise/' + r.day + '/' + r.i)">
-              <span class="pr-ico" :style="{ '--c': COLORS[PLAN[r.day].key] }">🏆</span>
+              <span class="pr-ico" :style="{ '--c': COLORS[PLAN[r.day].key] }"><Ico name="trophy" /></span>
               <div class="grow">
                 <b>{{ r.label || r.name }}</b>
                 <span>{{ r.label ? r.name + ' · ' : '' }}{{ prDate(r.date) }}</span>
@@ -157,6 +157,7 @@
 </template>
 
 <script setup>
+import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { computed } from 'vue'
 import { IonPage, IonContent, IonIcon, IonSegment, IonSegmentButton, IonLabel, useIonRouter } from '@ionic/vue'

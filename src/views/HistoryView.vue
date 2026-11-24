@@ -31,7 +31,7 @@
         <div class="stats">
           <div><span>Treningi</span><b>{{ monthList.length }}</b></div>
           <div><span>Serie</span><b>{{ monthSets }}</b></div>
-          <div><span>Tyg. z rzędu</span><b>{{ streak }}<small v-if="streak"> 🔥</small></b></div>
+          <div><span>Tyg. z rzędu</span><b>{{ streak }}<small v-if="streak"> <Ico name="flame" /></small></b></div>
         </div>
 
         <div class="list-head">
@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { ask as askDialog } from '../dialog'
 import { computed, ref } from 'vue'

@@ -39,7 +39,7 @@
               <span class="rc-name"><small v-if="t.label || t.alt" class="rc-parent">{{ t.alt ? 'Zamiennik' : t.name }}</small>{{ t.label || t.name }}</span>
               <div class="rc-val num" v-if="t.pts.length">
                 <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
-                <span v-if="t.pr" class="pr" title="Nowy rekord">🏆</span>
+                <span v-if="t.pr" class="pr" title="Nowy rekord"><Ico name="trophy" /></span>
               </div>
               <div class="rc-val none" v-else>Jeszcze nie robione</div>
               <div class="rc-meta" v-if="t.pts.length">
@@ -66,6 +66,7 @@
 </template>
 
 <script setup>
+import Ico from './Ico.vue'
 import { computed } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonButtons, IonBackButton, useIonRouter } from '@ionic/vue'
 import { chevronForward } from 'ionicons/icons'

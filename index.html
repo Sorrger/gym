@@ -6,12 +6,8 @@
   <title>Gym</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" id="sbs">
-  <script>
-    // iOS reads the status bar style when the app starts: dark theme chosen in the app → translucent bar over our dark background
-    try { var l = JSON.parse(localStorage.getItem('look') || '{}'), d = l.mode === 'dark' || ((!l.mode || l.mode === 'system') && matchMedia('(prefers-color-scheme: dark)').matches)
-      if (d) { document.getElementById('sbs').setAttribute('content', 'black-translucent'); document.documentElement.style.background = '#000' } } catch (e) {}
-  </script>
+  <!-- iOS keeps this from the moment the app is added to the home screen: translucent = our own background under the clock -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="apple-mobile-web-app-title" content="Gym">
@@ -21,6 +17,7 @@
 </head>
 <body>
   <div id="app"></div>
+  <div class="sb-scrim" aria-hidden="true"></div>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

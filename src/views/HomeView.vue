@@ -53,11 +53,11 @@
 
         <!-- quick numbers: streak, body weight, all trainings -->
         <div class="stats home-stats">
-          <div><span>🔥 Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
-          <div class="press" @click="router.push('/weight')"><span>⚖️ Waga</span>
+          <div><span><Ico name="flame" /> Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
+          <div class="press" @click="router.push('/weight')"><span><Ico name="scale" /> Waga</span>
             <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>kg</small></b><b v-else class="add">Dodaj</b>
             <em v-if="wTrend != null" class="num" :class="wTrend < -0.05 ? 'dn' : wTrend > 0.05 ? 'upw' : ''">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
-          <div><span>🏋️ Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
+          <div><span><Ico name="dumbbell" /> Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
         </div>
 
         <div v-if="dl.active || dl.due" class="card warn dl-card">
@@ -88,11 +88,6 @@
         </div>
         <button class="all-link press" @click="router.push('/tabs/train')">Wszystkie treningi ({{ nVisible }}) <ion-icon :icon="chevronForward" /></button>
 
-        <div class="stats foot">
-          <div><span>Ten miesiąc</span><b>{{ monthCount }}</b></div>
-          <div><span>Łącznie</span><b>{{ done.length }}</b></div>
-          <div><span>Serie</span><b>{{ totalSets }}</b></div>
-        </div>
       </div>
 
       <ion-toast :is-open="!!state.flash" :message="state.flash" :duration="2500" position="top" @didDismiss="state.flash = ''" />
@@ -101,6 +96,7 @@
 </template>
 
 <script setup>
+import Ico from './Ico.vue'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'

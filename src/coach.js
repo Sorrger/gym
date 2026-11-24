@@ -38,7 +38,7 @@ export function suggest(g, session) {
       const st = PULLUP_STAGES[g.stage - 1]
       const how = g.label === 'Ze wspomaganiem' ? `Na maszynie do podciągania ze wspomaganiem (przeciwwaga pod kolana) dobierz taką pomoc, żeby zrobić ${lo}-${hi} powtórzeń. Im mniej kg, tym trudniej.`
         : g.label === 'Pełne' ? `Zrób tyle pełnych podciągnięć, ile dasz radę (cel ${lo}-${hi} w serii), z pełnym zwisem na dole.` : `Cel ${lo}-${hi} w serii.`
-      return { kind: 'stage', title: `Nowy etap ${st.n}/4 🎉`, short: `Etap ${st.n}/4`,
+      return { kind: 'stage', title: `Nowy etap ${st.n}/4`, short: `Etap ${st.n}/4`,
         text: `Przeszedłeś dalej: ${st.title.toLowerCase()}. ${how}` + (st.goal ? ` Następny etap, gdy zrobisz ${st.goal}.` : '') }
     }
     return { kind: 'first', short: `Zakres ${lo}-${hi}`, text: `Pierwszy raz: dobierz ciężar tak, żeby zrobić ${lo}-${hi} ${repsWord(hi)} w każdej serii.` }
@@ -53,7 +53,7 @@ export function suggest(g, session) {
     const top = vals.length >= n && (vals.every(v => v >= hi) || easy)
     if (top) {
       const how = HARDER[g.key + '@' + g.stage] || HARDER[g.key] || HARDER[g.name]
-      return { kind: 'up', title: 'Masz cały zakres! 💪', short: how ? 'Utrudnij' : `${hi} ${unit}`,
+      return { kind: 'up', title: 'Masz cały zakres!', short: how ? 'Utrudnij' : `${hi} ${unit}`,
         text: `Ostatnio: ${vals.join(', ')} ${unit}${qTxt(last)} – ${easy && !vals.every(v => v >= hi) ? 'za łatwo, w każdej serii zostało 3+' : `wszystkie serie na górze zakresu (${lo}-${hi})`}.` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
     }
     const target = Array.from({ length: n }, (_, i) => {
@@ -81,7 +81,7 @@ export function suggest(g, session) {
     // way above the range (every set 3+ reps over the top) → a double step, otherwise one step
     const step = reps.every(r => r >= hi + 3) ? 2 * inc : inc
     const w = Math.max(0, W + (assist ? -step : step))
-    return { kind: 'up', title: assist ? 'Mniej wspomagania 💪' : 'Dodaj ciężar 💪', short: `${fmtNum(w)} kg × ${lo}`,
+    return { kind: 'up', title: assist ? 'Mniej wspomagania' : 'Dodaj ciężar', short: `${fmtNum(w)} kg × ${lo}`,
       text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? 'za lekko, w każdej serii zostało 3+ powtórzenia' : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }

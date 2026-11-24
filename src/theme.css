@@ -177,3 +177,8 @@ ion-alert { --background: color-mix(in srgb, var(--app-card) 88%, transparent); 
 @media (prefers-reduced-motion: reduce) { .upd-ring svg { animation: none; } }
 .upd-box b { font-size: 22px; font-weight: 700; }
 .upd-lbl { font-size: 15px; color: var(--app-muted); min-height: 20px; }
+
+/* strip under the iOS clock (status bar is translucent with white text): accent colour in light, black in dark */
+.sb-scrim { position: fixed; top: 0; left: 0; right: 0; height: env(safe-area-inset-top, 0px); z-index: 99999; pointer-events: none;
+  background: linear-gradient(90deg, var(--accent-2, var(--accent)), var(--accent)); }
+:root.ion-palette-dark .sb-scrim { background: #000; }
