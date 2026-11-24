@@ -23,6 +23,20 @@ export const WEEKDAY_TO_DAY = { 1: 0, 2: 1, 4: 2, 5: 3 }
 export function nSets(t) { const m = t.match(/^(\d+)(?:-(\d+))?/); return m ? +(m[2] || m[1]) : 3 }
 
 // Units: most exercises are weight in kg; some parts are time (s) or reps.
+// ---- own plan (Nov 24 2026, user: others can edit the plan on their phone) ----
+// The plan above is the default. A phone can keep its own version: { t, days: [{ name, note, ex } | null], muscles: { name: [[main],[help]] } }
+// stored in IndexedDB (key `plan`) and the backup gist (gym-plan.json). applyPlan() swaps it into PLAN in place
+// (everything imports the same PLAN), null = back to the default.
+export const DEFAULT_PLAN = JSON.parse(JSON.stringify(PLAN))
+export function applyPlan(c) {
+  PLAN.forEach((p, i) => {
+    const d = c?.days?.[i], def = DEFAULT_PLAN[i]
+    p.ex = JSON.parse(JSON.stringify(d?.ex?.length ? d.ex : def.ex))
+    p.name = d?.name || def.name
+    p.note = d ? (d.note ?? '') : def.note
+  })
+}
+
 export const UNITS = {
   kg: { step: 2.5, max: 300, frac: true, short: 'kg', best: 'Najcięższa seria (kg)' },
   s: { step: 5, max: 300, frac: false, short: 's', best: 'Najdłuższe wiszenie (s)' },

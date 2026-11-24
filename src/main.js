@@ -10,6 +10,7 @@ import { initCloud } from './cloud'
 import { initStrava } from './strava'
 import { initWeights } from './weight'
 import { initUpdater } from './updater'
+import { initPlan } from './customPlan'
 
 import '@ionic/vue/css/core.css'
 import '@ionic/vue/css/normalize.css'
@@ -28,6 +29,7 @@ const router = createRouter({
     { path: '/progress/:day', component: () => import('./views/PlanProgressView.vue') },
     { path: '/exercise/:day/:i', component: () => import('./views/ExerciseView.vue') },
     { path: '/workout/:id', component: () => import('./views/WorkoutView.vue') },
+    { path: '/plan/:day/edit', component: () => import('./views/PlanEditView.vue') },
     { path: '/plan/:day', component: () => import('./views/PlanView.vue') },
     { path: '/session/:id', component: () => import('./views/SessionView.vue') },
     { path: '/tabs/', component: Tabs, children: [
@@ -55,7 +57,7 @@ router.onError(err => {
 
 initUpdater()
 
-load().then(() => {
+initPlan().then(load).then(() => {
   initCloud()
   initStrava()
   initWeights()

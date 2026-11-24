@@ -6,6 +6,7 @@
           <button class="rb press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button>
           <div class="sh-title"><b>Plan treningu</b><span v-if="plan">{{ plan.ex.length }} ćwiczeń · ok. {{ minutes }} min</span></div>
           <div class="sh-right">
+            <button v-if="plan" class="rb press" @click="router.push('/plan/' + day + '/edit')" aria-label="Edytuj plan"><ion-icon :icon="createOutline" /></button>
             <button v-if="plan" class="rb tint press" @click="router.push('/progress/' + day)" aria-label="Postępy planu"><ion-icon :icon="statsChart" /></button>
           </div>
         </div>
@@ -55,7 +56,7 @@
 import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, useIonRouter } from '@ionic/vue'
-import { chevronBack, statsChart, play, informationCircle, trendingDown } from 'ionicons/icons'
+import { chevronBack, statsChart, play, informationCircle, trendingDown, createOutline } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, groupsOf, fmtNum, targetOf, PULLUP_STAGES, stageOf, altOf } from '../plan'
 import { dayMuscles } from '../muscles'
 import { state, sorted, lastDoneOf, activeSession, ago, deloadState, deloadSets } from '../store'

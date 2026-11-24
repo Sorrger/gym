@@ -116,6 +116,7 @@ import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
 import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline } from 'ionicons/icons'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { wstate, importWeights } from '../weight'
+import { planData, importPlan } from '../customPlan'
 import { cloud, connect, syncNow, restoreNow, disconnect } from '../cloud'
 import { strava, status as stravaStatus, startConnect, sendCode, pull, disconnectStrava, STRAVA_ICON } from '../strava'
 
@@ -130,7 +131,7 @@ const backupOld = computed(() => !lastBackup.value || (Date.now() - new Date(las
 function markBackup() { lastBackup.value = iso(new Date()); try { localStorage.setItem('lastBackup', lastBackup.value) } catch {} }
 
 async function exportData() {
-  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, weights: wstate.entries }, null, 1)
+  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, weights: wstate.entries, plan: await planData() }, null, 1)
   const name = 'silownia-' + iso(new Date()) + '.json'
   try {
     const f = new File([json], name, { type: 'application/json' })
@@ -145,12 +146,13 @@ async function exportData() {
 function importData(e) {
   const file = e.target.files[0]; if (!file) return
   const r = new FileReader()
-  r.onload = () => {
+  r.onload = async () => {
     try {
       const d = JSON.parse(r.result)
       if (!d?.sessions) throw 0
       const n = mergeSessions(d.sessions)
       const w = d.weights ? importWeights(d.weights) : 0
+      if (d.plan && await importPlan(d.plan)) setTimeout(() => location.reload(), 1500)
       msg.value = 'Wczytano ' + n + ' treningów' + (w ? ' i ' + w + ' pomiarów wagi' : '')
     } catch { msg.value = 'To nie jest plik kopii z tej aplikacji' }
     e.target.value = ''
