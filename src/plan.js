@@ -32,7 +32,8 @@ export function nSets(t) { const m = t.match(/^(\d+)(?:-(\d+))?/); return m ? +(
 // own alternatives `alts` ({ name: [names] }). The default plan above is the basic one for everybody.
 export const DEFAULT_PLAN = JSON.parse(JSON.stringify(PLAN))
 const DEFAULT_WD = { ...WEEKDAY_TO_DAY }
-const PALETTE = ['#ff5a4f', '#2f8cff', '#22b864', '#ff9500', '#af52de', '#ff2d55', '#30b0c7', '#e6a700']
+export const PALETTE = ['#ff5a4f', '#2f8cff', '#22b864', '#ff9500', '#af52de', '#ff2d55', '#30b0c7', '#e6a700', '#5856d6', '#8e8e93']
+const DEFAULT_COLORS = { ...COLORS }
 export const abbrOf = name => { const w = String(name || '?').trim().split(/\s+/); return (w.length > 1 ? w[0][0] + w[1][0] : w[0].slice(0, 2)).replace(/^./, c => c.toUpperCase()) }
 function blank(i) { return { key: 'p' + i, abbr: '', short: '', name: 'Trening ' + (i + 1), note: '', ex: [] } }
 export function applyPlan(c) {
@@ -46,7 +47,7 @@ export function applyPlan(c) {
     p.note = d ? (d.note ?? '') : def.note
     p.abbr = d?.name && d.name !== def.name || !def.abbr ? abbrOf(p.name) : def.abbr
     p.hidden = !!d?.hidden || (i >= DEFAULT_PLAN.length && !d)
-    if (!COLORS[p.key]) COLORS[p.key] = PALETTE[i % PALETTE.length]
+    COLORS[p.key] = d?.color || DEFAULT_COLORS[p.key] || PALETTE[i % PALETTE.length] // own colour per training (editor)
   }
   for (const k of Object.keys(WEEKDAY_TO_DAY)) delete WEEKDAY_TO_DAY[k]
   Object.assign(WEEKDAY_TO_DAY, c?.wd || DEFAULT_WD)

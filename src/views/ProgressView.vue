@@ -303,11 +303,12 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .w-n { font-size: 11px; font-weight: 700; color: var(--app-muted); height: 14px; }
 .w-col small { font-size: 10.5px; color: var(--app-muted); height: 14px; }
 .w-col.now small { color: var(--accent); font-weight: 700; }
-.prs .pr-ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; font-size: 17px; flex: none; background: color-mix(in srgb, var(--c) 16%, transparent); }
+.prs .pr-ico { width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; font-size: 19px; flex: none; background: linear-gradient(135deg, #ffe58a, #ffc93c); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c) 35%, transparent); }
 .prs .grow b { display: block; font-size: 15px; font-weight: 600; }
 .prs .grow span { display: block; font-size: 12.5px; color: var(--app-muted); }
 .pr-val { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
-.pr-val b { font-size: 15px; font-weight: 700; white-space: nowrap; }
+.pr-val b { font-size: 16px; font-weight: 800; white-space: nowrap; color: #d99a00; }
+:global(.ion-palette-dark) .pr-val b { color: #ffc93c; }
 .pr-val small { font-size: 11.5px; color: var(--app-muted); white-space: nowrap; }
 .stats4 { margin: 0 16px; display: grid; grid-template-columns: repeat(4, 1fr); padding: 14px 6px; }
 .stats4 div { display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid var(--app-line); }

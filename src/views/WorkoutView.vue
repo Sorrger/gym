@@ -187,6 +187,14 @@
       </div>
     </Transition>
 
+    <!-- new record while training -->
+    <Transition name="recpop">
+      <div v-if="recPop" class="rec-pop" @click="recPop = null" role="status">
+        <span class="rp-ico"><Ico name="trophy" /></span>
+        <div><b>Nowy rekord!</b><span>{{ recPop.name }} · <b class="num">{{ recPop.val }}</b> <small>({{ recPop.as ? 'pomoc było ' : 'było ' }}{{ recPop.prev }})</small></span></div>
+      </div>
+    </Transition>
+
     <!-- end-of-workout screen -->
     <Transition name="rise">
       <div v-if="summary && s" class="done-screen">
@@ -199,6 +207,14 @@
             <div><b class="num">{{ c.n }}<small>/{{ c.t }}</small></b><span>serii</span></div>
             <div><b class="num">{{ exDone }}<small>/{{ plan.ex.length }}</small></b><span>ćwiczeń</span></div>
             <div><b class="num">{{ prs.length }}</b><span>{{ prs.length === 1 ? 'rekord' : prs.length >= 2 && prs.length <= 4 ? 'rekordy' : 'rekordów' }}</span></div>
+          </div>
+        </div>
+        <!-- records of this workout: the moment worth seeing -->
+        <div v-if="prs.length" class="rec-card">
+          <div class="rec-head"><Ico name="trophy" /> {{ prs.length === 1 ? 'Nowy rekord' : 'Nowe rekordy' }}</div>
+          <div v-for="r in prs" :key="r.key" class="rec-row">
+            <span class="rn">{{ r.name }}<template v-if="r.label"> · {{ r.label }}</template></span>
+            <span class="rv num"><b>{{ fmtVal(r.max, r.unit) }}</b><small>{{ r.as ? 'pomoc było ' : 'było ' }}{{ fmtVal(r.prev, r.unit) }}</small></span>
           </div>
         </div>
         <div class="done-list">
@@ -220,6 +236,7 @@
 </template>
 
 <script setup>
+import Ico from './Ico.vue'
 import { LOC } from '../i18n'
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
@@ -356,11 +373,30 @@ function lastText(g) {
   return 'Ostatnio ' + fmtShort(p.date) + ' (' + ago(p.date) + '): ' + txt
 }
 
+// best value of an exercise before this set (earlier workouts + sets already ticked today); assisted: less = better
+function bestBefore(g, skip) {
+  const as = isAssisted(g), vals = []
+  for (const o of sorted()) if (o.id !== s.value.id && (o.date < s.value.date || (o.date === s.value.date && o.started < s.value.started)))
+    for (const x of o.ex?.[g.key] || []) if (x.d && x.w != null) vals.push(x.w)
+  if (!vals.length) return null // first time is not a record
+  sets(g.key).forEach((x, i) => { if (i !== skip && x.d && x.w != null) vals.push(x.w) })
+  return as ? Math.min(...vals) : Math.max(...vals)
+}
+const recPop = ref(null)
+let recT = 0
 function toggle(g, si) {
   const x = sets(g.key)[si]
   x.d = !x.d
   if (!x.d) delete x.q
   touch()
+  if (x.d && x.w != null && !s.value.deload) {
+    const b = bestBefore(g, si), as = isAssisted(g)
+    if (b != null && (as ? x.w < b : x.w > b)) {
+      recPop.value = { name: g.label || g.name, val: fmtVal(x.w, g.unit) + (g.unit === 'kg' && x.r ? ' × ' + x.r : ''), prev: fmtVal(b, g.unit), as }
+      try { navigator.vibrate?.([30, 40, 60]) } catch {}
+      clearTimeout(recT); recT = setTimeout(() => { recPop.value = null }, 3200)
+    }
+  }
   // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine);
   // when the reps-in-reserve chips are shown, give time to tap one first (jumps right after the tap, or after 5 s)
   if (x.d) autoNext(g.unit !== 's' && prefs.rir ? 5000 : 650)
@@ -563,7 +599,9 @@ const rows = computed(() => entriesOf(s.value.day, s.value).map(g => {
   const max = done.length ? Math.max(...done.map(x => x.w)) : null
   const before = sorted().filter(o => o.id !== s.value.id && (o.date < s.value.date || (o.date === s.value.date && o.started < s.value.started)))
     .flatMap(o => (o.ex?.[g.key] || []).filter(x => x.d && x.w != null).map(x => x.w))
-  return { ...g, done: arr.some(x => x.d), max, pr: max != null && before.length > 0 && max > Math.max(...before) }
+  const as = isAssisted(g), best = done.length ? (as ? Math.min(...done.map(x => x.w)) : max) : null
+  const prev = before.length ? (as ? Math.min(...before) : Math.max(...before)) : null
+  return { ...g, done: arr.some(x => x.d), max: best, prev, as, pr: best != null && prev != null && (as ? best < prev : best > prev) }
 }))
 const prs = computed(() => rows.value.filter(r => r.pr))
 const exDone = computed(() => new Set(rows.value.filter(r => r.done).map(r => r.ex)).size)
@@ -759,6 +797,26 @@ ion-footer { background: color-mix(in srgb, var(--app-bg) 80%, transparent); bac
 .dn { min-width: 0; }
 .dw { flex: none; font-weight: 600; display: flex; align-items: center; gap: 6px; }
 .pr { font-size: 10px; font-weight: 700; letter-spacing: .5px; background: #ffd257; color: #3b2a00; border-radius: 6px; padding: 2px 6px; }
+.rec-card { flex: none; margin: 14px 16px 0; border-radius: var(--r-md); padding: 12px 14px 6px; color: #3b2a00;
+  background: linear-gradient(135deg, #ffe58a, #ffc93c); box-shadow: 0 8px 24px rgba(0,0,0,.18); animation: pop .5s ease-out .15s both; }
+.rec-head { display: flex; align-items: center; gap: 7px; font-weight: 800; font-size: 16px; margin-bottom: 4px; }
+.rec-head .ico { font-size: 20px; }
+.rec-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 7px 0; border-top: 0.5px solid rgba(59,42,0,.15); font-size: 15px; }
+.rec-row:first-of-type { border-top: 0; }
+.rn { min-width: 0; font-weight: 600; }
+.rv { flex: none; text-align: right; display: flex; flex-direction: column; }
+.rv b { font-size: 17px; }
+.rv small { font-size: 12px; opacity: .7; }
+.rec-pop { position: absolute; z-index: 90; left: 14px; right: 14px; top: calc(env(safe-area-inset-top, 0px) + 58px); display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: 18px; color: #3b2a00; background: linear-gradient(135deg, #ffe58a, #ffc93c); box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+.rec-pop .rp-ico { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,.55); display: grid; place-items: center; font-size: 24px; flex: none; animation: pop .5s ease-out; }
+.rec-pop div { display: flex; flex-direction: column; min-width: 0; }
+.rec-pop div > b { font-size: 17px; font-weight: 800; }
+.rec-pop span { font-size: 14px; }
+.rec-pop small { opacity: .7; }
+.recpop-enter-active { transition: transform .35s cubic-bezier(.2,1.4,.4,1), opacity .25s; }
+.recpop-leave-active { transition: transform .25s, opacity .25s; }
+.recpop-enter-from, .recpop-leave-to { transform: translateY(-20px) scale(.95); opacity: 0; }
 .done-foot { flex: none; margin-top: auto; padding: 14px 16px calc(12px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; }
 .save-btn { height: 54px; border: 0; border-radius: 16px; background: #fff; color: var(--c); box-shadow: 0 8px 24px rgba(0,0,0,.18);
   font-size: 17px; font-weight: 600; }

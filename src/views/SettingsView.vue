@@ -1,25 +1,29 @@
 <template>
   <ion-page>
-    <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>Ustawienia</span></div>
+    <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>{{ sec ? MENU.find(m => m.k === sec)?.t : 'Ustawienia' }}</span></div>
     <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
       <header class="big-head sub-page">
-        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> Profil</button>
-        <h1 class="t-large">Ustawienia</h1>
-        <p class="sub">Wygląd, kopia danych, Strava</p>
+        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> {{ sec ? 'Ustawienia' : 'Profil' }}</button>
+        <h1 class="t-large">{{ sec ? MENU.find(m => m.k === sec)?.t : 'Ustawienia' }}</h1>
       </header>
       <div class="page">
+        <!-- menu: one row per section (each opens its own page) -->
+        <div v-if="!sec" class="ios-group menu">
+          <button v-for="m in MENU" :key="m.k" class="row press" @click="router.push('/settings/' + m.k)">
+            <span class="sq" :style="{ '--c': m.c }"><ion-icon :icon="m.i" /></span>
+            <div class="grow"><b>{{ m.t }}</b><span>{{ m.sub() }}</span></div>
+            <span v-if="m.warn && m.warn()" class="dot-warn"></span>
+            <ion-icon :icon="chevronForward" class="chev" />
+          </button>
+        </div>
 
+<template v-if="sec === 'look'">
         <!-- look -->
         <h3 class="section-title">Wygląd</h3>
         <div class="card look">
           <span class="lbl">Motyw</span>
           <div class="seg3">
             <button v-for="m in MODES" :key="m.v" class="press" :class="{ on: look.mode === m.v }" @click="setLook('mode', m.v)">{{ m.t }}</button>
-          </div>
-          <span class="lbl">Język · Language</span>
-          <div class="seg3" data-no-tr>
-            <button class="press" :class="{ on: curLang === 'pl' }" @click="setLang('pl')">Polski</button>
-            <button class="press" :class="{ on: curLang === 'en' }" @click="setLang('en')">English</button>
           </div>
           <span class="lbl">Kolor</span>
           <div class="sw">
@@ -29,6 +33,19 @@
           </div>
         </div>
 
+</template>
+                <template v-if="sec === 'lang'">
+        <div class="card look" data-no-tr>
+          <span class="lbl">Język · Language</span>
+          <div class="seg3">
+            <button class="press" :class="{ on: curLang === 'pl' }" @click="setLang('pl')">Polski</button>
+            <button class="press" :class="{ on: curLang === 'en' }" @click="setLang('en')">English</button>
+          </div>
+        </div>
+        <p class="section-foot">Po zmianie apka przeładuje się na sekundę.</p>
+        </template>
+
+<template v-if="sec === 'training'">
         <!-- coaching: each person can switch it to taste (defaults = how the app always worked) -->
         <h3 class="section-title">Trening</h3>
         <div class="card look">
@@ -59,6 +76,8 @@
           </template>
         </div>
 
+</template>
+        <template v-if="sec === 'progress'">
         <!-- progression rules: when to add weight, how much, when to go lighter -->
         <h3 class="section-title">Progresja</h3>
         <div class="ios-group">
@@ -74,6 +93,8 @@
         <p class="section-foot">Ćwiczenie idzie w górę, gdy wszystkie serie dojdą do góry zakresu (np. 3 × 8 przy 6-8) – albo wcześniej, gdy w każdej zostaje Twój zapas. {{ isDefault ? '' : 'Masz własne ustawienia.' }}</p>
         <button v-if="!isDefault" class="reset-btn press" @click="resetPrefs">Przywróć domyślne zasady treningu</button>
 
+</template>
+        <template v-if="sec === 'weight'">
         <h3 class="section-title">Waga ciała</h3>
         <div class="card look">
           <span class="lbl">Twój cel</span>
@@ -83,6 +104,8 @@
           <p class="hint">{{ GOALS.find(g => g.v === prefs.goal).d }}</p>
         </div>
 
+</template>
+        <template v-if="sec === 'backup'">
         <h3 class="section-title">Kopia zapasowa</h3>
         <p class="kop">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona.' : 'Twoje treningi są tylko w tym telefonie.' }}</p>
 
@@ -118,6 +141,8 @@
           <p class="section-foot">Kopia wysyła się sama kilka sekund po każdej zmianie. Bez internetu poczeka i wyśle się później.</p>
         </template>
 
+</template>
+        <template v-if="sec === 'strava'">
         <h3 class="section-title">Strava · tętno z zegarka</h3>
         <div class="ios-group" :style="{ '--c': '#fc4c02' }">
           <template v-if="sst === 'on'">
@@ -153,6 +178,8 @@
           <button class="row danger" @click="askStravaOff"><div class="grow"><b>Odłącz Stravę</b></div></button>
         </div>
 
+</template>
+        <template v-if="sec === 'backup'">
         <h3 class="section-title">Dane</h3>
         <div class="stats">
           <div><span>Treningi</span><b>{{ count }}</b></div>
@@ -179,7 +206,8 @@
             <button class="row danger" @click="askDisconnect"><div class="grow"><b>Odłącz GitHub</b></div></button>
           </div>
         </template>
-        <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="importData" />
+</template>
+                <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="importData" />
       </div>
       <ion-toast :is-open="!!msg" :message="t(msg)" :duration="2200" position="top" @didDismiss="msg = ''" />
     </ion-content>
@@ -194,7 +222,8 @@ import { prefs, DEFAULT_PREFS } from '../prefs'
 import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
-import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, chevronBack } from 'ionicons/icons'
+import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, trendingUpOutline, scaleOutline, heartOutline } from 'ionicons/icons'
+import { useRoute } from 'vue-router'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { wstate, importWeights } from '../weight'
 import { planData, importPlan } from '../customPlan'
@@ -206,7 +235,17 @@ import { strava, status as stravaStatus, startConnect, sendCode, pull, disconnec
 
 const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
-const goBack = () => (router.canGoBack() ? router.back() : router.navigate('/tabs/profile', 'back', 'replace'))
+const route = useRoute()
+const sec = String(route.params.sec || '') // fixed per page (Ionic keeps hidden pages alive)
+const goBack = () => (router.canGoBack() ? router.back() : router.navigate(sec ? '/settings' : '/tabs/profile', 'back', 'replace'))
+const MENU = [
+  { k: 'look', t: 'Wygląd', i: colorPaletteOutline, c: '#af52de', sub: () => ({ system: 'Jak telefon', light: 'Jasny', dark: 'Ciemny' })[look.mode] + ' · ' + (ACCENTS.find(a => a.id === look.accent)?.name || '') },
+  { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => (curLang === 'en' ? 'English' : 'Polski') },
+  { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => ({ auto: 'Podpowiedzi same', chip: 'Podpowiedzi na dotyk', off: 'Bez podpowiedzi' })[prefs.coach] + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
+  { k: 'progress', t: 'Progresja', i: trendingUpOutline, c: '#34c759', sub: () => 'Zapas ' + prefs.rirUp + '+ · krok ' + String(prefs.stepKg).replace('.', ',') + ' kg' },
+  { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] },
+  { k: 'backup', t: 'Kopia zapasowa', i: cloudUploadOutline, c: '#0a84ff', sub: () => (cloud.token ? (cloud.error ? 'Błąd kopii' : 'GitHub · automatycznie') : 'Tylko w telefonie'), warn: () => cloud.token && cloud.error && cloud.error !== 'Brak połączenia' },
+  { k: 'strava', t: 'Strava', i: heartOutline, c: '#fc4c02', sub: () => (sst.value === 'on' ? 'Połączona' : sst.value === 'waiting' ? 'Czeka' : 'Niepołączona') }]
 const COACH = [
   { v: 'auto', t: 'Same', d: 'Po otwarciu ćwiczenia apka sama pokazuje, ile dziś dźwignąć.' },
   { v: 'chip', t: 'Na dotyk', d: 'Podpowiedź tylko pod „Ostatnio…” – otwierasz ją, kiedy chcesz.' },
@@ -403,4 +442,6 @@ async function askDisconnect() {
 .stepper b { min-width: 26px; text-align: center; font-size: 18px; }
 .reset-btn { display: block; width: calc(100% - 32px); margin: 0 16px 6px; padding: 12px; border: 0; border-radius: var(--r-md); background: var(--app-card); font: inherit; font-size: 15px; font-weight: 600; color: var(--accent); }
 .stepper b { min-width: 54px; white-space: nowrap; font-size: 16px; }
+.menu { margin-top: 4px; }
+.dot-warn { width: 9px; height: 9px; border-radius: 50%; background: var(--app-bad); flex: none; }
 </style>

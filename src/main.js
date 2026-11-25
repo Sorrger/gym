@@ -38,6 +38,7 @@ const router = createRouter({
     { path: '/plans', component: () => import('./views/PlansView.vue') },
     { path: '/weight', component: () => import('./views/WeightView.vue') },
     { path: '/settings', component: () => import('./views/SettingsView.vue') },
+    { path: '/settings/:sec', component: () => import('./views/SettingsView.vue') },
     { path: '/welcome', component: () => import('./views/WelcomeView.vue') },
     { path: '/session/:id', component: () => import('./views/SessionView.vue') },
     { path: '/tabs/', component: Tabs, children: [

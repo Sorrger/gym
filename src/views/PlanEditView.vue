@@ -17,6 +17,10 @@
         <div class="card fields">
           <label>Nazwa planu<input v-model="name" maxlength="20" /></label>
           <label>Notatka<textarea v-model="note" rows="2" placeholder="np. kolejność, wskazówki" /></label>
+          <span class="lbl">Kolor</span>
+          <div class="cols">
+            <button v-for="c in PALETTE" :key="c" class="col press" :class="{ on: color === c }" :style="{ background: c }" @click="pickColor(c)" :aria-label="'Kolor ' + c"></button>
+          </div>
           <span class="lbl">Dni tygodnia (apka podpowie ten trening w te dni)</span>
           <div class="wds">
             <button v-for="w in WDS" :key="w.js" class="wd press" :class="{ on: wdSel.includes(w.js) }" @click="toggleWd(w.js)">
@@ -83,7 +87,7 @@ import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
 import { close, chevronUp, chevronDown, trashOutline, add } from 'ionicons/icons'
-import { PLAN, COLORS, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
+import { PLAN, COLORS, PALETTE, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { MUSCLES, MUSCLE_NAMES } from '../muscles'
 import { custom, savePlan } from '../customPlan'
 import { activeSession } from '../store'
@@ -93,7 +97,9 @@ const route = useRoute(), router = useIonRouter()
 const isNew = route.params.day === 'new'
 const day = isNew ? PLAN.length : +route.params.day
 const plan = PLAN[day]
-const color = COLORS[plan?.key] || '#af52de'
+const ownColor = ref(custom.data?.days?.[day]?.color || '')
+const color = computed(() => ownColor.value || COLORS[plan?.key] || PALETTE[day % PALETTE.length])
+const pickColor = c => { ownColor.value = c }
 const fromPlans = route.query.from === 'plans' || isNew
 const back = () => (fromPlans ? '#/plans' : '#/plan/' + day)
 const WDS = [1, 2, 3, 4, 5, 6, 0].map(js => ({ js, t: ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb'][js] }))
@@ -126,7 +132,7 @@ const musText = e => { const m = Object.keys(e.m).filter(k => e.m[k] === 1).map(
 function move(i, d) { const a = list.value; [a[i], a[i + d]] = [a[i + d], a[i]] }
 async function removeAt(i) {
   const e = list.value[i]
-  const { role } = await ask({ icon: trashOutline, color, title: 'Usunąć z planu?', message: `${e.name || 'To ćwiczenie'} zniknie z planu. Historia zostaje.`, buttons: [{ text: 'Usuń', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  const { role } = await ask({ icon: trashOutline, color: color.value, title: 'Usunąć z planu?', message: `${e.name || 'To ćwiczenie'} zniknie z planu. Historia zostaje.`, buttons: [{ text: 'Usuń', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role === 'del') list.value.splice(i, 1)
 }
 function addAlt(e) { const n = e.altNew.trim().replace(/\s+/g, ' ').replace(/·/g, '-'); if (n && n !== e.name.trim() && !e.alts.includes(n)) e.alts.push(n); e.altNew = '' }
@@ -159,9 +165,9 @@ function build() {
 
 async function save() {
   let b
-  try { b = build() } catch (err) { await ask({ icon: close, color, title: 'Popraw plan', message: err.message, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
+  try { b = build() } catch (err) { await ask({ icon: close, color: color.value, title: 'Popraw plan', message: err.message, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
   const days = Array.from({ length: Math.max(PLAN.length, day + 1) }, (_, i) => custom.data?.days?.[i] || null)
-  days[day] = { name: name.value.trim() || DEFAULT_PLAN[day]?.name || 'Trening ' + (day + 1), note: note.value.trim(), ex: b.ex }
+  days[day] = { name: name.value.trim() || DEFAULT_PLAN[day]?.name || 'Trening ' + (day + 1), note: note.value.trim(), ex: b.ex, ...(ownColor.value ? { color: ownColor.value } : {}) }
   await savePlan({ ...(custom.data || {}), days, muscles: b.muscles, alts: b.alts, wd: wdMap() }, back())
 }
 function wdMap(without = false) {
@@ -171,15 +177,15 @@ function wdMap(without = false) {
   return wd
 }
 async function removePlan() {
-  if (visiblePlans().length <= 1) { await ask({ icon: close, color, title: 'To jedyny trening', message: 'Musi zostać choć jeden trening. Dodaj inny, zanim usuniesz ten.', buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
-  const { role } = await ask({ icon: trashOutline, color, title: `Usunąć trening „${plan.name}”?`, message: 'Zniknie ze Startu i z planu. Zrobione treningi zostają w historii.', buttons: [{ text: 'Usuń trening', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (visiblePlans().length <= 1) { await ask({ icon: close, color: color.value, title: 'To jedyny trening', message: 'Musi zostać choć jeden trening. Dodaj inny, zanim usuniesz ten.', buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
+  const { role } = await ask({ icon: trashOutline, color: color.value, title: `Usunąć trening „${plan.name}”?`, message: 'Zniknie ze Startu i z planu. Zrobione treningi zostają w historii.', buttons: [{ text: 'Usuń trening', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role !== 'del') return
   const days = Array.from({ length: PLAN.length }, (_, i) => custom.data?.days?.[i] || null)
   days[day] = { name: plan.name, note: plan.note, ex: plan.ex, hidden: true }
   await savePlan({ ...(custom.data || {}), days, wd: wdMap(true) }, '#/plans')
 }
 async function reset() {
-  const { role } = await ask({ icon: trashOutline, color, title: 'Przywrócić wersję podstawową?', message: `Plan „${DEFAULT_PLAN[day].name}” wróci do wersji z planu podstawowego. Historia treningów zostaje.`, buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  const { role } = await ask({ icon: trashOutline, color: color.value, title: 'Przywrócić wersję podstawową?', message: `Plan „${DEFAULT_PLAN[day].name}” wróci do wersji z planu podstawowego. Historia treningów zostaje.`, buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (role !== 'ok') return
   const days = Array.from({ length: PLAN.length }, (_, i) => (i === day ? null : custom.data?.days?.[i] || null))
   await savePlan({ ...(custom.data || {}), days }, back())
@@ -250,4 +256,7 @@ function cancel() { if (router.canGoBack()) router.back(); else router.navigate(
 .alt-add button:disabled { opacity: .4; }
 .add, .reset { display: flex; align-items: center; justify-content: center; gap: 6px; width: calc(100% - 32px); margin: 4px 16px 10px; padding: 13px; border: 0; border-radius: 14px; font: inherit; font-size: 16px; font-weight: 600; color: var(--c); background: color-mix(in srgb, var(--c) 13%, var(--app-card)); }
 .reset { color: var(--app-bad); background: none; font-size: 14.5px; }
+.cols { display: flex; flex-wrap: wrap; gap: 9px; margin-bottom: 14px; }
+.col { width: 32px; height: 32px; border-radius: 50%; border: 0; box-shadow: inset 0 0 0 2px rgba(255,255,255,.25); transition: transform .15s; }
+.col.on { transform: scale(1.12); box-shadow: 0 0 0 3px var(--app-card), 0 0 0 5px currentColor; color: var(--ion-text-color); }
 </style>
