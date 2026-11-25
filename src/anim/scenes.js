@@ -19,3 +19,24 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   scene.box = frameBox(scene)
   return scene
 }
+
+// "Nauka podciągania": one scene + cues per part of the stage (dead hang, negatives, assisted, full)
+const PULL_CUES = {
+  Wiszenie: { pl: ['Chwyć drążek nachwytem, trochę szerzej niż barki.', 'Zwiśnij na prostych rękach, barki lekko ściągnięte w dół.', 'Trzymaj spokojnie, bez bujania.'],
+    en: ['Grip the bar overhand, a bit wider than your shoulders.', 'Hang on straight arms, shoulders pulled slightly down.', 'Hold still, no swinging.'] },
+  Negatywy: { pl: ['Wskocz albo wejdź na podest, tak żeby broda była nad drążkiem.', 'Opuszczaj się powoli, 3–5 sekund, aż ręce będą proste.', 'Stań na ziemi i powtórz.'],
+    en: ['Jump or step up so your chin is above the bar.', 'Lower yourself slowly, 3–5 seconds, until your arms are straight.', 'Stand down and repeat.'] },
+  'Ze wspomaganiem': { pl: ['Uklęknij na podporze maszyny i chwyć uchwyty.', 'Podciągnij się, aż broda minie uchwyty.', 'Opuść się powoli. Mniej kg pomocy = trudniej.'],
+    en: ['Kneel on the machine pad and grip the handles.', 'Pull up until your chin passes the handles.', 'Lower slowly. Less help (kg) = harder.'] },
+  'Pełne': { pl: ['Zwiśnij na prostych rękach.', 'Podciągnij się, aż broda będzie nad drążkiem, bez bujania.', 'Opuść się powoli do prostych rąk.'],
+    en: ['Hang on straight arms.', 'Pull up until your chin is over the bar, no swinging.', 'Lower slowly to straight arms.'] },
+}
+export function pullupPart(label) {
+  const mus = { main: ['lats'], help: ['biceps', 'upperback', 'forearms'] }
+  let sc
+  if (label === 'Wiszenie') sc = sceneFor('dead-hang', {}, { main: ['forearms'], help: ['lats'] })
+  else if (label === 'Ze wspomaganiem') sc = sceneFor('pull-up', { eq: 'as', grip: 'over', width: 'normal' }, mus)
+  else sc = sceneFor('pull-up', { eq: 'bw', grip: 'over', width: 'normal' }, mus)
+  if (sc && label === 'Negatywy') sc.phases = [[500, 'Podskocz', 0, 1], [500, 'Trzymaj', 1, 1], [4000, 'Opuszczaj powoli', 1, 0], [800, 'Opuszczaj powoli', 0, 0]]
+  return sc ? { ...sc, cues: PULL_CUES[label] } : null
+}

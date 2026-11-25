@@ -54,7 +54,7 @@ export function joints(p, view) {
   if (p.m1 != null || p.gx != null) leg2 = chain(HL, TH, FIG.shin, p.m1, p.m2, p.gx, p.gy, p.gb ?? p.lb ?? -1)
   else if (front) { const m = p.fx != null ? mirrorPt({ x: p.fx, y: p.fy }, H, t) : null; leg2 = chain(HL, TH, FIG.shin, mirrorAng(p.l1, t), mirrorAng(p.l2, t), m?.x, m?.y, -(p.lb ?? -1)) }
   else leg2 = leg
-  return { H, S, C, P, SR, SL, HR, HL, E: arm.mid, W: arm.end, E2: far.mid, W2: far.end, K: leg.mid, A: leg.end, K2: leg2.mid, A2: leg2.end, d, L }
+  return { cu: p.cu || 0, H, S, C, P, SR, SL, HR, HL, E: arm.mid, W: arm.end, E2: far.mid, W2: far.end, K: leg.mid, A: leg.end, K2: leg2.mid, A2: leg2.end, d, L }
 }
 
 // blend poses; angles take the short way round; many frames = k runs through them in order
@@ -127,7 +127,8 @@ const smooth = pts => pts.reduce((s, p, i) => (i === 0 ? `M${p.x} ${p.y}` : i ==
 // side view torso: back (L side) and front profile along hip → shoulder (glutes, lower back, lats, upper back / belly, chest)
 const PF = [0, 0.1, 0.3, 0.5, 0.72, 0.9, 1], BACK = [15, 17.5, 12.5, 13.5, 16.5, 17, 11], FRONT = [13, 14, 14, 13.5, 18, 16.5, 11]
 function torsoSide(J, cls) {
-  const P = (f, k, side) => add(add(J.H, { x: (J.S.x - J.H.x) * f, y: (J.S.y - J.H.y) * f }), J.L, side * k)
+  // cu: rounded back (spine flexion) – the profile bows out towards the back
+  const P = (f, k, side) => add(add(J.H, { x: (J.S.x - J.H.x) * f, y: (J.S.y - J.H.y) * f }), J.L, side * k + J.cu * 16 * Math.sin(Math.PI * f))
   const back = PF.map((f, i) => P(f, BACK[i], 1)), front = PF.map((f, i) => P(f, FRONT[i], -1)).reverse()
   return { t: 'path', a: { d: smooth(back) + `A10 10 0 0 1 ${front[0].x} ${front[0].y}` + smooth(front).replace(/^M/, 'L') + `A12 12 0 0 1 ${back[0].x} ${back[0].y}Z` }, c: cls }
 }
@@ -152,7 +153,7 @@ function foot(K, A, fo, cls = 'body') {
 }
 
 function gear(g, J, pose, near) {
-  const W = g.at === 'hold' && J.P ? J.P : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
+  const W = g.at === 'hold' && J.P ? J.P : g.at === 'elbow' ? J.E : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
   switch (g.k) {
     case 'bb': return [{ t: 'plate', at: W, r: g.r || 22, far: !near }]
     case 'pl': return [{ t: 'plate', at: W, r: g.r || 15, far: !near }]
@@ -166,7 +167,9 @@ function gear(g, J, pose, near) {
     case 'wheel': return [circle(at(W, 90, 6), 11, 'gear'), circle(at(W, 90, 6), 11, 'rim'), circle(at(W, 90, 6), 3, 'hub')]
     case 'roller': { const end = { x: W.x, y: W.y + (pose.rl ?? 60) }; return [line(W, end, 1.5, 'cable'), { t: 'plate', at: { x: end.x, y: end.y + 10 }, r: 11 }] }
     case 'belt': { const end = { x: J.H.x, y: J.H.y + 40 }; return [line(J.H, end, 1.5, 'cable'), { t: 'plate', at: { x: end.x, y: end.y + 12 }, r: 13 }] }
-    case 'shin': return [line(at(J.A, ang(J.K, J.A) - 90, 6), at(J.A, ang(J.K, J.A) + 90, 6), 10, 'pad')]
+    case 'kneepad': { const d = ang(J.H, J.K), c = at(lerpPt(J.H, J.K, 0.85), d - 90, 14); return [line(at(c, d, -16), at(c, d, 16), 10, 'pad')] } // machine pad on top of the thighs
+    case 'bar2': { const d = ang(J.W2, J.W), m = lerpPt(J.W, J.W2, 0.5); return [line({ x: m.x, y: m.y }, { x: m.x, y: g.top ?? -330 }, 1.5, 'cable'), line(at(J.W2, d, -14), at(J.W, d, 14), 5, 'gear frame')] } // straight bar between both hands (front view)
+    case 'shin': { const c = at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13); return [circle(c, 9, 'pad'), circle(c, 3, 'gear')] } // roller on the front (-1) or back (+1) of the shin
     case 'plat': { const a = g.ang ?? 0, c = at(J.A, a, 6); return [line(at(c, a + 90, 30), at(c, a - 90, 30), 8, 'pad')] }
     case 'rope': { // waving rope from the hands to an anchor
       const A = W, B = g.from, n = 24, pts = []

@@ -65,10 +65,14 @@ const LIB = {
   fly: sel => {
     // seen from the front (lying: from above): an arm swinging towards the viewer gets shorter (af)
     if (sel.eq === 'cb') {
+      // front view: the projected arm turns from out to the side towards the middle and gets shorter as it swings forward
       const v = sel.v || 'mid', b = st()
-      const [y0, y1] = v === 'lowhigh' ? [-142, -232] : v === 'highlow' ? [-300, -168] : [-226, -204]
+      const arm = (a, k, bend = 10) => ({ ...b, a1: a, a2: a + bend, af: k, ff: k })
+      const frames = v === 'lowhigh' ? [arm(55, 1), arm(34, 0.72), arm(-140, 0.28, -8)]
+        : v === 'highlow' ? [arm(-48, 1, 14), arm(22, 0.65), arm(150, 0.3, 8)]
+          : [arm(-4, 1), arm(2, 0.4), arm(178, 0.22, 0)]
       const ay = v === 'lowhigh' ? -30 : v === 'highlow' ? -300 : -226
-      return { view: 'f', frames: [{ ...b, ax: 100, ay: y0, ab: 1, af: 1 }, { ...b, ax: 8, ay: y1, ab: 1, af: 0.32 }], props: [tower(150, -320, ay), tower(-150, -320, ay)], gear: [{ k: 'cable', from: { x: 150, y: ay }, from2: { x: -150, y: ay }, both: true }], lab: ['Złącz', 'Rozciągnij'] }
+      return { view: 'f', frames, props: [tower(150, -320, ay), tower(-150, -320, ay)], gear: [{ k: 'cable', from: { x: 150, y: ay }, from2: { x: -150, y: ay }, both: true }], lab: ['Złącz', 'Rozciągnij'] }
     }
     if (sel.eq === 'mc') { const b = { hx: 0, hy: -92, t: -90, l1: 90, l2: 90, tf: 0.25 }; return { view: 'f', frames: [{ ...b, a1: 2, a2: -84, af: 1, ff: 1 }, { ...b, a1: 2, a2: -88, af: 0.22, ff: 1 }], props: [{ k: 'pad', x1: 0, y1: -100, x2: 0, y2: -250, w: 40 }, { k: 'pad', x1: -34, y1: -84, x2: 34, y2: -84, w: 14 }, { k: 'post', x: 0, y2: -78 }], gear: [{ k: 'handle', both: true }], lab: ['Złącz', 'Rozciągnij'] } }
     const b = { hx: 0, hy: -150, t: -90, l1: 90, l2: 90 }
@@ -108,9 +112,11 @@ const LIB = {
     return { frames: [mk(bar.y + 172, -90), mk(bar.y + 118, -86)], props: [{ k: 'bar', x: bar.x, y: bar.y, side: -70 }, ...(sel.eq === 'as' ? [{ k: 'pad', x1: -30, y1: -150, x2: 40, y2: -150, w: 10 }] : [])], lab: ['Podciągnij', 'Opuść'] }
   },
   'lat-pulldown': sel => {
-    const kneel = sel.pos === 'kneel'
-    const b = kneel ? { hx: 0, hy: -76, t: -96, l1: 90, l2: 180, fo: 180 } : seat({ t: -98 }), S = shoulderOf(b), top = { x: S.x + 12, y: S.y - 84 }
-    return { frames: [{ ...b, ax: top.x, ay: top.y, ab: -1 }, { ...b, ax: S.x + 16, ay: S.y - 4, ab: -1 }], props: [...(kneel ? [] : [SEAT_PROP, { k: 'pad', x1: 40, y1: -96, x2: 76, y2: -96, w: 11 }]), tower(top.x, -330)], gear: [{ k: 'cable', from: { x: top.x, y: -322 } }], lab: PULL }
+    // front view: arms in a wide V, elbows drive down to the sides, bar to the upper chest
+    const kneel = sel.pos === 'kneel', narrow = sel.width === 'close'
+    const b = kneel ? { hx: 0, hy: -76, t: -90, tf: 0.3, l1: 90, l2: 90 } : { ...FSEAT }
+    const up = narrow ? { a1: -78, a2: -82 } : { a1: -58, a2: -62 }, down = narrow ? { a1: 70, a2: -100 } : { a1: 38, a2: -88 }
+    return { view: 'f', frames: [{ ...b, ...up }, { ...b, ...down }], props: kneel ? [] : [...FSEAT_PROPS, { k: 'pad', x1: -30, y1: -102, x2: 30, y2: -102, w: 9 }], gear: [{ k: 'bar2', top: -340 }], lab: PULL }
   },
   'bb-row': sel => {
     const lean = sel.v === 'yates' ? -40 : sel.v === 'pendlay' ? -8 : -22
@@ -119,14 +125,20 @@ const LIB = {
     return { frames: [{ ...b, ax: S.x + 6, ay: Math.min(S.y + 86, -24) }, { ...b, ax: S.x - 34, ay: S.y + 26 }], gear: held(sel.eq), lab: PULL }
   },
   'db-row': sel => {
+    const pos = sel.pos || 'bench'
+    if (pos === 'bench' && sel.side !== 'both') {
+      const b = { hx: -40, hy: -146, t: -8, fx: -62, fy: -7, gx: -104, gy: -94, bx: 50, by: -98, bb: 1 }
+      const S = shoulderOf(b)
+      return { frames: [{ ...b, ax: S.x + 2, ay: S.y + 84 }, { ...b, ax: S.x - 36, ay: S.y + 26, ab: 1 }], props: [{ k: 'bench', x: -20, y: -100, len: 200, legs: [-0.8, 0.8] }], gear: held('db'), lab: PULL }
+    }
     const b = { hx: -40, hy: -118, t: -4, fx: -36, fy: -7, gx: 30, gy: -84, gb: 1, bx: 70, by: -84 }
     const S = shoulderOf(b)
     return { frames: [{ ...b, ax: S.x - 2, ay: S.y + 84 }, { ...b, ax: S.x - 38, ay: S.y + 22 }], props: [{ k: 'bench', x: 50, y: -84, len: 120 }], gear: held('db'), lab: PULL }
   },
   'cable-row': sel => {
-    const b = { hx: 0, hy: -44, t: -80, fx: 120, fy: -40, lb: -1, l1: -10 }
-    const S = shoulderOf(b)
-    return { frames: [{ ...b, t: -70, ax: S.x + 88, ay: S.y + 14 }, { ...b, t: -96, ax: S.x + 14, ay: S.y + 40 }], props: [{ k: 'seat', x: 0, y: -38, w: 60 }, { k: 'pad', x1: 140, y1: -10, x2: 140, y2: -70, w: 10 }, tower(160, -80, -40)], gear: [{ k: 'cable', from: { x: 160, y: -40 } }], lab: PULL }
+    // hands travel in a straight line at the height of the pulley, between the knees, to the belly
+    const b = { hx: 0, hy: -44, fx: 124, fy: -36 }, y = -66
+    return { frames: [{ ...b, t: -68, ax: 128, ay: y }, { ...b, t: -96, ax: 22, ay: y - 4, ab: 1 }], props: [{ k: 'seat', x: 0, y: -38, w: 60 }, { k: 'pad', x1: 140, y1: -12, x2: 140, y2: -66, w: 10 }, tower(170, -90, y)], gear: [{ k: 'cable', from: { x: 170, y } }], lab: PULL }
   },
   'tbar-row': sel => { const L = LIB['bb-row']({ eq: 'bb' }); return { ...L, gear: [{ k: 'pole', from: { x: -170, y: -4 } }] } },
   'machine-row': sel => { const b = seat({ t: -84 }); return { frames: [hand(b, 84, sel.v === 'high' ? -6 : 14), hand(b, 4, sel.v === 'high' ? 4 : 34)], props: [SEAT_PROP, { k: 'pad', x1: 30, y1: -110, x2: 30, y2: -170, w: 12 }], gear: [{ k: 'handle' }], lab: PULL } },
@@ -144,9 +156,9 @@ const LIB = {
   shrug: sel => ({ frames: [st({ sg: 0 }), st({ sg: 10, hy: -144 })], gear: held(sel.eq === 'cb' || sel.eq === 'mc' ? 'db' : sel.eq), lab: UP }),
   'face-pull': sel => { const b = sel.pos === 'seat' ? seat({}) : sel.pos === 'kneel' ? { hx: 0, hy: -76, t: -90, l1: 90, l2: 180, fo: 180 } : st({ t: -86, fx: 24, gx: -30, gy: -7 }); return { frames: [hand(b, 86, -8), { ...hand(b, 14, -36), ab: -1 }], props: [tower(190, -300, shoulderOf(b).y - 10), ...(sel.pos === 'seat' ? [SEAT_PROP] : [])], gear: [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: 190, y: shoulderOf(b).y - 10 } }], lab: PULL } },
   'reverse-fly': sel => {
-    if (sel.eq === 'mc' || sel.pos === 'chest') { const b = seat({ t: -84 }); return { frames: [{ ...b, a1: 4, a2: 4, af: 1 }, { ...b, a1: 30, a2: 30, af: 0.3 }], props: [SEAT_PROP, { k: 'pad', x1: 30, y1: -110, x2: 30, y2: -170, w: 12 }], gear: [{ k: 'handle' }], lab: ['Rozciągnij', 'Wróć'] } }
+    if (sel.eq === 'mc' || sel.pos === 'chest') { const b = seat({ t: -84 }); return { frames: [{ ...b, a1: 4, a2: 4, af: 1, ff: 1 }, { ...b, a1: 24, a2: 24, af: 0.3, ff: 0.3 }], props: [SEAT_PROP, { k: 'pad', x1: 30, y1: -110, x2: 30, y2: -170, w: 12 }], gear: [{ k: 'handle' }], lab: ['Rozciągnij', 'Wróć'] } }
     const b = st({ hx: -34, hy: -124, t: -18 })
-    return { frames: [{ ...b, a1: 92, a2: 88, af: 1 }, { ...b, a1: 122, a2: 118, af: 0.42 }], gear: held(sel.eq === 'cb' ? 'db' : sel.eq), lab: ['Rozciągnij', 'Wróć'] }
+    return { frames: [{ ...b, a1: 92, a2: 96, af: 1, ff: 1 }, { ...b, a1: 118, a2: 122, af: 0.4, ff: 0.4 }], gear: held(sel.eq === 'cb' ? 'db' : sel.eq), lab: ['Rozciągnij', 'Wróć'] }
   },
   'back-extension': sel => {
     const mk = t => ({ hx: 0, hy: -150, t, l1: 150, l2: 150, hold: 'rack', ab: 1 })
@@ -240,8 +252,12 @@ const LIB = {
     const v = sel.v || 'back'
     const hold = { back: 'back', front: 'rack', zercher: 'chest', box: 'back', overhead: 'up' }[v]
     const deep = v === 'box' ? -74 : -66
+    if (v === 'zercher') { // bar in the crook of the elbows, hands up by the chest
+      const top = st({ fx: 10, ra1: 152, ra2: -18 }), bot = { ...top, hx: -34, hy: deep, t: -62 }
+      return { frames: [top, bot], gear: [{ k: 'bb', at: 'elbow' }], lab: SQ }
+    }
     const top = st({ hold, ab: v === 'overhead' ? 1 : -1, fx: 10 })
-    const bot = { ...top, hx: v === 'front' || v === 'overhead' || v === 'zercher' ? -34 : -46, hy: deep, t: v === 'front' || v === 'overhead' ? -68 : -54 }
+    const bot = { ...top, hx: v === 'front' || v === 'overhead' ? -34 : -46, hy: deep, t: v === 'front' || v === 'overhead' ? -68 : -54 }
     return { frames: [top, bot], props: v === 'box' ? [{ k: 'box', x: -60, w: 44, h: 50 }] : [], gear: [{ k: 'bb', at: 'hold' }], lab: SQ }
   },
   'goblet-squat': sel => {
@@ -278,7 +294,7 @@ const LIB = {
     const box = { x: 54, h: 46 }
     return { frames: [{ hx: 0, hy: -110, t: -86, fx: box.x, fy: -box.h - 7, gx: -10, gy: -7, a1: 90, a2: 90 }, { hx: 44, hy: -box.h - 140, t: -90, fx: box.x, fy: -box.h - 7, gx: box.x - 10, gy: -box.h - 30, gb: 1, a1: 90, a2: 90 }], props: [{ k: 'box', x: box.x + 6, w: 70, h: box.h }], gear: held(sel.eq), lab: ['Wejdź', 'Zejdź'] }
   },
-  'leg-extension': () => { const b = seat({ t: -96 }); return { frames: [{ ...b, l2: 95 }, { ...b, l2: -6 }], props: [SEAT_PROP, BACKREST], gear: [{ k: 'shin' }], lab: ['Wyprostuj', 'Opuść'] } },
+  'leg-extension': () => { const b = seat({ t: -96 }); return { frames: [{ ...b, l2: 95 }, { ...b, l2: -6 }], props: [SEAT_PROP, BACKREST, { k: 'pad', x1: 34, y1: -93, x2: 62, y2: -93, w: 10 }], gear: [{ k: 'shin' }], lab: ['Wyprostuj', 'Opuść'] } },
   'sissy-squat': () => ({ frames: [st({ fx: 10, a1: 20, a2: 20 }), { hx: 30, hy: -70, t: -132, fx: 10, fy: -9, a1: 20, a2: 20, fo: 30 }], lab: SQ }),
   'wall-sit': sel => { const p = { hx: -40, hy: -76, t: -90, fx: 30, fy: -7, a1: 90, a2: 90 }; return { frames: [p, { ...p, hy: -75 }], props: [{ k: 'wall', x: -54 }], gear: sel.eq === 'db' ? held('db') : sel.eq === 'pl' ? [{ k: 'pl', at: 'hold' }] : [], ph: holdPh } },
   pistol: sel => {
@@ -292,7 +308,7 @@ const LIB = {
   },
   'tibialis-raise': () => ({ frames: [{ hx: -30, hy: -144, t: -90, fx: 14, fy: -7, a1: 90, a2: 90, fo: 0 }, { hx: -30, hy: -144, t: -90, fx: 14, fy: -7, a1: 90, a2: 90, fo: -30 }], props: [{ k: 'wall', x: -46 }], lab: ['Unieś palce', 'Opuść'] }),
   'calf-raise': sel => {
-    if (sel.pos === 'seat') { const b = seat({}); return { frames: [{ ...b, fo: 10 }, { ...b, hy: -86, fo: 35 }], props: [SEAT_PROP, { k: 'pad', x1: 50, y1: -88, x2: 90, y2: -88, w: 10 }], lab: ['Wspięcie', 'Opuść'] } }
+    if (sel.pos === 'seat') { const b = seat({ l1: null, l2: null }); return { frames: [{ ...b, fx: 60, fy: -18, fo: -8 }, { ...b, fx: 62, fy: -31, fo: 40 }], props: [SEAT_PROP, { k: 'box', x: 76, w: 22, h: 16 }], gear: [{ k: 'kneepad' }], lab: ['Wspięcie', 'Opuść'] } }
     const heavy = sel.eq === 'bb' || sel.eq === 'sm' || sel.eq === 'mc'
     const h = heavy ? { hold: 'back', ab: -1 } : {}
     return { frames: [st({ fo: 10, ...h }), st({ hy: -158, fy: -20, fo: 36, ...h })], props: [{ k: 'box', x: 14, w: 50, h: 12 }], gear: heavy ? [{ k: 'bb', at: 'hold' }] : held(sel.eq), lab: ['Wspięcie', 'Opuść'] }
@@ -312,9 +328,9 @@ const LIB = {
     return { frames: [top, bot], gear: held(sel.eq === 'sm' ? 'bb' : sel.eq), lab: ['Pochyl', 'Wyprostuj'] }
   },
   'leg-curl': sel => {
-    if (sel.pos === 'stand') { const b = st({ fx: null, fy: null, t: -86, l1: 94, m1: 88, m2: 90, a1: 60, a2: 0, b1: 60, b2: 0 }); return { frames: [{ ...b, l2: 94 }, { ...b, l2: 205 }], props: [{ k: 'pad', x1: 34, y1: -150, x2: 34, y2: -110, w: 12 }, { k: 'post', x: 50, y2: -110 }], gear: [{ k: 'shin' }], lab: ['Zegnij', 'Wyprostuj'] } }
+    if (sel.pos === 'stand') { const b = st({ fx: null, fy: null, t: -86, l1: 94, m1: 88, m2: 90, a1: 60, a2: 0, b1: 60, b2: 0 }); return { frames: [{ ...b, l2: 94 }, { ...b, l2: 205 }], props: [{ k: 'pad', x1: 34, y1: -150, x2: 34, y2: -110, w: 12 }, { k: 'post', x: 50, y2: -110 }], gear: [{ k: 'shin', side: 1 }], lab: ['Zegnij', 'Wyprostuj'] } }
     if (sel.pos === 'lying') { const b = { hx: -10, hy: -84, t: 180, l1: 0, l2: 0, a1: 140, a2: 90 }; return { frames: [b, { ...b, l2: -100 }], props: [{ k: 'bench', x: -30, y: -72, len: 150 }], gear: [{ k: 'shin' }], lab: ['Zegnij', 'Wyprostuj'] } }
-    const b = seat({ t: -98 }); return { frames: [{ ...b, l2: -4 }, { ...b, l2: 110 }], props: [SEAT_PROP, BACKREST, { k: 'pad', x1: 30, y1: -90, x2: 66, y2: -90, w: 10 }], gear: [{ k: 'shin' }], lab: ['Zegnij', 'Wyprostuj'] }
+    const b = seat({ t: -98 }); return { frames: [{ ...b, l2: -4 }, { ...b, l2: 110 }], props: [SEAT_PROP, BACKREST, { k: 'pad', x1: 30, y1: -90, x2: 66, y2: -90, w: 10 }], gear: [{ k: 'shin', side: 1 }], lab: ['Zegnij', 'Wyprostuj'] }
   },
   nordic: () => {
     const K = { x: 0, y: -10 }, mk = a => { const H = { x: K.x + Math.cos(a * Math.PI / 180) * 70, y: K.y + Math.sin(a * Math.PI / 180) * 70 }; return { hx: H.x, hy: H.y, t: a, fx: -66, fy: -7, lb: 1, a1: a + 160, a2: a + 160 } }
@@ -361,7 +377,7 @@ const LIB = {
 
   // ---------- core ----------
   crunch: sel => {
-    if (sel.eq === 'cb' || sel.pos === 'kneel') { const b = { hx: 0, hy: -76, t: -80, l1: 90, l2: 180, fo: 180, hold: 'head', ab: -1 }; return { frames: [b, { ...b, t: 10 }], props: [tower(-60, -300)], gear: [{ k: 'cable', from: { x: -60, y: -292 } }], lab: ['Spięcie', 'Wróć'] } }
+    if (sel.eq === 'cb' || sel.pos === 'kneel') { const b = { hx: 0, hy: -78, t: -64, l1: 92, l2: 180, fo: 180, hold: 'head', ab: -1, cu: 0.15 }; return { frames: [b, { ...b, hx: -6, hy: -74, t: 14, hd: 30, cu: 1 }], props: [tower(-60, -300)], gear: [{ k: 'cable', from: { x: -60, y: -292 } }], lab: ['Spięcie', 'Wróć'] } }
     const legsUp = sel.v === 'legsup'
     if (sel.pos === 'ball') { const b = { hx: 20, hy: -66, t: 186, hold: 'head', ab: 1, fx: 112, fy: -7 }; return { frames: [b, { ...b, t: 214 }], props: [{ k: 'ball', x: -10, y: -34, r: 34 }], lab: ['Spięcie', 'Wróć'] } }
     const b = { hx: 30, hy: -13, t: 180, hold: 'head', ab: 1, ...(legsUp ? { l1: -90, l2: 0 } : { fx: 86, fy: -7 }) }
@@ -372,7 +388,7 @@ const LIB = {
   'leg-raise': sel => {
     const v = sel.v || 'bent'
     if (sel.pos === 'lying' || sel.pos === 'incline') { const b = { hx: 0, hy: -13, t: 180, a1: 0, a2: 0 }; return { frames: [{ ...b, l1: -6, l2: -6 }, { ...b, l1: -88, l2: v === 'bent' ? 0 : -88 }], lab: UP } }
-    if (sel.pos === 'captain') { const b = { hx: 0, hy: -180, t: -90, ax: 16, ay: -154, ab: -1, bx: 16, by: -154 }; return { frames: [{ ...b, l1: 92, l2: 92 }, { ...b, l1: v === 'straight' ? 0 : -20, l2: v === 'straight' ? 0 : 80 }], props: [{ k: 'pad', x1: -16, y1: -214, x2: -16, y2: -150, w: 12 }, { k: 'pad', x1: -10, y1: -146, x2: 30, y2: -146, w: 8 }, { k: 'post', x: -16, y2: -150 }], lab: UP } }
+    if (sel.pos === 'captain') { const b = { hx: 0, hy: -170, t: -90, a1: 90, a2: 0, b1: 90, b2: 0 }; return { frames: [{ ...b, l1: 92, l2: 92 }, { ...b, l1: v === 'straight' ? 0 : -20, l2: v === 'straight' ? 0 : 80, cu: 0.6 }], props: [{ k: 'pad', x1: -22, y1: -150, x2: -22, y2: -262, w: 12 }, { k: 'pad', x1: -6, y1: -200, x2: 46, y2: -200, w: 9 }, { k: 'post', x: -24, y2: -150 }], lab: UP } }
     const bar = { x: 6, y: -330 }, b = { hx: -2, hy: bar.y + 172, t: -90, ax: bar.x, ay: bar.y }
     const end = v === 't2b' ? { l1: -70, l2: -78, hx: -18, hy: bar.y + 168, t: -110 } : v === 'straight' ? { l1: 0, l2: 0 } : { l1: -24, l2: 84 }
     return { frames: [{ ...b, l1: 92, l2: 92 }, { ...b, ...end }], props: [{ k: 'bar', x: bar.x, y: bar.y, side: -70 }], lab: UP }

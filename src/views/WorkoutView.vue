@@ -3,7 +3,7 @@
     <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start"><ion-back-button default-href="/tabs/home" text="" :style="{ '--color': color }" /></ion-buttons>
-        <ion-title>{{ plan?.name }}</ion-title>
+        <ion-title><span class="wt-name">{{ plan?.name }}</span><span v-if="elapsed" class="wt-time num" aria-label="Czas treningu"><ion-icon :icon="timeOutline" />{{ elapsed }}</span></ion-title>
         <ion-buttons slot="end"><ion-button @click="askDelete" aria-label="Usuń trening" class="tb-trash"><ion-icon slot="icon-only" :icon="trashOutline" /></ion-button><button class="tb-finish" @click="finish">{{ s?.finished ? 'Gotowe' : 'Zakończ' }}</button></ion-buttons>
       </ion-toolbar>
       <ion-toolbar v-if="s" class="dots-bar">
@@ -159,7 +159,7 @@ import BodyMap from './BodyMap.vue'
 import HowToSheet from './HowToSheet.vue'
 import { suggest, applySuggestion, live } from '../coach'
 import { musclesOf } from '../muscles'
-import { computed, ref, watch, watchEffect, nextTick } from 'vue'
+import { computed, ref, watch, watchEffect, nextTick, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, useIonRouter  } from '@ionic/vue'
 import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal } from 'ionicons/icons'
@@ -171,6 +171,17 @@ import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, 
 const route = useRoute()
 const router = useIonRouter()
 const s = computed(() => state.sessions[route.params.id])
+// time since the workout started, shown under the title while it is open
+const now = ref(Date.now())
+const tick = setInterval(() => { if (s.value && !s.value.finished) now.value = Date.now() }, 1000)
+onUnmounted(() => clearInterval(tick))
+const elapsed = computed(() => {
+  const st = s.value?.started
+  if (!st || s.value.finished) return ''
+  const sec = Math.max(0, Math.floor((now.value - st) / 1000)), h = Math.floor(sec / 3600), m = Math.floor(sec / 60) % 60, x = sec % 60
+  const p = n => String(n).padStart(2, '0')
+  return h ? `${h}:${p(m)}:${p(x)}` : `${m}:${p(x)}`
+})
 // workout gone (deleted, or auto-closed after 12 h): leave once, after Ionic has finished setting up this page,
 // navigating during page setup corrupts the router and can freeze the tab bar
 let leaving = false
@@ -416,6 +427,9 @@ function save() {
 </script>
 
 <style scoped>
+ion-title .wt-name { display: block; line-height: 1.15; }
+.wt-time { display: inline-flex; align-items: center; gap: 3px; font-size: 13px; font-weight: 600; line-height: 1.2; color: var(--c); font-variant-numeric: tabular-nums; }
+.wt-time ion-icon { font-size: 13px; }
 .tb-trash { --color: var(--app-muted); }
 .tb-finish { height: 32px; margin: 0 8px 0 2px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c);
   font-size: 15px; font-weight: 600; }

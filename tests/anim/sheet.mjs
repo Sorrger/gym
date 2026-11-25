@@ -21,8 +21,8 @@ function svg(sc, k) {
 const cells = []
 for (const b of BASES) {
   if (only && !b.id.includes(only)) continue
-  const sels = [fullSel(b)]
-  for (const ax of (process.env.AX || 'pos,v,angle').split(',')) for (const val of (ax === 'v' ? (b.v || []).map(x => x[0]) : b.o[ax] || []).slice(1)) { const s = fullSel(b, { ...fullSel(b), [ax]: val }); if (s[ax] === val) sels.push(s) }
+  const sels = process.env.SEL ? [fullSel(b, JSON.parse(process.env.SEL))] : [fullSel(b)]
+  for (const ax of process.env.SEL ? [] : (process.env.AX || 'pos,v,angle').split(',')) for (const val of (ax === 'v' ? (b.v || []).map(x => x[0]) : b.o[ax] || []).slice(1)) { const s = fullSel(b, { ...fullSel(b), [ax]: val }); if (s[ax] === val) sels.push(s) }
   for (const sel of sels) {
     const c = compose(b, sel)
     let sc
