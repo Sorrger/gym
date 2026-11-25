@@ -210,7 +210,7 @@ ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
   const dl = C.compose(C.byId['deadlift'], { v: 'rack' }), sq = C.compose(C.byId['squat'], { eq: 'db' })
   ok(dl.main.includes('upperback') && dl.help.includes('hamstrings') && !sq.name.includes('Zerchera') && !C.axesOf(C.byId['squat'], { eq: 'db' }).variants, 'variants only where they fit (rack pull, no Zercher with dumbbells)')
   // naming: capital first letter, the rest lowercase except names of people, brands and letters
-  const PROPER = /^(T-gryf\w*|Arnolda|JM|Pallof\w*|Svend|Meadows\w*|Z-press|Y|Zottmana|Tate|GHD|V-up|V-uchwyt|Turkish|Smith|Zerchera|Pendlay|Yates|Nordic|OHP|MC|RDL|GHR|TGU|Pec)$/
+  const PROPER = /^(T-gryf\w*|Arnolda|JM|Pallof\w*|Svend|Meadows\w*|Z-press|Y|Zottmana|Tate|GHD|V-up|V-uchwyt|Turkish|Smith|Zerchera|Pendlay|Yates|Nordic|L-sit|Copenhagen|RKC|OHP|MC|RDL|GHR|TGU|Pec)$/
   const words = t => t.replace(/[(),–:]/g, ' ').split(/\s+/).filter(Boolean)
   const badCase = C.BASES.flatMap(b => [
     ...(b.pl[0] === b.pl[0].toUpperCase() && b.en[0] === b.en[0].toUpperCase() ? [] : [b.pl]),
