@@ -53,8 +53,8 @@
         <p v-else-if="base.akaEn" class="ep-how" data-no-tr>Also called: {{ base.akaEn }}</p>
         <p v-if="base.how" class="ep-how">{{ base.how[0] }}</p>
         <p v-if="res.assisted" class="ep-how">Wpisujesz ciężar wspomagania – mniej kg = trudniej.</p>
-        <button class="ep-pick press" @click="pick">Wybierz</button>
       </div>
+      <div v-if="base" class="ep-foot"><p class="ep-sum" data-no-tr>{{ lang === 'pl' ? res.name : res.nameEn }}</p><button class="ep-pick press" @click="pick">Wybierz</button></div>
     </div>
   </ion-modal>
 </template>
@@ -63,12 +63,12 @@
 import { ref, reactive, computed, watch } from 'vue'
 import { IonModal, IonIcon } from '@ionic/vue'
 import { close, chevronBack, chevronForward } from 'ionicons/icons'
-import { BASES, GROUPS, AXES, axesOf, fullSel, compose, catalogEN } from '../catalog'
+import { BASES, GROUPS, AXES, axesOf, fullSel, compose, catalogEN, byName } from '../catalog'
 import { MUSCLE_NAMES } from '../muscles'
 import { lang, addPhrases } from '../i18n'
 import BodyMap from './BodyMap.vue'
 
-const props = defineProps({ open: Boolean, color: String })
+const props = defineProps({ open: Boolean, color: String, current: { type: String, default: '' } })
 const emit = defineEmits(['close', 'pick'])
 addPhrases(catalogEN())
 
@@ -78,7 +78,13 @@ const q = ref(''), grp = ref('')
 const base = ref(null)
 /** @type {Record<string, string>} */
 const sel = reactive({})
-watch(() => props.open, o => { if (o) { base.value = null; q.value = '' } })
+// opening for an exercise from the catalogue starts on its own options, so it can be tweaked
+watch(() => props.open, o => {
+  if (!o) return
+  q.value = ''; grp.value = ''
+  const c = props.current && byName(props.current.trim())
+  if (c) { choose(c.base); for (const k of Object.keys(sel)) delete sel[k]; Object.assign(sel, fullSel(c.base, c.sel)) } else base.value = null
+})
 
 // search ignores Polish letters and case; matches the Polish and English names
 const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l')
@@ -140,5 +146,7 @@ function pick() { const r = res.value; emit('pick', { name: r.name, unit: r.unit
 .ex-sheet .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--c); }
 .ex-sheet .dot.h { opacity: .4; }
 .ex-sheet .ep-how { font-size: 14px; color: var(--app-muted); margin: 10px 4px; line-height: 1.4; }
-.ex-sheet .ep-pick { width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--c); color: #fff; font-size: 16px; font-weight: 600; margin-top: 6px; }
+.ex-sheet .ep-foot { padding: 8px 16px calc(12px + env(safe-area-inset-bottom, 0px)); border-top: .5px solid var(--app-line, rgba(0,0,0,.08)); background: var(--app-bg); }
+.ex-sheet .ep-sum { margin: 0 2px 8px; font-size: 13px; color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ex-sheet .ep-pick { width: 100%; height: 50px; border: 0; border-radius: 14px; background: var(--c); color: #fff; font-size: 16px; font-weight: 600; }
 </style>

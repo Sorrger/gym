@@ -40,7 +40,8 @@
             </div>
           </div>
           <input v-if="!e.special" v-model="e.name" class="name" :list="'known'" placeholder="Nazwa ćwiczenia (wpisz albo wybierz)" @change="nameChanged(e)" />
-          <button v-if="!e.special" class="cat press" @click="pickFor = e"><ion-icon :icon="libraryOutline" /> Wybierz z katalogu</button>
+          <p v-if="!e.special && lang !== 'pl' && enName(e.name)" class="en-name" data-no-tr>{{ enName(e.name) }}</p>
+          <button v-if="!e.special" class="cat press" @click="openPicker(e, 'ex')"><ion-icon :icon="libraryOutline" /> Wybierz z katalogu</button>
           <p v-if="e.special" class="spec">{{ e.specialText }} – można tylko przesunąć albo usunąć.</p>
           <template v-else>
             <div class="row3">
@@ -63,6 +64,7 @@
                 <input v-model="e.altNew" list="known" placeholder="Dodaj zamiennik…" @keyup.enter="addAlt(e)" />
                 <button class="press" :disabled="!e.altNew.trim()" @click="addAlt(e)">Dodaj</button>
               </div>
+              <button class="cat small press" @click="openPicker(e, 'alt')"><ion-icon :icon="libraryOutline" /> Zamiennik z katalogu</button>
             </div>
             <button class="mus press" @click="e.open = !e.open">
               <span>Mięśnie: <b>{{ musText(e) }}</b></span><ion-icon :icon="e.open ? chevronUp : chevronDown" />
@@ -74,10 +76,10 @@
           </template>
         </div>
 
-        <button class="add press" @click="addEx(); pickFor = list[list.length - 1]"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
+        <button class="add press" @click="addEx(); openPicker(list[list.length - 1], 'new')"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
         <button v-if="isCustom && DEFAULT_PLAN[day]" class="reset press" @click="reset">Przywróć wersję podstawową „{{ DEFAULT_PLAN[day].name }}”</button>
         <button v-if="!isNew" class="reset press" @click="removePlan">Usuń ten trening</button>
-        <ExercisePicker :open="!!pickFor" :color="color" @close="pickFor = null" @pick="picked" />
+        <ExercisePicker :open="!!pickFor" :color="color" :current="pickMode === 'ex' ? pickFor?.name : ''" @close="pickerClosed" @pick="picked" />
         <datalist id="known"><option v-for="k in known" :key="k" :value="k" /></datalist>
       </div>
     </ion-content>
@@ -90,6 +92,8 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
 import { close, chevronUp, chevronDown, trashOutline, add, libraryOutline } from 'ionicons/icons'
 import ExercisePicker from './ExercisePicker.vue'
+import { byName, compose } from '../catalog'
+import { lang } from '../i18n'
 import { PLAN, COLORS, PALETTE, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { MUSCLES, MUSCLE_NAMES } from '../muscles'
 import { custom, savePlan } from '../customPlan'
@@ -116,7 +120,11 @@ const openHere = activeSession()?.day === day
 const isCustom = !!custom.data?.days?.[day]
 
 let uid = 0
-function musOf(name) { const [m = [], h = []] = MUSCLES[name] || []; const o = {}; h.forEach(x => (o[x] = 2)); m.forEach(x => (o[x] = 1)); return o }
+function musMap(m, h) { const o = {}; h.forEach(x => (o[x] = 2)); m.forEach(x => (o[x] = 1)); return o }
+// muscles of a name: the plan's own list first, else the catalogue's
+function catOf(name) { const c = byName(name); return c ? compose(c.base, c.sel) : null }
+function musOf(name) { if (MUSCLES[name]) { const [m = [], h = []] = MUSCLES[name]; return musMap(m, h) } const c = catOf(name); return c ? musMap(c.main, c.help) : {} }
+const enName = n => { const c = n && catOf(n.trim()); return c ? c.nameEn : '' }
 // one editable row per plan entry; multi-part ones (pull-up stages etc.) are kept as they are
 function toRow(ex) {
   const [nm, target, tag, parts] = ex
@@ -132,14 +140,35 @@ if (!list.value.length) addEx()
 
 /** @type {import('vue').Ref<any>} */
 const pickFor = ref(null)
-function picked(r) {
+const pickMode = ref('ex') // 'ex' = replace this exercise, 'new' = just added row, 'alt' = add an alternative
+let picked1 = false
+function openPicker(e, mode) { pickMode.value = mode; picked1 = false; pickFor.value = e }
+async function picked(r) {
   const e = pickFor.value
   if (!e) return
-  const o = {}; r.help.forEach(x => (o[x] = 2)); r.main.forEach(x => (o[x] = 1))
-  Object.assign(e, { name: r.name, unit: r.unit, lo: r.range[0], hi: r.range[1], m: MUSCLES[r.name] ? musOf(r.name) : o, mTouched: !MUSCLES[r.name], open: false })
+  picked1 = true
+  if (pickMode.value === 'alt') {
+    if (r.name !== e.name.trim() && !e.alts.includes(r.name)) { e.alts.push(r.name); (e.altMus ||= {})[r.name] = [r.main, r.help] }
+    return
+  }
+  const twice = list.value.some(x => x !== e && x.name.trim() === r.name)
+  Object.assign(e, { name: r.name, unit: r.unit, lo: r.range[0], hi: r.range[1], rest: '', m: MUSCLES[r.name] ? musOf(r.name) : musMap(r.main, r.help), mTouched: !MUSCLES[r.name], fromCat: true, open: false })
+  if (twice) await ask({ icon: close, color: color.value, title: 'To ćwiczenie już jest w planie', message: `„${r.name}” jest w tym treningu drugi raz. Zmień opcje albo usuń jedno z nich, inaczej plan się nie zapisze.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
 }
-function nameChanged(e) { if (!e.mTouched) { e.m = musOf(e.name.trim()); if (!MUSCLES[e.name.trim()]) e.open = true } }
-function cycle(e, id) { e.mTouched = true; e.m = { ...e.m, [id]: ((e.m[id] || 0) + 1) % 3 }; if (!e.m[id]) delete e.m[id] }
+// closing the catalogue right after "Dodaj ćwiczenie" without picking leaves no empty row behind
+function pickerClosed() {
+  const e = pickFor.value
+  if (e && pickMode.value === 'new' && !picked1 && !e.name.trim()) { const i = list.value.indexOf(e); if (i >= 0 && list.value.length > 1) list.value.splice(i, 1) }
+  pickFor.value = null
+}
+function nameChanged(e) {
+  if (e.mTouched && !e.fromCat) return // muscles the user set by hand stay
+  const nm = e.name.trim(), c = !MUSCLES[nm] && catOf(nm)
+  e.m = musOf(nm); e.fromCat = !!c; e.mTouched = !!c
+  if (c) e.unit = c.unit
+  if (!MUSCLES[nm] && !c) e.open = true
+}
+function cycle(e, id) { e.mTouched = true; e.fromCat = false; e.m = { ...e.m, [id]: ((e.m[id] || 0) + 1) % 3 }; if (!e.m[id]) delete e.m[id] }
 const musText = e => { const m = Object.keys(e.m).filter(k => e.m[k] === 1).map(k => MUSCLE_NAMES[k]); return m.length ? m.join(', ') : 'wybierz' }
 function move(i, d) { const a = list.value; [a[i], a[i + d]] = [a[i + d], a[i]] }
 async function removeAt(i) {
@@ -170,6 +199,7 @@ function build() {
     const def = MUSCLES[nm]
     if (e.mTouched || !def) { if (m.length || h.length || def) muscles[nm] = [m, h] }
     alts[nm] = e.alts.filter(a => a !== nm)
+    for (const a of alts[nm]) if (e.altMus?.[a] && !MUSCLES[a] && !muscles[a]) muscles[a] = e.altMus[a]
   }
   if (!ex.length) throw new Error('Trening musi mieć choć jedno ćwiczenie.')
   return { ex, muscles, alts }
@@ -225,6 +255,8 @@ function cancel() { if (router.canGoBack()) router.back(); else router.navigate(
 .ex-top { display: flex; align-items: center; gap: 8px; }
 .n { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
 .name { margin-top: 10px; font-weight: 600; }
+.en-name { margin: 4px 2px 0; font-size: 13px; color: var(--app-muted); }
+.cat.small { margin-top: 6px; padding: 5px 10px; font-size: 13px; }
 .cat { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; border: 0; border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 600;
   color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
 .fixed { flex: 1; min-width: 0; font-size: 16px; }

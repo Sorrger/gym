@@ -9,11 +9,13 @@ export const EN = {
   "Katalog ćwiczeń": "Exercise catalogue",
   "Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.": "Nothing found. Type your own name in the exercise field.",
   "Szukaj, np. wyciskanie, przysiad…": "Search, e.g. bench, squat…",
+  "To ćwiczenie już jest w planie": "This exercise is already in the plan",
   "Wariant": "Variant",
   "Wpisujesz ciężar wspomagania – mniej kg = trudniej.": "You log the assistance weight – less kg = harder.",
   "Wszystkie": "All",
   "Wybierz": "Choose",
   "Wybierz z katalogu": "Choose from catalogue",
+  "Zamiennik z katalogu": "Alternative from the catalogue",
   "– apka sama mówi, kiedy dodać ciężar.": "– the app tells you when to add weight.",
   "– Profil → Ustawienia: zasady progresji, lżejszy tydzień, motyw, język.": "– Profile → Settings: progression rules, light week, theme, language.",
   "– wszystko działa na siłowni bez zasięgu.": "– everything works in the gym without signal.",
@@ -677,6 +679,7 @@ export const EN = {
 }
 
 export const PATTERNS = [
+  ["„([^”]+)” jest w tym treningu drugi raz\\. Zmień opcje albo usuń jedno z nich, inaczej plan się nie zapisze\\.", '“$1” is in this training twice. Change the options or remove one of them, otherwise the plan will not save.'],
   ["Trenujesz zgodnie z planem\\. Najwięcej pracy: (.+) – tak jak chcesz\\. Nogi mniej, bo tak jest zaplanowane\\.", "You train as planned. Most work: $1 – as you want. Legs less, as planned."],
   ["(?:W tym okresie zrobiłeś|Zrobiłeś) (\\d+) z (\\d+) treningów planu \\((.+)\\)\\. Wykres wyrówna się, gdy zrobisz każdy choć raz – dopiero wtedy widać prawdziwy balans\\.", "You did $1 of $2 workouts of the plan ($3). The chart evens out once you do each at least once – only then you see the real balance."],
   ["Co kilka tygodni apka sama robi lżejszy tydzień: te same ćwiczenia, (.+) i 3-4 powtórzenia w zapasie\\. Zmęczenie schodzi, stawy odpoczywają, a po nim wracasz do normalnych ciężarów – zwykle z nową siłą\\.", "Every few weeks the app plans a light week by itself: the same exercises, $1 and 3-4 reps in reserve. Fatigue drops, joints rest, and afterwards you go back to normal weights – usually stronger."],
