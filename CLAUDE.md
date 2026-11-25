@@ -141,6 +141,14 @@ Still to solve when the database comes:
 - Sync per record (only changed sessions since the last sync) instead of one big file – the `updated`/`deleted` fields already allow it.
 - Strava runs as the owner's GitHub Action – other users need it on the backend (per-user OAuth).
 
+## Plan: browser app → store app (explained to the user Nov 25 2026)
+- Wrap the same Vue + Ionic code with Capacitor (same company as Ionic): `@capacitor/core` + `cap add ios/android`; the web build goes into native projects. Hash router works as is.
+- In the native build: no service worker / updater.js (the store updates the app), status bar via `@capacitor/status-bar` (fixes the strip problem), deep link for the Strava/Google/Apple sign-in return.
+- Native extras via plugins: local notifications (rest timer end), haptics, HealthKit / Health Connect, Sign in with Apple; Live Activity + widgets need a small Swift plugin.
+- Data: phone storage of the web app and the native app are separate – the move goes through the account/database (or the Kopia JSON file). So: database + sign-in first, then the store app.
+- No Mac: iOS builds in the cloud (Codemagic / Ionic Appflow / GitHub Actions macOS). Apple Developer 99 $/year, Google Play 25 $ once; new personal Play accounts need a closed test (12 testers, 14 days).
+- Keep the web version on GitHub Pages in parallel.
+
 ## TODO (user, Nov 25 2026 – next sessions, in this spirit)
 - Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).
 - Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).
