@@ -5,11 +5,12 @@ import { pageAnim } from './pageAnim'
 import { createRouter, createWebHashHistory } from '@ionic/vue-router'
 import App from './App.vue'
 import Tabs from './views/Tabs.vue'
-import { load } from './store'
+import { load, state } from './store'
 import { initCloud } from './cloud'
 import { initStrava } from './strava'
 import { initWeights } from './weight'
-import { initAccount } from './account'
+import { initAccount, account } from './account'
+import { initI18n } from './i18n'
 import { initUpdater } from './updater'
 import { initPlan } from './customPlan'
 import { applyLook } from './theme'
@@ -37,6 +38,7 @@ const router = createRouter({
     { path: '/plans', component: () => import('./views/PlansView.vue') },
     { path: '/weight', component: () => import('./views/WeightView.vue') },
     { path: '/settings', component: () => import('./views/SettingsView.vue') },
+    { path: '/welcome', component: () => import('./views/WelcomeView.vue') },
     { path: '/session/:id', component: () => import('./views/SessionView.vue') },
     { path: '/tabs/', component: Tabs, children: [
       { path: '', redirect: '/tabs/home' },
@@ -68,6 +70,14 @@ router.onError(err => {
 
 initUpdater()
 
+// first start on a phone with nothing in it: language + account first (an existing user never sees it)
+const needsWelcome = () => { try { if (localStorage.getItem('onboarded')) return false } catch { return false }
+  return !Object.keys(state.sessions).length && !account.nick }
+router.beforeEach(to => {
+  if (to.path !== '/welcome' && needsWelcome()) return '/welcome'
+  if (to.path === '/welcome' && !needsWelcome()) return '/tabs/home'
+})
+
 initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => {
   initCloud()
   initStrava()
@@ -75,6 +85,7 @@ initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => {
   const app = createApp(App).use(IonicVue, { mode: 'ios', navAnimation: pageAnim }).use(router)
   router.isReady().then(() => {
     app.mount('#app')
+    initI18n()
     // warm up every screen in the background, so the first visit of a tab or page doesn't wait for its code
     const warm = () => router.getRoutes().forEach(r => { const c = r.components?.default; if (typeof c === 'function') c().catch(() => {}) })
     ;(window.requestIdleCallback || (f => setTimeout(f, 1200)))(warm, { timeout: 2500 })

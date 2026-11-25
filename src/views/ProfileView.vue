@@ -68,12 +68,13 @@
         </div>
         <p class="section-foot">Gym · Twoje dane zostają u Ciebie</p>
       </div>
-      <ion-toast :is-open="!!toast" :message="toast" :duration="3500" position="top" @didDismiss="toast = ''" />
+      <ion-toast :is-open="!!toast" :message="t(toast)" :duration="3500" position="top" @didDismiss="toast = ''" />
     </ion-content>
   </ion-page>
 </template>
 
 <script setup>
+import { t } from '../i18n'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { ref, computed } from 'vue'

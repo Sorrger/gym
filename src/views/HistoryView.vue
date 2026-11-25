@@ -64,6 +64,7 @@
 </template>
 
 <script setup>
+import { LOC } from '../i18n'
 import { weekStreak } from '../stats'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
@@ -85,7 +86,7 @@ const selected = ref(null)
 const all = computed(() => { void state.sessions; return doneSessions() })
 const prefix = computed(() => iso(view.value).slice(0, 7))
 const isCurrentMonth = computed(() => prefix.value === today.slice(0, 7))
-const monthLabel = computed(() => { const s = view.value.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1) })
+const monthLabel = computed(() => { const s = view.value.toLocaleDateString(LOC(), { month: 'long', year: 'numeric' }); return s.charAt(0).toUpperCase() + s.slice(1) })
 const lead = computed(() => (view.value.getDay() + 6) % 7)
 const cells = computed(() => {
   const y = view.value.getFullYear(), m = view.value.getMonth(), days = new Date(y, m + 1, 0).getDate()
@@ -106,7 +107,7 @@ function pick(c) {
   if (c.items.length === 1 && selected.value === c.date) { open(c.items[0]); return }
   selected.value = selected.value === c.date ? null : c.date
 }
-const dayName = d => { const s = new Date(d + 'T12:00:00').toLocaleDateString('pl-PL', { weekday: 'short' }); return s.charAt(0).toUpperCase() + s.slice(1) }
+const dayName = d => { const s = new Date(d + 'T12:00:00').toLocaleDateString(LOC(), { weekday: 'short' }); return s.charAt(0).toUpperCase() + s.slice(1) }
 
 function open(s) { router.push((s.finished ? '/session/' : '/workout/') + s.id) }
 async function ask(s) {

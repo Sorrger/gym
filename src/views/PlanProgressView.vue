@@ -2,7 +2,7 @@
   <ion-page>
     <ion-header :translucent="true">
       <ion-toolbar>
-        <ion-buttons slot="start"><ion-back-button default-href="/tabs/progress" text="Postępy" /></ion-buttons>
+        <ion-buttons slot="start"><ion-back-button default-href="/tabs/progress" :text="t('Postępy')" /></ion-buttons>
         <ion-title>{{ plan.name }}</ion-title>
       </ion-toolbar>
     </ion-header>
@@ -66,6 +66,7 @@
 </template>
 
 <script setup>
+import { t } from '../i18n'
 import Ico from './Ico.vue'
 import { computed } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonButtons, IonBackButton, useIonRouter } from '@ionic/vue'

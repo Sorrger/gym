@@ -62,6 +62,7 @@
 </template>
 
 <script setup>
+import { LOC } from '../i18n'
 import Ico from './Ico.vue'
 import { prefs } from '../prefs'
 import { setPref } from '../account'
@@ -98,7 +99,7 @@ const shown = computed(() => {
 const rows = computed(() => list.value.map((p, k) => ({ ...p, d: k ? +(p.kg - list.value[k - 1].kg).toFixed(1) : null })).reverse())
 
 const sign = v => { const r = Math.round(v * 10) / 10; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) }
-const dayName = s => new Date(s + 'T12:00').toLocaleDateString('pl-PL', { weekday: 'long' })
+const dayName = s => new Date(s + 'T12:00').toLocaleDateString(LOC(), { weekday: 'long' })
 
 // verdict for the chosen goal (Ustawienia / here): cut = slow cut keeping muscle (0,2–0,7 %/week),
 // maintain = within ±0,25 %/week, bulk = lean gain (0,1–0,5 %/week)

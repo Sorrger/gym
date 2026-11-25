@@ -16,6 +16,11 @@
           <div class="seg3">
             <button v-for="m in MODES" :key="m.v" class="press" :class="{ on: look.mode === m.v }" @click="setLook('mode', m.v)">{{ m.t }}</button>
           </div>
+          <span class="lbl">Język · Language</span>
+          <div class="seg3" data-no-tr>
+            <button class="press" :class="{ on: curLang === 'pl' }" @click="setLang('pl')">Polski</button>
+            <button class="press" :class="{ on: curLang === 'en' }" @click="setLang('en')">English</button>
+          </div>
           <span class="lbl">Kolor</span>
           <div class="sw">
             <button v-for="a in ACCENTS" :key="a.id" class="press" :class="{ on: look.accent === a.id }" @click="setLook('accent', a.id)" :aria-label="a.name">
@@ -176,12 +181,13 @@
         </template>
         <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="importData" />
       </div>
-      <ion-toast :is-open="!!msg" :message="msg" :duration="2200" position="top" @didDismiss="msg = ''" />
+      <ion-toast :is-open="!!msg" :message="t(msg)" :duration="2200" position="top" @didDismiss="msg = ''" />
     </ion-content>
   </ion-page>
 </template>
 
 <script setup>
+import { t, lang as curLang, setLang } from '../i18n'
 import { useScrolled } from '../useScrolled'
 import { accountData, importAccount, setPref } from '../account'
 import { prefs, DEFAULT_PREFS } from '../prefs'

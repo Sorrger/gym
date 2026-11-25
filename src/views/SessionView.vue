@@ -70,6 +70,7 @@
 </template>
 
 <script setup>
+import { LOC } from '../i18n'
 import Ico from './Ico.vue'
 import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
@@ -93,8 +94,8 @@ const color = computed(() => (plan.value ? COLORS[plan.value.key] : 'var(--accen
 const sv = computed(() => (s.value ? stravaFor(s.value.id) : null))
 const c = computed(() => (s.value ? counts(s.value) : { n: 0, t: 0 }))
 const vol = computed(() => (s.value ? volumeOf(s.value) : 0))
-const dayName = computed(() => (s.value ? new Date(s.value.date + 'T12:00').toLocaleDateString('pl-PL', { weekday: 'long' }) : ''))
-const hm = t => new Date(t).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })
+const dayName = computed(() => (s.value ? new Date(s.value.date + 'T12:00').toLocaleDateString(LOC(), { weekday: 'long' }) : ''))
+const hm = t => new Date(t).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit' })
 const timeRange = computed(() => {
   if (sv.value?.start) { const a = Date.parse(sv.value.start); return hm(a) + '–' + hm(a + (sv.value.elapsed || 0) * 1000) }
   return s.value?.started ? hm(s.value.started) + (s.value.finished && s.value.updated ? '–' + hm(s.value.updated) : '') : ''
@@ -157,7 +158,7 @@ async function del() {
   goBack()
   setTimeout(() => remove(x.id), 350) // after the page has left, so it never shows "Nie ma takiego treningu"
 }
-const fmtShortDay = computed(() => s.value ? new Date(s.value.date + 'T12:00').toLocaleDateString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short' }) : '')
+const fmtShortDay = computed(() => s.value ? new Date(s.value.date + 'T12:00').toLocaleDateString(LOC(), { weekday: 'short', day: 'numeric', month: 'short' }) : '')
 
 // heart-rate chart
 const cv = ref(null)

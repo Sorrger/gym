@@ -90,12 +90,13 @@
 
       </div>
 
-      <ion-toast :is-open="!!state.flash" :message="state.flash" :duration="2500" position="top" @didDismiss="state.flash = ''" />
+      <ion-toast :is-open="!!state.flash" :message="t(state.flash)" :duration="2500" position="top" @didDismiss="state.flash = ''" />
     </ion-content>
   </ion-page>
 </template>
 
 <script setup>
+import { LOC, t } from '../i18n'
 import { weightTone, deloadWords } from '../prefs'
 const cap = t => t.charAt(0).toUpperCase() + t.slice(1)
 import Ico from './Ico.vue'
@@ -132,7 +133,7 @@ const done = computed(() => { void state.sessions; return doneSessions() })
 const totalSets = computed(() => done.value.reduce((a, s) => a + counts(s).n, 0))
 
 const todayText = computed(() => {
-  const s = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long' })
+  const s = new Date().toLocaleDateString(LOC(), { weekday: 'long', day: 'numeric', month: 'long' })
   return s.charAt(0).toUpperCase() + s.slice(1)
 })
 const greeting = computed(() => {

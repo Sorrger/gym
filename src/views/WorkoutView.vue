@@ -220,6 +220,7 @@
 </template>
 
 <script setup>
+import { LOC } from '../i18n'
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
 import { stravaFor, svText } from '../strava'
@@ -555,7 +556,7 @@ function finish() {
   summary.value = true
 }
 const c = computed(() => counts(s.value))
-const niceDate = computed(() => new Date(s.value.date + 'T12:00:00').toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' }))
+const niceDate = computed(() => new Date(s.value.date + 'T12:00:00').toLocaleDateString(LOC(), { day: 'numeric', month: 'long' }))
 const rows = computed(() => entriesOf(s.value.day, s.value).map(g => {
   const arr = s.value.ex[g.key] || []
   const done = arr.filter(x => x.d && x.w != null)
