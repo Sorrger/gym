@@ -171,10 +171,15 @@ function gear(g, J, pose, near) {
     case 'footpad': { const y = Math.max(J.A.y, J.A2.y) + 7; return [line({ x: Math.min(J.A.x, J.A2.x) - 16, y }, { x: Math.max(J.A.x, J.A2.x) + 16, y }, 9, 'pad')] } // assisted machine platform under the feet
     case 'footband': { const y = Math.max(J.A.y, J.A2.y) + 4, l = Math.min(J.A.x, J.A2.x) - 6, r = Math.max(J.A.x, J.A2.x) + 6; return [line({ x: l, y: g.top }, { x: l, y }, 2.5, 'band'), line({ x: l, y }, { x: r, y }, 2.5, 'band'), line({ x: r, y }, { x: r, y: g.top }, 2.5, 'band')] } // band from the bar under the feet
     case 'backpad': { const a = add(add(J.H, J.L, 17), J.d, -14), b = add(add(J.S, J.L, 17), J.d, 16); return [line(a, b, 13, 'pad')] } // machine back pad moving with the body
+    case 'lever': { // machine arm from a fixed pivot (or the knee / elbow) to the hands or the shin roller
+      const P0 = g.pivot === 'knee' ? J.K : g.pivot === 'elbow' ? J.E : g.pivot
+      const T = g.to === 'roller' ? at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13) : W
+      return [line(P0, T, 7, 'gear frame'), circle(P0, 6, 'gear')]
+    }
     case 'kneepad': { const d = ang(J.H, J.K), c = at(lerpPt(J.H, J.K, 0.85), d - 90, 14); return [line(at(c, d, -16), at(c, d, 16), 10, 'pad')] } // machine pad on top of the thighs
     case 'bar2': { const d = ang(J.W2, J.W), m = lerpPt(J.W, J.W2, 0.5); return [line({ x: m.x, y: m.y }, { x: m.x, y: g.top ?? -330 }, 1.5, 'cable'), line(at(J.W2, d, -14), at(J.W, d, 14), 5, 'gear frame')] } // straight bar between both hands (front view)
     case 'shin': { const c = at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13); return [circle(c, 9, 'pad'), circle(c, 3, 'gear')] } // roller on the front (-1) or back (+1) of the shin
-    case 'plat': { const a = g.ang ?? 0, c = at(J.A, a, 6); return [line(at(c, a + 90, 30), at(c, a - 90, 30), 8, 'pad')] }
+    case 'plat': { const a = g.ang ?? 0, c = at(J.A, a, 9); return [line(at(c, a + 90, 30), at(c, a - 90, 30), 8, 'pad')] }
     case 'rope': { // waving rope from the hands to an anchor
       const A = W, B = g.from, n = 24, pts = []
       for (let i = 0; i <= n; i++) { const q = lerpPt(A, B, i / n), amp = 9 * (1 - i / n); pts.push(`${q.x} ${q.y + Math.sin((i / n) * 3 * Math.PI * 2 - (pose.wv || 0)) * amp}`) }
@@ -200,6 +205,13 @@ function prop(p) {
     case 'bar': return [line({ x: p.x + (p.side ?? -40), y: p.y }, { x: p.x + (p.side ?? -40), y: 0 }, 5, 'gear frame'), line({ x: p.x + (p.side ?? -40), y: p.y }, { x: p.x, y: p.y }, 5, 'gear frame'), circle({ x: p.x, y: p.y }, 5, 'gear')]
     case 'tower': return [line({ x: p.x, y: 0 }, { x: p.x, y: p.top }, 8, 'gear frame'), ...(p.pulley != null ? [circle({ x: p.x, y: p.pulley }, 6, 'gear')] : [])]
     case 'box': return [{ t: 'rect', a: { x: p.x - p.w / 2, y: -p.h, width: p.w, height: p.h, rx: 3 }, c: 'pad' }]
+    case 'stack': { // machine weight stack: frame, pulley and plates
+      const h = p.h || 230
+      /** @type {any[]} */
+      const out = [line({ x: p.x - 17, y: 0 }, { x: p.x - 17, y: -h }, 5, 'gear frame'), line({ x: p.x + 17, y: 0 }, { x: p.x + 17, y: -h }, 5, 'gear frame'), line({ x: p.x - 20, y: -h }, { x: p.x + 20, y: -h }, 6, 'gear frame'), circle({ x: p.x, y: -h + 10 }, 6, 'gear'), line({ x: p.x, y: -h + 10 }, { x: p.x, y: -96 }, 1.5, 'cable')]
+      for (let i = 0; i < 8; i++) out.push({ t: 'rect', a: { x: p.x - 13, y: -14 - i * 11, width: 26, height: 9, rx: 2 }, c: 'pad' })
+      return out
+    }
     case 'wall': return [line({ x: p.x, y: 0 }, { x: p.x, y: p.top ?? -280 }, 6, 'gear frame')]
     case 'ball': return [circle({ x: p.x, y: p.y }, p.r, 'pad')]
     case 'line': return [line({ x: p.x1, y: p.y1 }, { x: p.x2, y: p.y2 }, p.w || 4, p.c || 'gear')]
@@ -254,10 +266,10 @@ export function frameBox(scene) {
   const pts = []
   for (const f of scene.frames) { const J = joints(f, scene.view); pts.push(J.H, J.S, J.C, J.E, J.W, J.E2, J.W2, J.K, J.A, J.K2, J.A2) }
   for (const p of scene.props || []) {
-    if (p.x != null) pts.push({ x: p.x + (p.k === 'box' ? p.w / 2 : 0), y: p.y ?? (p.top ?? -(p.h || 0)) }, ...(scene.top ? [] : [{ x: p.x - (p.k === 'box' ? p.w / 2 : 0), y: 0 }]))
+    if (p.x != null) pts.push({ x: p.x + (p.k === 'box' ? p.w / 2 : p.k === 'stack' ? 20 : 0), y: p.y ?? (p.top ?? -(p.h || (p.k === 'stack' ? 230 : 0))) }, ...(scene.top ? [] : [{ x: p.x - (p.k === 'box' ? p.w / 2 : 0), y: 0 }]))
     if (p.x1 != null) pts.push({ x: p.x1, y: p.y1 }, { x: p.x2, y: p.y2 })
   }
-  for (const g of scene.gear || []) { if (g.from) pts.push(g.from); if (g.from2) pts.push(g.from2) }
+  for (const g of scene.gear || []) { if (g.from) pts.push(g.from); if (g.from2) pts.push(g.from2); if (g.pivot?.x != null) pts.push(g.pivot) }
   let x0 = Math.min(...pts.map(p => p.x)) - 36, x1 = Math.max(...pts.map(p => p.x)) + 36
   let y0 = Math.min(...pts.map(p => p.y)) - 40, y1 = scene.top ? Math.max(...pts.map(p => p.y)) + 36 : 16
   const w = x1 - x0, h = y1 - y0, want = 380 / 250

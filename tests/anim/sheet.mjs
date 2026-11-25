@@ -28,14 +28,14 @@ for (const b of BASES) {
     let sc
     try { sc = sceneFor(b.id, sel, { main: c.main, help: c.help }) } catch (e) { cells.push(`<div class="c err"><b>${c.name}</b><p>${e.message}</p></div>`); continue }
     if (!sc) { cells.push(`<div class="c err"><b>${c.name}</b><p>brak</p></div>`); continue }
-    cells.push(`<div class="c"><b>${c.name}</b><div>${[0, 0.5, 1].map(k => svg(sc, k)).join('')}</div></div>`)
+    cells.push(`<div class="c"><b>${c.name}</b><div>${(process.env.KS || '0,0.5,1').split(',').map(Number).map(k => svg(sc, k)).join('')}</div></div>`)
   }
 }
 fs.mkdirSync('/tmp/anim', { recursive: true })
 const per = 12, pages = Math.ceil(cells.length / per)
 for (let i = 0; i < pages; i++) {
   const f = `/tmp/anim/sheet-${i}.html`
-  fs.writeFileSync(f, `<html><head><style>${css}body{font:12px sans-serif;margin:8px;display:grid;grid-template-columns:repeat(${process.env.COLS || 2},${(process.env.W || 190) * 3 + 30}px);gap:6px}.c{background:#fff;padding:4px}.c div{display:flex;gap:4px}.err{background:#fdd}</style></head><body>${cells.slice(i * per, (i + 1) * per).join('')}</body></html>`)
+  fs.writeFileSync(f, `<html><head><style>${css}body{font:12px sans-serif;margin:8px;display:grid;grid-template-columns:repeat(${process.env.COLS || 2},${(process.env.W || 190) * (process.env.KS || "0,0.5,1").split(",").length + 30}px);gap:6px}.c{background:#fff;padding:4px}.c div{display:flex;gap:4px}.err{background:#fdd}</style></head><body>${cells.slice(i * per, (i + 1) * per).join('')}</body></html>`)
   execFileSync('/usr/bin/google-chrome', ['--headless=new', '--no-sandbox', '--disable-gpu', '--hide-scrollbars', '--window-size=1230,1000', `--screenshot=/tmp/anim/sheet-${i}.png`, 'file://' + f], { stdio: 'ignore' })
 }
 console.log(cells.length, 'cells,', pages, 'pages; errors:', cells.filter(c => c.includes('class="c err"')).length)

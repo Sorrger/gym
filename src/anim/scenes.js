@@ -17,8 +17,15 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   const scene = { rig: true, ...d, phases, main: mus.main || [], help: mus.help || [] }
   if (baseId === 'bench-press' && (sel.eq === 'bb' || sel.eq === 'sm') && sel.angle === 'flat' && sel.width !== 'close') scene.cues = BENCH_CUES
   scene.box = frameBox(scene)
+  // machines get a weight stack behind the figure (left in side view, right in front view)
+  if (sel.eq === 'mc' && !NO_STACK.has(baseId) && !(baseId === 'calf-raise' && sel.pos === 'legpress')) {
+    const b = scene.box
+    scene.props = [{ k: 'stack', x: scene.view === 'f' ? b.x + b.w + 4 : b.x + 6 }, ...(scene.props || [])]
+    scene.box = frameBox(scene)
+  }
   return scene
 }
+const NO_STACK = new Set(['leg-press', 'hack-squat', 'pendulum', 'sled-push'])
 
 // "Nauka podciągania": one scene + cues per part of the stage (dead hang, negatives, assisted, full)
 const PULL_CUES = {
