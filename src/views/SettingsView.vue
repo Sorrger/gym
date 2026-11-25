@@ -60,6 +60,14 @@
             <div class="grow"><b>{{ t.t }}</b><span>{{ t.d }}</span></div>
             <span class="sw-t" :class="{ on: prefs[t.k] }"><i></i></span>
           </button>
+          <div v-if="prefs.restTimer" class="row every">
+            <div class="grow"><b>Czas przerwy</b><span>Po każdej serii (w trakcie: −15 / +15 s)</span></div>
+            <div class="stepper num">
+              <button class="press" :disabled="!can(REST, -1)" @click="bump(REST, -1)" aria-label="Mniej">−</button>
+              <b>{{ REST.fmt(prefs.restSec) }}</b>
+              <button class="press" :disabled="!can(REST, 1)" @click="bump(REST, 1)" aria-label="Więcej">+</button>
+            </div>
+          </div>
           <template v-if="prefs.deload">
             <div v-for="t in DELOAD_NUMS" :key="t.k" class="row every">
               <div class="grow"><b>{{ t.t }}</b><span>{{ t.d }}</span></div>
@@ -241,7 +249,7 @@ const goBack = () => (router.canGoBack() ? router.back() : router.navigate(sec ?
 const MENU = [
   { k: 'look', t: 'Wygląd', i: colorPaletteOutline, c: '#af52de', sub: () => ({ system: 'Jak telefon', light: 'Jasny', dark: 'Ciemny' })[look.mode] + ' · ' + (ACCENTS.find(a => a.id === look.accent)?.name || '') },
   { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => (curLang === 'en' ? 'English' : 'Polski') },
-  { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => ({ auto: 'Podpowiedzi same', chip: 'Podpowiedzi na dotyk', off: 'Bez podpowiedzi' })[prefs.coach] + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
+  { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => ({ auto: 'Podpowiedzi same', chip: 'Podpowiedzi na dotyk', off: 'Bez podpowiedzi' })[prefs.coach] + (prefs.restTimer ? ' · przerwa ' + REST.fmt(prefs.restSec) : '') + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
   { k: 'progress', t: 'Progresja', i: trendingUpOutline, c: '#34c759', sub: () => 'Zapas ' + prefs.rirUp + '+ · krok ' + String(prefs.stepKg).replace('.', ',') + ' kg' },
   { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] },
   { k: 'backup', t: 'Kopia zapasowa', i: cloudUploadOutline, c: '#0a84ff', sub: () => (cloud.token ? (cloud.error ? 'Błąd kopii' : 'GitHub · automatycznie') : 'Tylko w telefonie'), warn: () => cloud.token && cloud.error && cloud.error !== 'Brak połączenia' },
@@ -255,7 +263,9 @@ const TOGGLES = [
   { k: 'rir', t: 'Zapas powtórzeń', d: 'Ile zostało do upadku (0, 1, 2, 3+)' },
   { k: 'warmup', t: 'Rozgrzewka', d: 'Serie rozgrzewkowe przy sztandze' },
   { k: 'autoNext', t: 'Przejdź dalej sam', d: 'Po ostatniej serii następne ćwiczenie' },
-  { k: 'deload', t: 'Lżejszy tydzień (deload)', d: 'Apka sama ustawia lżejszy tydzień' }]
+  { k: 'deload', t: 'Lżejszy tydzień (deload)', d: 'Apka sama ustawia lżejszy tydzień' },
+  { k: 'restTimer', t: 'Minutnik przerwy', d: 'Startuje sam po odhaczeniu serii' },
+  { k: 'setTypes', t: 'Rodzaje serii', d: 'Dotknij numer serii: rozgrzewkowa (R), drop set (D), do upadku (U). Rozgrzewkowe się nie liczą' }]
 const num = v => String(v).replace('.', ',')
 const NUMS = [
   { k: 'rirUp', t: 'Zapas do dodania ciężaru', d: 'W każdej serii zostaje tyle powtórzeń → od razu więcej kg', min: 1, max: 5, step: 1, fmt: v => v + '+' },
@@ -266,6 +276,7 @@ const NUMS = [
 const DELOAD_NUMS = [
   { k: 'deloadEvery', t: 'Lżejszy tydzień co', d: 'tygodni treningu (wcześniej, gdy wyniki stoją)', min: 4, max: 12, step: 1, fmt: v => v + ' tyg.' },
   { k: 'deloadPct', t: 'O ile lżej', d: 'Ciężary w lżejszym tygodniu', min: 5, max: 30, step: 5, fmt: v => v + '%' }]
+const REST = { k: 'restSec', min: 30, max: 300, step: 15, fmt: v => Math.floor(v / 60) + ':' + String(v % 60).padStart(2, '0') }
 const can = (t, d) => { const v = prefs[t.k]; if (t.opts) { const i = t.opts.indexOf(v); return d < 0 ? i > 0 || i < 0 : i < t.opts.length - 1 } return d < 0 ? v > t.min : v < t.max }
 function bump(t, d) {
   if (!can(t, d)) return
@@ -273,7 +284,7 @@ function bump(t, d) {
   if (t.opts) { const i = t.opts.indexOf(v); setPref(t.k, t.opts[i < 0 ? t.opts.indexOf(2.5) : i + d]); return }
   setPref(t.k, Math.round((v + d * t.step) * 100) / 100)
 }
-const RULES = ['rirUp', 'repsGain', 'stepKg', 'failN', 'dropPct', 'deloadEvery', 'deloadPct', 'deloadHalf', 'coach', 'live', 'rir', 'warmup', 'autoNext', 'deload']
+const RULES = ['rirUp', 'repsGain', 'stepKg', 'failN', 'dropPct', 'deloadEvery', 'deloadPct', 'deloadHalf', 'coach', 'live', 'rir', 'warmup', 'autoNext', 'deload', 'restTimer', 'restSec', 'setTypes']
 const isDefault = computed(() => RULES.every(k => prefs[k] === DEFAULT_PREFS[k]))
 async function resetPrefs() {
   const { role } = await ask({ title: 'Przywrócić domyślne zasady?', message: 'Podpowiedzi, zapas, krok ciężaru, zejście i lżejszy tydzień wrócą do ustawień startowych. Treningi zostają.',

@@ -17,7 +17,10 @@ export const DEFAULT_PREFS = {
   failN: 2,         // workouts in a row below the range before going lighter
   dropPct: 10,      // … by this much
   deloadPct: 10,    // light week: this much lighter
-  deloadHalf: true  // light week: half the sets
+  deloadHalf: true, // light week: half the sets
+  restTimer: false, // rest timer starts by itself after a ticked set (off for the owner – user asked)
+  restSec: 120,     // … this long
+  setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }
 export const prefs = reactive({ ...DEFAULT_PREFS })
 export const setPrefsLocal = p => Object.assign(prefs, DEFAULT_PREFS, p || {})
@@ -29,3 +32,7 @@ export const rirTop = () => Math.max(3, prefs.rirUp)
 export const rirLabel = q => (q >= rirTop() ? rirTop() + '+' : String(q))
 // how the light week works, in words (cards, dialogs, coach)
 export const deloadWords = () => [prefs.deloadHalf ? 'połowa serii' : 'te same serie', `ok. ${prefs.deloadPct}% lżej`].join(', ')
+// set types (x.t): undefined = working set, 'w' warm-up (not counted anywhere), 'd' drop set, 'f' to failure
+export const SET_TYPES = [undefined, 'w', 'd', 'f']
+export const SET_TYPE_LABEL = { w: 'R', d: 'D', f: 'U' }
+export const isWork = x => x.t !== 'w'

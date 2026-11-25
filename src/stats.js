@@ -15,11 +15,11 @@ export function volumeOf(s) {
   for (const [k, arr] of Object.entries(s.ex || {})) {
     // an exercise later removed from the plan still counts if it was done with kg × reps
     const count = kg.has(k) || (!inPlan.has(k) && !k.includes('wspomag') && arr.some(x => x.r != null))
-    if (count) for (const x of arr) if (x.d && x.w != null) v += x.w * (x.r || 0)
+    if (count) for (const x of arr) if (x.d && x.w != null && x.t !== 'w') v += x.w * (x.r || 0)
   }
   return Math.round(v)
 }
-export const setsOf = s => Object.values(s.ex || {}).reduce((a, arr) => a + arr.filter(x => x.d).length, 0)
+export const setsOf = s => Object.values(s.ex || {}).reduce((a, arr) => a + arr.filter(x => x.d && x.t !== 'w').length, 0)
 
 // exercises (of one plan, or all) whose best in the last `days` beat everything before
 // new records in a period (days = null → all time): every workout where an exercise beat all its earlier workouts
@@ -61,7 +61,7 @@ export function prCount(day = null, days = 30) {
 // "strength" of one exercise in one workout: kg → estimated 1-rep max (Epley: kg × (1 + reps/30)) of the best set,
 // reps/seconds → the best value. Compared only with itself, so units never mix.
 function bestValue(g, arr) {
-  const done = (arr || []).filter(x => x.d && x.w != null)
+  const done = (arr || []).filter(x => x.d && x.w != null && x.t !== 'w')
   if (!done.length) return null
   if (g.unit !== 'kg') return Math.max(...done.map(x => x.w))
   const lo = rangeOf(g.target)?.lo || 6
@@ -171,7 +171,7 @@ export function muscleSets(days = null) {
     if (s.date < cut) continue
     const perEx = {}
     for (const [k, arr] of Object.entries(s.ex || {})) {
-      const base = k.split(' · ')[0], n = arr.filter(x => x.d).length
+      const base = k.split(' · ')[0], n = arr.filter(x => x.d && x.t !== 'w').length
       perEx[base] = Math.max(perEx[base] || 0, n)
     }
     for (const [base, n] of Object.entries(perEx)) {

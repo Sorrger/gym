@@ -107,6 +107,8 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - English round 2 (crawler: only the first-start page left untranslated in the crawl, which runs it in Polish).
 - Tests moved into the repo: `npm test` (tests/logic, 154 cases) + tests/e2e Playwright scripts (see tests/README.md); CI `.github/workflows/test.yml` (npm test + build). `PROJECT_REVIEW.md` = structure review + comparison with Hevy/Strong/HeavySet + business model.
 
+- Rest timer + set types (user, Nov 25; OFF by default – owner keeps them off): prefs `restTimer` (+ `restSec` 30–300 s, step 15), `setTypes`. Rest bar above the footer in WorkoutView after a ticked set (−15/+15, Pomiń, beeps + vibrate at 0, green "Koniec przerwy"). Set types: tap the set number → R warm-up / D drop set / U to failure, stored `x.t` ('w'|'d'|'f'); warm-ups (`t === 'w'`) are left out of volume, set counts in stats, records, coach history. Settings → Trening. Playwright `rest.mjs`.
+
 ## TODO (user, Nov 25 2026 – next sessions, in this spirit)
 - Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).
 - Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).

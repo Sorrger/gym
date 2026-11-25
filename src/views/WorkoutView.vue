@@ -68,7 +68,8 @@
                 </div>
                 <div class="sets">
                   <div class="set" v-for="(x, si) in sets(g.key)" :key="si" :class="{ d: x.d }">
-                    <span class="idx num">{{ si + 1 }}</span>
+                    <button v-if="prefs.setTypes" class="idx num ty press" :class="'t-' + (x.t || 'n')" @click="cycleType(g, si)" :aria-label="'Rodzaj serii: ' + typeName(x.t)">{{ x.t ? SET_TYPE_LABEL[x.t] : si + 1 }}</button>
+                    <span v-else class="idx num">{{ si + 1 }}</span>
                     <div class="ctl">
                       <div class="line">
                         <button class="step num" @click="step(g, si, -1)" :aria-label="'Minus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="removeIcon" /></button>
@@ -187,6 +188,17 @@
       </div>
     </Transition>
 
+    <!-- rest timer -->
+    <Transition name="recpop">
+      <div v-if="restEnd && !summary" class="rest-bar" :class="{ end: restLeft === 0 }" role="timer">
+        <span class="rest-ico"><ion-icon :icon="stopwatchOutline" /></span>
+        <div class="rest-t"><small>{{ restLeft ? 'Przerwa' : 'Koniec przerwy' }}</small><b class="num">{{ restTxt }}</b></div>
+        <button class="press" @click="addRest(-15)" aria-label="15 sekund krócej">−15</button>
+        <button class="press" @click="addRest(15)" aria-label="15 sekund dłużej">+15</button>
+        <button class="press skip" @click="stopRest">{{ restLeft ? 'Pomiń' : 'OK' }}</button>
+      </div>
+    </Transition>
+
     <!-- new record while training -->
     <Transition name="recpop">
       <div v-if="recPop" class="rec-pop" @click="recPop = null" role="status">
@@ -248,7 +260,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter,
   IonModal, IonPicker, IonPickerColumn, IonPickerColumnOption, useIonRouter  } from '@ionic/vue'
 import { checkmark, trophy, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, heart, trendingUp, trendingDown, bulbOutline, trophyOutline, flameOutline, swapHorizontal } from 'ionicons/icons'
-import { prefs, rirTop, rirLabel, deloadWords } from '../prefs'
+import { prefs, rirTop, rirLabel, deloadWords, SET_TYPES, SET_TYPE_LABEL } from '../prefs'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, entriesOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, sorted, cancelDeload, swapExercise, dropEmptyManual } from '../store'
@@ -377,9 +389,9 @@ function lastText(g) {
 function bestBefore(g, skip) {
   const as = isAssisted(g), vals = []
   for (const o of sorted()) if (o.id !== s.value.id && (o.date < s.value.date || (o.date === s.value.date && o.started < s.value.started)))
-    for (const x of o.ex?.[g.key] || []) if (x.d && x.w != null) vals.push(x.w)
+    for (const x of o.ex?.[g.key] || []) if (x.d && x.w != null && x.t !== 'w') vals.push(x.w)
   if (!vals.length) return null // first time is not a record
-  sets(g.key).forEach((x, i) => { if (i !== skip && x.d && x.w != null) vals.push(x.w) })
+  sets(g.key).forEach((x, i) => { if (i !== skip && x.d && x.w != null && x.t !== 'w') vals.push(x.w) })
   return as ? Math.min(...vals) : Math.max(...vals)
 }
 const recPop = ref(null)
@@ -389,7 +401,7 @@ function toggle(g, si) {
   x.d = !x.d
   if (!x.d) delete x.q
   touch()
-  if (x.d && x.w != null && !s.value.deload) {
+  if (x.d && x.w != null && x.t !== 'w' && !s.value.deload) {
     const b = bestBefore(g, si), as = isAssisted(g)
     if (b != null && (as ? x.w < b : x.w > b)) {
       recPop.value = { name: g.label || g.name, val: fmtVal(x.w, g.unit) + (g.unit === 'kg' && x.r ? ' × ' + x.r : ''), prev: fmtVal(b, g.unit), as }
@@ -400,8 +412,40 @@ function toggle(g, si) {
   // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine);
   // when the reps-in-reserve chips are shown, give time to tap one first (jumps right after the tap, or after 5 s)
   if (x.d) autoNext(g.unit !== 's' && prefs.rir ? 5000 : 650)
+  if (x.d && prefs.restTimer && g.unit !== 's' && c.value.n < c.value.t) startRest()
+  if (!x.d) stopRest()
 }
 let nextT = 0
+// set types (Ustawienia → Trening → Rodzaje serii): tap the set number to cycle
+const TYPE_NAMES = { w: 'rozgrzewkowa', d: 'drop set', f: 'do upadku' }
+const typeName = t => TYPE_NAMES[t] || 'robocza'
+function cycleType(g, si) {
+  const x = sets(g.key)[si], i = SET_TYPES.indexOf(x.t)
+  const nt = SET_TYPES[(i + 1) % SET_TYPES.length]
+  if (nt) x.t = nt; else delete x.t
+  touch()
+}
+// rest timer (Ustawienia → Trening → Minutnik przerwy): starts after a ticked set, beeps at the end
+const restEnd = ref(0), restNow = ref(Date.now())
+let restI = 0, restDoneT = 0
+const restLeft = computed(() => Math.max(0, Math.ceil((restEnd.value - restNow.value) / 1000)))
+const restTxt = computed(() => Math.floor(restLeft.value / 60) + ':' + String(restLeft.value % 60).padStart(2, '0'))
+function startRest(sec = prefs.restSec) {
+  clearInterval(restI); clearTimeout(restDoneT)
+  restEnd.value = Date.now() + sec * 1000; restNow.value = Date.now()
+  let rang = false
+  restI = setInterval(() => {
+    restNow.value = Date.now()
+    if (!rang && restLeft.value <= 0) {
+      rang = true; beep(880, 160); setTimeout(() => beep(1320, 260), 220)
+      try { navigator.vibrate?.([200, 100, 200]) } catch {}
+      restDoneT = setTimeout(stopRest, 2500)
+    }
+  }, 250)
+}
+function addRest(d) { restEnd.value = Math.max(Date.now() + 5000, restEnd.value + d * 1000) }
+function stopRest() { clearInterval(restI); clearTimeout(restDoneT); restEnd.value = 0 }
+onUnmounted(stopRest)
 function autoNext(ms) {
   clearTimeout(nextT)
   if (!prefs.autoNext || !isComplete(idx.value)) return
@@ -595,10 +639,10 @@ const c = computed(() => counts(s.value))
 const niceDate = computed(() => new Date(s.value.date + 'T12:00:00').toLocaleDateString(LOC(), { day: 'numeric', month: 'long' }))
 const rows = computed(() => entriesOf(s.value.day, s.value).map(g => {
   const arr = s.value.ex[g.key] || []
-  const done = arr.filter(x => x.d && x.w != null)
+  const done = arr.filter(x => x.d && x.w != null && x.t !== 'w')
   const max = done.length ? Math.max(...done.map(x => x.w)) : null
   const before = sorted().filter(o => o.id !== s.value.id && (o.date < s.value.date || (o.date === s.value.date && o.started < s.value.started)))
-    .flatMap(o => (o.ex?.[g.key] || []).filter(x => x.d && x.w != null).map(x => x.w))
+    .flatMap(o => (o.ex?.[g.key] || []).filter(x => x.d && x.w != null && x.t !== 'w').map(x => x.w))
   const as = isAssisted(g), best = done.length ? (as ? Math.min(...done.map(x => x.w)) : max) : null
   const prev = before.length ? (as ? Math.min(...before) : Math.max(...before)) : null
   return { ...g, done: arr.some(x => x.d), max: best, prev, as, pr: best != null && prev != null && (as ? best < prev : best > prev) }
@@ -817,6 +861,22 @@ ion-footer { background: color-mix(in srgb, var(--app-bg) 80%, transparent); bac
 .recpop-enter-active { transition: transform .35s cubic-bezier(.2,1.4,.4,1), opacity .25s; }
 .recpop-leave-active { transition: transform .25s, opacity .25s; }
 .recpop-enter-from, .recpop-leave-to { transform: translateY(-20px) scale(.95); opacity: 0; }
+.rest-bar { position: absolute; z-index: 80; left: 12px; right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + 86px); display: flex; align-items: center; gap: 8px;
+  padding: 9px 10px 9px 12px; border-radius: 18px; background: var(--app-card); box-shadow: 0 10px 30px rgba(0,0,0,.22); }
+.rest-bar.end { background: #34c759; color: #fff; }
+.rest-ico { font-size: 24px; color: var(--c); display: grid; }
+.rest-bar.end .rest-ico { color: #fff; }
+.rest-t { flex: 1; display: flex; flex-direction: column; line-height: 1.1; }
+.rest-t small { font-size: 12px; color: var(--app-muted); font-weight: 600; }
+.rest-bar.end .rest-t small { color: rgba(255,255,255,.85); }
+.rest-t b { font-size: 24px; font-weight: 800; letter-spacing: -.3px; }
+.rest-bar button { border: 0; border-radius: 11px; padding: 9px 10px; font: inherit; font-size: 15px; font-weight: 700; background: var(--app-field); color: var(--ion-text-color); }
+.rest-bar button.skip { background: var(--c); color: #fff; }
+.rest-bar.end button { background: rgba(255,255,255,.25); color: #fff; }
+.idx.ty { border: 0; background: var(--app-field); border-radius: 8px; min-width: 26px; height: 26px; padding: 0 4px; font-weight: 800; color: var(--ion-text-color); }
+.idx.ty.t-w { background: #ffd60a; color: #3b2a00; }
+.idx.ty.t-d { background: #5e5ce6; color: #fff; }
+.idx.ty.t-f { background: #ff3b30; color: #fff; }
 .done-foot { flex: none; margin-top: auto; padding: 14px 16px calc(12px + env(safe-area-inset-bottom, 0px)); display: grid; gap: 4px; }
 .save-btn { height: 54px; border: 0; border-radius: 16px; background: #fff; color: var(--c); box-shadow: 0 8px 24px rgba(0,0,0,.18);
   font-size: 17px; font-weight: 600; }

@@ -189,3 +189,8 @@ PATTERNS.unshift(
 PATTERNS.push(['(.+) · (.+)', '$1 · $2'], ['([^\\d,]+) (\\d+(?:[.,]\\d+)?)', '$1 $2'])
 PATTERNS.push(['([^\\d,]+) (\\d+%)', '$1 $2'],
   ['Na start masz plan podstawowy: (.+)\\. Zmienisz go w Trening → Edytuj plan – ćwiczenia, dni, ile chcesz treningów\\.', 'You start with the basic plan: $1. Change it in Workout → Edit plan – exercises, days, as many workouts as you want.'])
+Object.assign(EN, { 'Minutnik przerwy': 'Rest timer', 'Startuje sam po odhaczeniu serii': 'Starts by itself after you tick a set', 'Rodzaje serii': 'Set types',
+  'Dotknij numer serii: rozgrzewkowa (R), drop set (D), do upadku (U). Rozgrzewkowe się nie liczą': 'Tap the set number: warm-up (R), drop set (D), to failure (U). Warm-ups don\'t count',
+  'Czas przerwy': 'Rest time', 'Po każdej serii (w trakcie: −15 / +15 s)': 'After every set (during: −15 / +15 s)', 'Przerwa': 'Rest', 'Koniec przerwy': 'Rest over', 'Pomiń': 'Skip',
+  'rozgrzewka · ': 'warm-up · ', 'drop set · ': 'drop set · ', 'do upadku · ': 'to failure · ' })
+PATTERNS.push(['przerwa (.+)', 'rest $1'], ['Rodzaj serii: (.+)', 'Set type: $1'])

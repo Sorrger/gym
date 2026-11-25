@@ -20,7 +20,7 @@ function history(key, session, max = 3, unit = null) {
   const out = []
   for (const o of sorted()) {
     if (o.deload || o.id === session.id || o.date > session.date || (o.date === session.date && o.started >= session.started)) continue
-    let done = (o.ex?.[key] || []).filter(x => x.d && x.w != null)
+    let done = (o.ex?.[key] || []).filter(x => x.d && x.w != null && x.t !== 'w')
     if (unit && done.length && (unit === 'kg') !== done.some(x => x.r != null)) done = []
     if (done.length) out.push({ date: o.date, sets: done })
     if (out.length >= max) break
