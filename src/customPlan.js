@@ -15,6 +15,7 @@ function apply(c) {
   applyPlan(custom.data)
   for (const k of Object.keys(MUSCLES)) if (!(k in DEF_MUSCLES)) delete MUSCLES[k]
   Object.assign(MUSCLES, DEF_MUSCLES, custom.data?.muscles || {})
+  for (const o of Object.values(custom.data?.own || {})) if (!MUSCLES[o.name]) MUSCLES[o.name] = [o.main || [], o.help || []]
   // an alternative nobody described works the same muscles as the exercise it replaces
   for (const [orig, alts] of Object.entries(ALT)) for (const n of alts) if (!MUSCLES[n] && MUSCLES[orig]) MUSCLES[n] = MUSCLES[orig]
 }

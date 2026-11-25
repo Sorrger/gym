@@ -5,7 +5,7 @@
 // Optional reps in reserve per set (x.q: 0, 1, 2, 3 = "3+") refine it:
 // • every set with prefs.rirUp+ left → too light: add weight now, even below the top of the range
 // • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
-import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf, DEF_REPS } from './plan'
+import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf, DEF_REPS, canon } from './plan'
 import { sorted, deloadKg, deloadSets } from './store'
 import { prefs, rirLabel, deloadWords } from './prefs'
 
@@ -53,7 +53,7 @@ export function suggest(g, session) {
     const easy = g.unit !== 's' && last.length >= n && last.every(x => x.q != null && x.q >= prefs.rirUp && x.w >= lo)
     const top = vals.length >= n && (vals.every(v => v >= hi) || easy)
     if (top) {
-      const how = HARDER[g.key + '@' + g.stage] || HARDER[g.key] || HARDER[g.name]
+      const how = HARDER[g.key + '@' + g.stage] || HARDER[g.key] || HARDER[g.name] || HARDER[canon(g.key)] || HARDER[canon(g.name)]
       return { kind: 'up', title: 'Masz cały zakres!', short: how ? 'Utrudnij' : `${hi} ${unit}`,
         text: `Ostatnio: ${vals.join(', ')} ${unit}${qTxt(last)} – ${easy && !vals.every(v => v >= hi) ? `za łatwo, w każdej serii zostało ${prefs.rirUp}+` : `wszystkie serie na górze zakresu (${lo}-${hi})`}.` + (how ? ` Czas utrudnić: ${how}.` : ''), sets: null }
     }

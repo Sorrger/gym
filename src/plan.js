@@ -56,7 +56,25 @@ export function applyPlan(c) {
   for (const k of Object.keys(ALT)) delete ALT[k]
   Object.assign(ALT, JSON.parse(JSON.stringify(DEFAULT_ALT)), c?.alts || {})
   for (const k of Object.keys(ALT)) if (!ALT[k]?.length) delete ALT[k]
+  // the user's renames: a name that is in the plan again (or an own exercise) is a new exercise, so its old mapping is dropped
+  const inUse = new Set([...PLAN.flatMap(p => p.ex.map(e => e[0])), ...Object.keys(ALT), ...Object.values(ALT).flat(), ...Object.values(c?.own || {}).map(o => o.name)])
+  for (const k of Object.keys(OWN_RENAMED)) delete OWN_RENAMED[k]
+  for (const [o, n] of Object.entries(c?.renamed || {})) if (o !== n && !inUse.has(o)) OWN_RENAMED[o] = n
+  for (const k of Object.keys(ORIGIN)) delete ORIGIN[k]
+  const targets = new Set(Object.values(OWN_RENAMED))
+  for (const o of Object.keys(OWN_RENAMED)) if (!targets.has(o)) ORIGIN[resolveName(o)] = o
 }
+// the user's own renames (old → new): their history follows (migrateNames)
+export const OWN_RENAMED = {}
+// current name → the name it had first; built-in tables (INC, WARMUP, HARDER, ASSISTED) are keyed by that
+export const ORIGIN = {}
+export function resolveName(n) {
+  let x = n
+  const seen = new Set()
+  while (!seen.has(x) && (OWN_RENAMED[x] || RENAMED[x])) { seen.add(x); x = OWN_RENAMED[x] || RENAMED[x] }
+  return x
+}
+export const canon = k => { const [b, ...p] = String(k ?? '').split(' · '); return ORIGIN[b] ? [ORIGIN[b], ...p].join(' · ') : k }
 // a workout may point at a training this phone doesn't know (e.g. restored from another phone): add a hidden placeholder
 export function ensurePlans(maxDay) { for (let i = PLAN.length; i <= maxDay; i++) { PLAN[i] = { ...blank(i), hidden: true }; if (!COLORS[PLAN[i].key]) COLORS[PLAN[i].key] = PALETTE[i % PALETTE.length] } }
 // indices of the trainings shown on Start / Plan / Postępy
@@ -84,8 +102,8 @@ export const INC = {
 }
 // machines where the kg number is help (less = harder)
 export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)', 'Nauka podciągania · Ze wspomaganiem'])
-export const isAssisted = g => ASSISTED.has(g.key) || ASSISTED.has(g.name) || /ze wspomaganiem/.test(g.key || '')
-export const incOf = (g, def = 2.5) => INC[g.key] || INC[g.name] || def
+export const isAssisted = g => ASSISTED.has(g.key) || ASSISTED.has(g.name) || ASSISTED.has(canon(g.key)) || ASSISTED.has(canon(g.name)) || /ze wspomaganiem/.test(g.key || '')
+export const incOf = (g, def = 2.5) => INC[g.key] || INC[g.name] || INC[canon(g.key)] || INC[canon(g.name)] || def
 // what to do when a bodyweight/time exercise tops out
 export const HARDER = {
   'Unoszenie nóg w podporze na poręczach': 'proste nogi albo hantelek między stopami',
@@ -238,9 +256,10 @@ export function migrateNames(s) {
   let changed = false
   for (const key of Object.keys(s?.ex || {})) {
     const [base, ...part] = key.split(' · ')
-    const to = RENAMED[base]
-    if (!to) continue
+    const to = resolveName(base)
+    if (to === base) continue
     const nk = [to, ...part].join(' · ')
+    if (s.ex[nk]?.length && s.ex[key]?.length) continue // both names in one workout: keep both, never drop sets
     if (!s.ex[nk]?.length) s.ex[nk] = s.ex[key]
     delete s.ex[key]
     changed = true

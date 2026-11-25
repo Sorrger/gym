@@ -105,7 +105,7 @@ const g = await gh('/gists/' + gistId)
 const backup = await fileOf(g, BACKUP)
 // the phone's own plan, if the user edited it in the app
 const own = await fileOf(g, 'gym-plan.json').catch(() => null)
-if (own?.days) { applyPlan(own); Object.assign(MUSCLES, own.muscles || {}); for (const [o, a] of Object.entries(own.alts || {})) for (const n of a) if (!MUSCLES[n] && MUSCLES[o]) MUSCLES[n] = MUSCLES[o] }
+if (own?.days) { applyPlan(own); Object.assign(MUSCLES, own.muscles || {}); for (const o of Object.values(own.own || {})) if (!MUSCLES[o.name]) MUSCLES[o.name] = [o.main || [], o.help || []]; for (const [o, a] of Object.entries(own.alts || {})) for (const n of a) if (!MUSCLES[n] && MUSCLES[o]) MUSCLES[n] = MUSCLES[o] }
 ensurePlans(Math.max(0, ...Object.values(backup?.sessions || {}).map(x => x.day || 0)))
 Object.values(backup?.sessions || {}).forEach(migrateNames) // old exercise names → current ones
 let auth = (await fileOf(g, AUTH)) || {}

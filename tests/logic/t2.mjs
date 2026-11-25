@@ -234,4 +234,28 @@ ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
   ok(C.BASES.every(b => b.how && b.how.length === 2), 'catalogue: technique cue in both languages')
 }
 
+// ---------- own renames: history follows the exercise ----------
+{
+  const RDL = 'Martwy ciąg rumuński', NEW = 'RDL ze sztangą'
+  const pushEx = plan.PLAN.map(p => p.ex)
+  const days = plan.PLAN.map(p => ({ name: p.name, note: p.note, ex: p.ex.map(e => (e[0] === RDL ? [NEW, ...e.slice(1)] : e)) }))
+  plan.applyPlan({ days, renamed: { [RDL]: NEW } })
+  ok(plan.resolveName(RDL) === NEW && plan.canon(NEW) === RDL, 'rename: old name resolves to the new one, the new one remembers its origin')
+  ok(plan.incOf({ key: NEW, name: NEW }) === 5, 'rename: built-in rules (kg step) still apply under the new name')
+  const s1 = { ex: { [RDL]: kg([80, 80]) } }
+  ok(plan.migrateNames(s1) && s1.ex[NEW]?.length === 2 && !s1.ex[RDL], 'rename: stored sets move to the new name')
+  const s2 = { ex: { [RDL]: kg([80]), [NEW]: kg([90]) } }
+  plan.migrateNames(s2)
+  ok(s2.ex[RDL]?.length === 1 && s2.ex[NEW]?.length === 1, 'rename: a workout with both names keeps both (no sets dropped)')
+  const days3 = days.map(d => ({ ...d, ex: d.ex.map(e => (e[0] === NEW ? ['RDL v3', ...e.slice(1)] : e)) }))
+  plan.applyPlan({ days: days3, renamed: { [RDL]: NEW, [NEW]: 'RDL v3' } })
+  ok(plan.resolveName(RDL) === 'RDL v3' && plan.canon('RDL v3') === RDL, 'rename: chains follow to the newest name')
+  plan.applyPlan({ days: plan.PLAN.map((p, i) => ({ name: p.name, note: p.note, ex: pushEx[i] })), renamed: { [RDL]: NEW } })
+  ok(plan.resolveName(RDL) === RDL, 'rename: a name that is in the plan again is a new exercise (mapping ignored)')
+  plan.applyPlan({ days, renamed: { A: 'B', B: 'A' } })
+  ok(['A', 'B'].includes(plan.resolveName('A')), 'rename: a loop in the map never hangs')
+  plan.applyPlan(null)
+  ok(plan.resolveName(RDL) === RDL && !plan.canon(RDL).includes('RDL'), 'rename: default plan has no own renames')
+}
+
 globalThis.T2 = { n, fails }

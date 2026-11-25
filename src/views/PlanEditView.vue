@@ -11,7 +11,7 @@
     </ion-header>
     <ion-content :fullscreen="true">
       <div class="page" :style="{ '--c': color }">
-        <p class="info">Zmiany są tylko na tym telefonie (i w Twojej kopii na GitHubie). Ćwiczenie z nową nazwą zaczyna własną historię – stare treningi zostają.</p>
+        <p class="info">Zmiany są tylko na tym telefonie (i w Twojej kopii na GitHubie). Gdy zmienisz nazwę ćwiczenia, zapytam, czy przenieść jego historię.</p>
         <p v-if="openHere" class="info warn">Masz otwarty trening tego planu. Zaliczone serie zostaną, ale ćwiczenia usunięte z planu znikną z ekranu treningu.</p>
 
         <div class="card fields">
@@ -79,7 +79,7 @@
         <button class="add press" @click="addEx(); openPicker(list[list.length - 1], 'new')"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
         <button v-if="isCustom && DEFAULT_PLAN[day]" class="reset press" @click="reset">Przywróć wersję podstawową „{{ DEFAULT_PLAN[day].name }}”</button>
         <button v-if="!isNew" class="reset press" @click="removePlan">Usuń ten trening</button>
-        <ExercisePicker :open="!!pickFor" :color="color" :current="pickMode === 'ex' ? pickFor?.name : ''" @close="pickerClosed" @pick="picked" />
+        <ExercisePicker :open="!!pickFor" :color="color" :current="pickMode === 'ex' ? pickFor?.name : ''" :own="Object.values(ownMap)" :used-names="usedNames" @close="pickerClosed" @pick="picked" @del-own="id => delete ownMap[id]" />
         <datalist id="known"><option v-for="k in known" :key="k" :value="k" /></datalist>
       </div>
     </ion-content>
@@ -87,7 +87,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
 import { close, chevronUp, chevronDown, trashOutline, add, libraryOutline } from 'ionicons/icons'
@@ -97,7 +97,7 @@ import { lang } from '../i18n'
 import { PLAN, COLORS, PALETTE, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { MUSCLES, MUSCLE_NAMES } from '../muscles'
 import { custom, savePlan } from '../customPlan'
-import { activeSession } from '../store'
+import { activeSession, state } from '../store'
 import { ask } from '../dialog'
 
 const route = useRoute(), router = useIonRouter()
@@ -115,7 +115,16 @@ const toggleWd = js => { const i = wdSel.value.indexOf(js); if (i >= 0) wdSel.va
 // which other training this weekday belongs to now (picking it here moves it)
 const wdOwner = js => { const o = WEEKDAY_TO_DAY[js]; return wdSel.value.includes(js) ? '✓' : o != null && o !== day && PLAN[o] ? PLAN[o].name : '' }
 const UNITS_ED = [{ v: 'kg', t: 'Ciężar (kg)' }, { v: 'reps', t: 'Powtórzenia' }, { v: 's', t: 'Czas (s)' }]
-const known = [...new Set([...Object.keys(MUSCLES), ...Object.values(ALT).flat()])].sort((a, b) => a.localeCompare(b, 'pl'))
+/** the phone's own exercises (id → { name, g, unit, main, help, range }); saved with the plan */
+const ownMap = reactive(JSON.parse(JSON.stringify(custom.data?.own || {})))
+const ownOf = n => Object.values(ownMap).find(o => o.name === n) || null
+const known = [...new Set([...Object.keys(MUSCLES), ...Object.values(ALT).flat(), ...Object.values(ownMap).map(o => o.name)])].sort((a, b) => a.localeCompare(b, 'pl'))
+// names used anywhere in the plan: an own exercise in use can't be deleted
+const usedNames = computed(() => [...new Set([...PLAN.flatMap((p, i) => (i === day ? [] : p.ex.map(e => e[0]))), ...list.value.map(e => e.name.trim()), ...Object.entries(ALT).flat(2)])])
+// stable id per exercise: kept when the exercise is renamed (history moves with it)
+const ids = { ...(custom.data?.ids || {}) }
+const slug = n => n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+function idOf(n) { if (!n) return ''; if (ids[n]) return ids[n]; const o = ownOf(n); if (o) return o.id; const c = catOf(n); return c ? 'c-' + slug(c.name) : 'x-' + slug(n) }
 const openHere = activeSession()?.day === day
 const isCustom = !!custom.data?.days?.[day]
 
@@ -123,7 +132,11 @@ let uid = 0
 function musMap(m, h) { const o = {}; h.forEach(x => (o[x] = 2)); m.forEach(x => (o[x] = 1)); return o }
 // muscles of a name: the plan's own list first, else the catalogue's
 function catOf(name) { const c = byName(name); return c ? compose(c.base, c.sel) : null }
-function musOf(name) { if (MUSCLES[name]) { const [m = [], h = []] = MUSCLES[name]; return musMap(m, h) } const c = catOf(name); return c ? musMap(c.main, c.help) : {} }
+function musOf(name) {
+  if (MUSCLES[name]) { const [m = [], h = []] = MUSCLES[name]; return musMap(m, h) }
+  const o = ownOf(name); if (o) return musMap(o.main || [], o.help || [])
+  const c = catOf(name); return c ? musMap(c.main, c.help) : {}
+}
 const enName = n => { const c = n && catOf(n.trim()); return c ? c.nameEn : '' }
 // one editable row per plan entry; multi-part ones (pull-up stages etc.) are kept as they are
 function toRow(ex) {
@@ -131,7 +144,7 @@ function toRow(ex) {
   if (parts && typeof parts !== 'string' || parts === 'stages') return { id: ++uid, special: true, raw: ex, name: nm, specialText: parts === 'stages' ? 'Etapy zmieniają się same' : 'Ćwiczenie z kilku części' }
   const r = rangeOf(target) || { lo: 8, hi: 12 }
   const rest = String(target || '').replace(/^\s*\d+(?:-\d+)?\s*×\s*\d+(?:\s*-\s*\d+)?\s*s?/, '') // e.g. " / stronę"
-  return { id: ++uid, alts: [...altOf(nm)], altNew: '', name: nm, orig: nm, tag, sets: nSets(target || '3'), lo: r.lo, hi: r.hi, unit: typeof parts === 'string' ? parts : 'kg', rest, m: musOf(nm), mTouched: false, open: !MUSCLES[nm] }
+  return { id: ++uid, exid: idOf(nm), alts: [...altOf(nm)], altNew: '', name: nm, orig: nm, tag, sets: nSets(target || '3'), lo: r.lo, hi: r.hi, unit: typeof parts === 'string' ? parts : 'kg', rest, m: musOf(nm), mTouched: false, open: !MUSCLES[nm] }
 }
 const name = ref(plan?.name || ''), note = ref(plan?.note || '')
 /** @type {import('vue').Ref<any[]>} */
@@ -151,6 +164,7 @@ async function picked(r) {
     if (r.name !== e.name.trim() && !e.alts.includes(r.name)) { e.alts.push(r.name); (e.altMus ||= {})[r.name] = [r.main, r.help] }
     return
   }
+  if (r.own) ownMap[r.own.id] = r.own
   const twice = list.value.some(x => x !== e && x.name.trim() === r.name)
   Object.assign(e, { name: r.name, unit: r.unit, lo: r.range[0], hi: r.range[1], rest: '', m: MUSCLES[r.name] ? musOf(r.name) : musMap(r.main, r.help), mTouched: !MUSCLES[r.name], fromCat: true, open: false })
   if (twice) await ask({ icon: close, color: color.value, title: 'To ćwiczenie już jest w planie', message: `„${r.name}” jest w tym treningu drugi raz. Zmień opcje albo usuń jedno z nich, inaczej plan się nie zapisze.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
@@ -163,7 +177,7 @@ function pickerClosed() {
 }
 function nameChanged(e) {
   if (e.mTouched && !e.fromCat) return // muscles the user set by hand stay
-  const nm = e.name.trim(), c = !MUSCLES[nm] && catOf(nm)
+  const nm = e.name.trim(), c = !MUSCLES[nm] && (ownOf(nm) || catOf(nm))
   e.m = musOf(nm); e.fromCat = !!c; e.mTouched = !!c
   if (c) e.unit = c.unit
   if (!MUSCLES[nm] && !c) e.open = true
@@ -179,12 +193,13 @@ async function removeAt(i) {
 function addAlt(e) { const n = e.altNew.trim().replace(/\s+/g, ' ').replace(/·/g, '-'); if (n && n !== e.name.trim() && !e.alts.includes(n)) e.alts.push(n); e.altNew = '' }
 function addEx() { list.value.push({ id: ++uid, alts: [], altNew: '', name: '', sets: 3, lo: 8, hi: 12, unit: 'kg', rest: '', m: {}, mTouched: false, open: true }) }
 
-function build() {
+const clean = n => n.trim().replace(/\s+/g, ' ')
+function build(moved = new Set()) {
   const names = new Set(), muscles = { ...(custom.data?.muscles || {}) }, alts = JSON.parse(JSON.stringify(ALT))
   const ex = []
   for (const e of list.value) {
     if (e.special) { ex.push(e.raw); names.add(e.name); continue }
-    const nm = e.name.trim().replace(/\s+/g, ' ')
+    const nm = clean(e.name)
     if (!nm) throw new Error('Każde ćwiczenie musi mieć nazwę.')
     if (nm.includes('·')) throw new Error('Nazwa nie może zawierać znaku „·”.')
     if (names.has(nm)) throw new Error(`„${nm}” jest w planie dwa razy.`)
@@ -192,7 +207,7 @@ function build() {
     let lo = Math.max(1, Math.round(+e.lo || 1)), hi = Math.max(1, Math.round(+e.hi || lo))
     if (hi < lo) [lo, hi] = [hi, lo] // typed 12–8
     const target = `${e.sets} × ${lo}${hi > lo ? '-' + hi : ''}${e.unit === 's' ? ' s' : ''}${e.rest || ''}`
-    const row = [nm, target, nm === e.orig ? e.tag ?? null : null]
+    const row = [nm, target, nm === e.orig || moved.has(e.orig) ? e.tag ?? null : null]
     if (e.unit !== 'kg') row.push(e.unit)
     ex.push(row)
     const m = Object.keys(e.m).filter(k => e.m[k] === 1), h = Object.keys(e.m).filter(k => e.m[k] === 2)
@@ -205,12 +220,47 @@ function build() {
   return { ex, muscles, alts }
 }
 
+// does any stored workout have sets of this exercise (or one of its parts)?
+const hasHistory = n => Object.values(state.sessions).some(s => Object.entries(s.ex || {}).some(([k, a]) => k.split(' · ')[0] === n && a?.some(x => x.d)))
+
 async function save() {
-  let b
-  try { b = build() } catch (err) { await ask({ icon: close, color: color.value, title: 'Popraw plan', message: err.message, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] }); return }
+  const bad = msg => ask({ icon: close, color: color.value, title: 'Popraw plan', message: msg, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
+  try { build() } catch (err) { await bad(err.message); return }
+  // renamed exercises that have history: move it to the new name, or start from zero
+  const renames = list.value.filter(e => !e.special && e.orig && clean(e.name) !== e.orig && hasHistory(e.orig)).map(e => [e.orig, clean(e.name)])
+  let moved = new Set()
+  if (renames.length) {
+    const { role } = await ask({ icon: libraryOutline, color: color.value, title: 'Zmieniłeś nazwę ćwiczenia',
+      message: renames.map(([o, n]) => `„${o}” → „${n}”`).join('\n') + '\n\nPrzenieść historię (serie, rekordy, progres) na nową nazwę? Zmiana obejmie też inne treningi z tym ćwiczeniem.',
+      buttons: [{ text: 'Przenieś historię', role: 'move', kind: 'primary' }, { text: 'Nowe ćwiczenie od zera', role: 'fresh', kind: 'soft' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+    if (role !== 'move' && role !== 'fresh') return
+    if (role === 'move') moved = new Set(renames.map(r => r[0]))
+  }
+  const b = build(moved)
   const days = Array.from({ length: Math.max(PLAN.length, day + 1) }, (_, i) => custom.data?.days?.[i] || null)
   days[day] = { name: name.value.trim() || DEFAULT_PLAN[day]?.name || 'Trening ' + (day + 1), note: note.value.trim(), ex: b.ex, ...(ownColor.value ? { color: ownColor.value } : {}) }
-  await savePlan({ ...(custom.data || {}), days, muscles: b.muscles, alts: b.alts, wd: wdMap() }, back())
+  const renamed = { ...(custom.data?.renamed || {}) }
+  for (const [o, n] of renames.filter(r => moved.has(r[0]))) {
+    for (const k of Object.keys(renamed)) if (renamed[k] === o) renamed[k] = n
+    renamed[o] = n; delete renamed[n]
+    // the same exercise in the other trainings gets the new name too (shared history stays shared)
+    PLAN.forEach((p, i) => {
+      if (i === day || !p.ex.some(x => x[0] === o)) return
+      const d = days[i] || { name: p.name, note: p.note, ex: p.ex }
+      days[i] = { ...d, ex: d.ex.map(x => (x[0] === o ? [n, ...x.slice(1)] : x)) }
+    })
+    for (const k of Object.keys(b.alts)) {
+      b.alts[k] = b.alts[k].map(a => (a === o ? n : a))
+      if (k === o) { b.alts[n] = [...new Set([...(b.alts[n] || []), ...b.alts[k]])].filter(a => a !== n); delete b.alts[k] }
+    }
+    if (b.muscles[o] && !b.muscles[n]) b.muscles[n] = b.muscles[o]
+    if (!b.muscles[n] && MUSCLES[o]) b.muscles[n] = MUSCLES[o]
+    ids[n] = ids[o] || idOf(o); delete ids[o]
+  }
+  for (const e of list.value) if (!e.special && clean(e.name) && !moved.has(e.orig) && !ids[clean(e.name)]) ids[clean(e.name)] = idOf(clean(e.name))
+  // an own exercise keeps its muscles in the plan's muscle list, so stats and the body map know it
+  for (const o of Object.values(ownMap)) if (!b.muscles[o.name] && !MUSCLES[o.name]) b.muscles[o.name] = [o.main || [], o.help || []]
+  await savePlan({ ...(custom.data || {}), days, muscles: b.muscles, alts: b.alts, wd: wdMap(), own: { ...ownMap }, ids, renamed }, back())
 }
 function wdMap(without = false) {
   const wd = { ...WEEKDAY_TO_DAY }

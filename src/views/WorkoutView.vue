@@ -162,7 +162,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, useIonRouter  } from '@ionic/vue'
 import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal } from 'ionicons/icons'
 import { prefs, rirTop, rirLabel, deloadWords, SET_TYPES, SET_TYPE_LABEL } from '../prefs'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn } from '../plan'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, cancelDeload, swapExercise, dropEmptyManual } from '../store'
 
@@ -249,7 +249,7 @@ async function showTip(list) {
 
 function warm(g) {
   if (!prefs.warmup) return null
-  const bar = WARMUP[g.name]
+  const bar = WARMUP[g.name] ?? WARMUP[canon(g.name)]
   if (bar == null || g.label) return null
   const arr = sets(g.key)
   if (arr.some(x => x.d)) return null // hidden once the first working set is done
