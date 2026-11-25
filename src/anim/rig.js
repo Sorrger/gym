@@ -223,9 +223,11 @@ export function draw(scene, pose) {
   if (J.K2 !== J.K) out.push(...legShapes(J.H, J.K2, J.A2, 'farf'), foot(J.K2, J.A2, pose.fo2 ?? pose.fo, 'far'))
   if (J.E2 !== J.E) { out.push(...both.flatMap(x => gear(x, J, pose, false))); out.push(...armShapes(J.S, J.E2, J.W2, 'farf'), circle(J.W2, FIG.hand - 0.5, 'far')) }
   out.push(...g.filter(x => x.z === 'back').flatMap(x => gear(x, J, pose, true)))
-  out.push(line(J.S, J.C, 12, 'limb'), torsoSide(J, 'bodyf'), circle(J.C, FIG.head, 'body'))
-  const top = ang(J.S, J.C)
-  out.push({ t: 'path', a: { d: arc(J.C, FIG.head + 0.5, top + 25, top - 115), 'stroke-width': 4 }, c: 'hair' })
+  // which way the back of the head is (towards L): hair there, nose on the other side
+  const top = ang(J.S, J.C), dl = ((Math.atan2(J.L.y, J.L.x) * 180 / Math.PI - top + 540) % 360) - 180, sb = dl >= 0 ? 1 : -1
+  const nose = at(at(J.C, top - sb * 80, FIG.head - 0.5), top + 180, 1)
+  out.push(line(J.S, J.C, 12, 'limb'), torsoSide(J, 'bodyf'), circle(J.C, FIG.head, 'body'), circle(nose, 3.4, 'body'))
+  { const h0 = top - sb * 25, h1 = top + sb * 115; out.push({ t: 'path', a: { d: arc(J.C, FIG.head + 0.5, Math.max(h0, h1), Math.min(h0, h1)), 'stroke-width': 4 }, c: 'hair' }) }
   out.push(...legShapes(J.H, J.K, J.A, 'bodyf'), foot(J.K, J.A, pose.fo))
   out.push(...paint(J, help.filter(m => !ARMS.includes(m)), 'accent soft'), ...paint(J, main.filter(m => !ARMS.includes(m)), 'accent'))
   out.push(...g.filter(x => x.z === 'mid').flatMap(x => gear(x, J, pose, true)))
