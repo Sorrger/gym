@@ -100,18 +100,21 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - **User said: do not change the training plan anymore unless asked.**
 - Training priorities (from the user): chest + back first; upper chest emphasis (Nov 21 2026, user asked): incline DB (Push) and Smith incline (Upper) 4 sets each, Push cable fly is low-to-high ('Rozpiętki na bramie z dołu do góry', separate history) → chest ~17 sets/week, back ~17-18 effective; rear delts weaker (reverse butterfly 3 × 12-15 added on Upper right after butterfly, same machine); cable lateral raise 3 × 10-15 / side at the end of Upper (added, removed, then added back – final, Nov 2026, user) → side delts 7 sets/week; arms: cable triceps+biceps removed from Upper (Nov 2026, user: arms big enough; arms get Push/Pull work only); legs: one day on purpose (maintenance), Zercher before RDL (Nov 2026, user asked); after the research docs (Nov 21 2026, user asked): Pull: T-bar replaced by seated cable row with a wide overhand bar 3 × 8-10 (upper back; lats come from DB row + pulldown; separate history), order: negatives → DB row → cable row → wide lat pulldown 3 × 8-10 (user: machines after free weights) (user can't do many negatives yet; same name as on Upper = shared history) and hammer curls 2 × 10-12 after the incline curl; Nogi: seated leg curl (renamed from 'Uginanie nóg na maszynie', history kept via RENAMED), calves split into standing 2 + seated 2 – don't flag legs as a problem. Keep personal body data out of this public repo.
 
+## Done Nov 25 2026 (second round)
+- Settings = menu (`/settings`) + section pages `/settings/:sec` (look, lang, training, progress, weight, backup, strava) – same SettingsView, `sec` fixed per page instance; Home backup warning → `/settings/backup`.
+- Colour per training: editor swatches (PALETTE) → `days[i].color`, applied in `applyPlan` (default colours kept in DEFAULT_COLORS).
+- Records: gold pop-up "Nowy rekord!" when a ticked set beats the best (earlier workouts + today's sets; assisted = less; none in deload; vibrate), gold "Nowe rekordy" card on the summary (was → now), gold trophies in Postępy. No badges (user).
+- English round 2 (crawler: only the first-start page left untranslated in the crawl, which runs it in Polish).
+- Tests moved into the repo: `npm test` (tests/logic, 154 cases) + tests/e2e Playwright scripts (see tests/README.md); CI `.github/workflows/test.yml` (npm test + build). `PROJECT_REVIEW.md` = structure review + comparison with Hevy/Strong/HeavySet + business model.
+
 ## TODO (user, Nov 25 2026 – next sessions, in this spirit)
-- Settings split into sections / sub-pages (e.g. Wygląd, Trening, Progresja, Waga, Kopia, Strava, Język, Konto) instead of one long page.
 - Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).
 - Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).
-- Pick a colour (and maybe icon) per training in the plan editor.
 - Exercise library (user, Nov 25): full catalogue of (practically) all existing gym exercises, with properly researched muscles (main / helping, from EMG / training literature), equipment, category; users can add their own custom exercises (name, muscles, unit) next to the catalogue. Own custom icons, "how to do it" (short description, maybe GIF/animation – optional), muscles; choose from it in the editor.
-- NO badges (user changed mind): only records, shown like now but nicer (better record cards/moments).
 - Database + sign-in (Google / Apple), everything per account (see "Accounts + own database").
-- Review the overall project structure (code organisation, tests in the repo/CI, how commercial-ready it is).
+- Structure follow-ups from PROJECT_REVIEW.md: one sync adapter, split WorkoutView/SettingsView/ProgressView into components, vue-i18n keys before stores, TS+ESLint, error reports, version in Settings. Biggest feature gap vs Hevy/Strong: automatic rest timer after a ticked set; then set types/supersets, plate calculator per set, notes, body measurements, CSV import/export.
 - Research: better watch data – Garmin (Connect IQ / Health API, official partner access), Apple Health / Google Health Connect (via Capacitor) for HR, calories, sleep, body weight.
 - Research: Strava for other users – is it legal/allowed by the Strava API agreement (rate limits, brand rules, writing custom descriptions to other people's activities, per-user OAuth on our own backend instead of the owner's GitHub Action).
-- Finish English translations (remaining dialogs/coach texts; crawler /tmp/pw/crawl.mjs approach).
 
 ## Ideas the user floated (not done)
 - Shrugs removed from Pull (Nov 2026, user). iOS Live Activity / Dynamic Island workout status: impossible for a PWA (needs a native app + Mac) – told the user.
