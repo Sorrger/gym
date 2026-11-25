@@ -154,7 +154,7 @@ function foot(K, A, fo, cls = 'body') {
 }
 
 function gear(g, J, pose, near) {
-  const W = g.at === 'hold' && J.P ? J.P : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
+  const W = g.at === 'hold' && J.P ? J.P : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : g.at === 'hip' ? J.H : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
   switch (g.k) {
     case 'bb': return [{ t: 'plate', at: W, r: g.r || 22, far: !near }]
     case 'pl': return [{ t: 'plate', at: W, r: g.r || 15, far: !near }]
@@ -172,10 +172,14 @@ function gear(g, J, pose, near) {
     case 'footband': { const y = Math.max(J.A.y, J.A2.y) + 4, l = Math.min(J.A.x, J.A2.x) - 6, r = Math.max(J.A.x, J.A2.x) + 6; return [line({ x: l, y: g.top }, { x: l, y }, 2.5, 'band'), line({ x: l, y }, { x: r, y }, 2.5, 'band'), line({ x: r, y }, { x: r, y: g.top }, 2.5, 'band')] } // band from the bar under the feet
     case 'backpad': { const a = add(add(J.H, J.L, 17), J.d, -14), b = add(add(J.S, J.L, 17), J.d, 16); return [line(a, b, 13, 'pad')] } // machine back pad moving with the body
     case 'lever': { // machine arm from a fixed pivot (or the knee / elbow) to the hands or the shin roller
-      const P0 = g.pivot === 'knee' ? J.K : g.pivot === 'elbow' ? J.E : g.pivot
-      const T = g.to === 'roller' ? at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13) : W
+      const P0 = g.pivot === 'knee' ? J.K : g.pivot === 'elbow' ? J.E : g.pivot === 'hip' ? J.H : g.pivot
+      const T = g.to === 'shoulder' ? add(J.S, J.L, 14) : g.to === 'hip' ? add(J.H, J.L, -16) : g.to === 'foot' ? J.A : g.to === 'roller' ? at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13) : W
       return [line(P0, T, 7, 'gear frame'), circle(P0, 6, 'gear')]
     }
+    case 'armpads': return [line(lerpPt(J.SR, J.E, 0.45), at(J.E, ang(J.SR, J.E), 8), 12, 'pad'), line(lerpPt(J.SL, J.E2, 0.45), at(J.E2, ang(J.SL, J.E2), 8), 12, 'pad'), circle(J.SR, 5, 'gear'), circle(J.SL, 5, 'gear')] // lateral-raise machine pads on the upper arms
+    case 'pad': { const c = g.at === 'shoulder' ? add(J.S, J.L, 14) : g.at === 'hip' ? add(J.H, J.L, -16) : W; return [circle(c, g.r || 10, 'pad')] } // round machine pad on the body
+    case 'kneepads': { const o = g.side ?? 1; return [circle({ x: J.K.x + 13 * o, y: J.K.y }, 9, 'pad'), circle({ x: J.K2.x - 13 * o, y: J.K2.y }, 9, 'pad')] } // ab/adductor machine pads outside (1) or inside (-1) the knees
+    case 'deck': return [line({ x: 26, y: g.y }, J.W, 6, 'gear frame'), line({ x: -26, y: g.y }, J.W2, 6, 'gear frame'), line({ x: -34, y: g.y }, { x: 34, y: g.y }, 7, 'gear frame')] // pec-deck arms hanging from pivots above the shoulders
     case 'kneepad': { const d = ang(J.H, J.K), c = at(lerpPt(J.H, J.K, 0.85), d - 90, 14); return [line(at(c, d, -16), at(c, d, 16), 10, 'pad')] } // machine pad on top of the thighs
     case 'bar2': { const d = ang(J.W2, J.W), m = lerpPt(J.W, J.W2, 0.5); return [line({ x: m.x, y: m.y }, { x: m.x, y: g.top ?? -330 }, 1.5, 'cable'), line(at(J.W2, d, -14), at(J.W, d, 14), 5, 'gear frame')] } // straight bar between both hands (front view)
     case 'shin': { const c = at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13); return [circle(c, 9, 'pad'), circle(c, 3, 'gear')] } // roller on the front (-1) or back (+1) of the shin

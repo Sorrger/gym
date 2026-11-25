@@ -1,7 +1,7 @@
 // Exercise animations. Each scene uses the shared figure (model.js): static shapes + a frame(k) for the moving parts,
 // k = 0 (start) … 1 (end of the movement). Roles (c) become CSS classes in ExerciseAnim.vue, so colours follow the theme.
 import { rigScene } from './library'
-import { frameBox } from './rig'
+import { frameBox, joints } from './rig'
 
 const BENCH_CUES = {
   pl: ['Ściągnij łopatki, stopy mocno na ziemi.', 'Opuść sztangę powoli do dołu klatki.', 'Wypchnij w górę, łokcie ok. 45° od tułowia.'],
@@ -20,10 +20,40 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   // machines get a weight stack behind the figure (left in side view, right in front view)
   if (sel.eq === 'mc' && !NO_STACK.has(baseId) && !(baseId === 'calf-raise' && sel.pos === 'legpress')) {
     const b = scene.box
-    scene.props = [{ k: 'stack', x: scene.view === 'f' ? b.x + b.w + 4 : b.x + 6 }, ...(scene.props || [])]
+    const x = scene.view === 'f' ? b.x + b.w + 4 : b.x + 6
+    scene.props = [{ k: 'stack', x }, ...(scene.props || [])]
+    const own = MACHINE[baseId]?.(joints(scene.frames[0], scene.view), sel)
+    if (own) scene.gear = own
+    // the handles hang on a cable from the stack, unless a machine arm or a cable is drawn already
+    if (!(scene.gear || []).some(g => ['lever', 'cable', 'pole', 'plat', 'backpad', 'deck', 'armpads', 'bar2', 'kneepads', 'pad', 'shin'].includes(g.k))) {
+      // pulley at the average height of the hands (like an adjustable cable column)
+      const ys = scene.frames.map(f => joints(f, scene.view).W.y), y = Math.max(-220, Math.min(-30, ys.reduce((a, b) => a + b, 0) / ys.length))
+      scene.gear = [{ k: 'cable', from: { x, y }, both: scene.view === 'f' }, ...(scene.gear || [])]
+    }
+    scene.box = frameBox(scene)
+  }
+  // Smith machine: the bar runs in vertical rails
+  if (sel.eq === 'sm') {
+    const xs = scene.frames.map(f => { const J = joints(f, scene.view); return (J.P || J.W).x })
+    const x = xs.reduce((a, b) => a + b, 0) / xs.length
+    scene.props = [{ k: 'line', x1: x - 6, y1: 0, x2: x - 6, y2: -340, w: 6, c: 'gear frame' }, { k: 'line', x1: x - 20, y1: -340, x2: x + 8, y2: -340, w: 7, c: 'gear frame' }, ...(scene.props || [])]
     scene.box = frameBox(scene)
   }
   return scene
+}
+// machine parts for exercises whose free-weight scene doesn't show the machine (J0 = joints of the first frame)
+const MACHINE = {
+  'torso-rotation': J0 => [{ k: 'lever', pivot: { x: J0.S.x + 10, y: J0.S.y - 70 } }, { k: 'handle' }],
+  'hip-abduction': (J0, sel) => (sel.pos === 'stand' ? null : [{ k: 'kneepads', side: 1 }]),
+  'hip-adduction': () => [{ k: 'kneepads', side: -1 }],
+  'glute-kickback': J0 => [{ k: 'lever', pivot: { x: J0.H.x - 10, y: J0.H.y + 34 }, to: 'roller', side: 1 }, { k: 'shin', side: 1 }],
+  'calf-raise': (J0, sel) => (sel.pos === 'stand' || !sel.pos ? [{ k: 'lever', pivot: { x: J0.S.x - 90, y: J0.S.y + 70 }, to: 'shoulder' }, { k: 'pad', at: 'shoulder' }] : null),
+  'back-extension': () => [{ k: 'lever', pivot: 'hip', to: 'shoulder' }, { k: 'pad', at: 'shoulder' }],
+  'hip-thrust': J0 => [{ k: 'lever', pivot: { x: J0.H.x - 80, y: J0.H.y + 16 }, to: 'hip' }, { k: 'pad', at: 'hip', r: 12 }],
+  'tibialis-raise': () => [{ k: 'shin', side: -1 }],
+  'belt-squat': J0 => [{ k: 'cable', from: { x: J0.H.x, y: -4 }, at: 'hip' }],
+  'reverse-hyper': () => [{ k: 'lever', pivot: { x: 40, y: -112 }, to: 'foot' }, { k: 'shin' }],
+  'sissy-squat': () => [{ k: 'shin', side: -1 }],
 }
 const NO_STACK = new Set(['leg-press', 'hack-squat', 'pendulum', 'sled-push'])
 
