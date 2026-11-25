@@ -42,7 +42,7 @@ export const BASES = [
     o: { eq: ['bb', 'db', 'sm'], angle: ['flat', 'incline', 'decline'], width: ['normal', 'wide', 'close'], grip: ['over', 'neutral', 'under'] }, when: { grip: ['bb', 'db'] },
     x: { 'width:close': { m: ['triceps'] }, 'grip:under': { h: ['biceps'] } }, k: 'klata wąskim chwytem close grip triceps płaska skośna',
     how: ['Łopatki ściągnięte, stopy na ziemi, opuszczaj do dolnej części klatki.', 'Shoulder blades pinched, feet down, lower to the lower chest.'] },
-  { id: 'chest-press', akaEn: 'chest press machine, Hammer Strength press', aka: 'maszyna na klatę, hammer', g: 'chest', pl: 'Wyciskanie na maszynie', en: 'Machine chest press', m: ['chest'], h: ['shoulders', 'triceps'], r: [8, 12],
+  { id: 'chest-press', only: { 'eq:cb': { angle: ['flat', 'incline'] } }, akaEn: 'chest press machine, Hammer Strength press', aka: 'maszyna na klatę, hammer, wyciskanie na wyciągu', g: 'chest', pl: 'Wyciskanie przed siebie (chest press)', en: 'Chest press', m: ['chest'], h: ['shoulders', 'triceps'], r: [8, 12],
     o: { eq: ['mc', 'cb'], angle: ['flat', 'incline', 'decline'], grip: ['over', 'neutral'], side: ['both', 'one'] }, k: 'hammer strength',
     how: ['Uchwyty na wysokości środka klatki, łokcie lekko pod kątem.', 'Handles at mid-chest, elbows slightly tucked.'] },
   { id: 'fly', akaEn: 'flyes, pec deck, cable crossover, butterfly', aka: 'brama, krzyżowanie linek, butterfly, motylek, pec deck', g: 'chest', pl: 'Rozpiętki', en: 'Fly', m: ['chest'], h: ['shoulders'], r: [10, 15],
@@ -60,7 +60,7 @@ export const BASES = [
     how: ['Zejdź do ok. 90° w łokciu, barki z dala od uszu.', 'Lower to about 90° at the elbow, shoulders away from the ears.'] },
   { id: 'pullover', akaEn: 'DB pullover', aka: 'przenoszenie hantla za głowę', g: 'chest', pl: 'Przenoszenie ciężaru za głowę (pullover)', en: 'Pullover', m: ['chest', 'lats'], h: ['triceps'], r: [10, 12],
     o: { eq: ['db', 'cb', 'mc'] }, how: ['Ramiona prawie proste, opuszczaj ciężar za głowę do rozciągnięcia.', 'Arms almost straight, lower behind the head to a stretch.'] },
-  { id: 'landmine-press', akaEn: 'landmine, angled press', aka: 'mina', g: 'chest', pl: 'Wyciskanie landmine', en: 'Landmine press', m: ['chest', 'shoulders'], h: ['triceps', 'abs'], r: [8, 12],
+  { id: 'landmine-press', only: { 'side:both': { pos: ['stand'] } }, akaEn: 'landmine, angled press', aka: 'mina', g: 'chest', pl: 'Wyciskanie landmine', en: 'Landmine press', m: ['chest', 'shoulders'], h: ['triceps', 'abs'], r: [8, 12],
     o: { eq: ['bb'], pos: ['stand', 'kneel'], side: ['one', 'both'] }, how: ['Koniec sztangi w rogu, wypychaj w górę i w przód.', 'Bar end in a corner, press up and forward.'] },
   { id: 'floor-press', akaEn: 'floor press', aka: 'wyciskanie z podłogi', g: 'chest', pl: 'Wyciskanie leżąc na podłodze', en: 'Floor press', m: ['chest', 'triceps'], h: ['shoulders'], r: [6, 10],
     o: { eq: ['bb', 'db', 'kb'] }, how: ['Łokcie dotykają podłogi, pauza i wypchnij.', 'Elbows touch the floor, pause, press.'] },
@@ -76,8 +76,8 @@ export const BASES = [
     o: { eq: ['bb', 'sm', 'ez'], grip: ['over', 'under'], width: ['normal', 'wide'] }, x: { 'width:wide': { m: ['reardelts'] } }, k: 'pendlay yates',
     v: [['bent', 'klasycznie', 'classic'], ['pendlay', 'z podłogi (Pendlay)', 'Pendlay'], ['yates', 'tułów wyżej (Yates)', 'Yates']],
     how: ['Tułów pochylony ok. 45°, plecy proste, sztanga do brzucha.', 'Torso at about 45°, flat back, bar to the belly.'] },
-  { id: 'db-row', akaEn: 'one-arm row, DB row, Kroc row', aka: 'wiosło hantlem, kroc row', g: 'back', pl: 'Wiosłowanie hantlem', en: 'Dumbbell row', m: ['lats', 'upperback'], h: ['biceps', 'reardelts'], r: [8, 12],
-    o: { eq: ['db', 'kb'], pos: ['bench', 'bent', 'chest'], side: ['one', 'both'] },
+  { id: 'db-row', only: { 'pos:bench': { side: ['one'] } }, akaEn: 'one-arm row, DB row, Kroc row', aka: 'wiosło hantlem, kroc row', g: 'back', pl: 'Wiosłowanie hantlem', en: 'Dumbbell row', m: ['lats', 'upperback'], h: ['biceps', 'reardelts'], r: [8, 12],
+    o: { eq: ['db'], pos: ['bench', 'bent', 'chest'], side: ['one', 'both'] },
     how: ['Łokieć prowadź do biodra, na dole pełne rozciągnięcie.', 'Drive the elbow to the hip, full stretch at the bottom.'] },
   { id: 'cable-row', akaEn: 'seated row, low row, cable row', aka: 'linka do brzucha, wioślarz, wyciąg dolny', g: 'back', pl: 'Wiosłowanie na wyciągu dolnym', en: 'Seated cable row', m: ['upperback', 'lats'], h: ['biceps', 'reardelts'], r: [8, 12],
     o: { eq: ['cb'], grip: ['neutral', 'over', 'under'], width: ['close', 'wide'], side: ['both', 'one'] },
@@ -98,7 +98,7 @@ export const BASES = [
     how: ['Ręce prawie proste, ściągaj łukiem do ud.', 'Arms almost straight, pull in an arc to the thighs.'] },
   { id: 'shrug', akaEn: 'shrugs, traps', aka: 'szrugsy, kaptury', g: 'back', pl: 'Unoszenie barków (szrugsy)', en: 'Shrug', m: ['traps'], h: ['forearms'], r: [10, 15],
     o: { eq: ['bb', 'db', 'mc', 'sm', 'cb', 'hx'] }, how: ['Barki prosto w górę do uszu, pauza, bez kręcenia.', 'Shoulders straight up to the ears, pause, no rolling.'] },
-  { id: 'face-pull', akaEn: 'face pulls', aka: 'face pulle, lina do twarzy', g: 'back', pl: 'Przyciąganie liny do twarzy (face pull)', en: 'Face pull', m: ['reardelts'], h: ['upperback', 'traps'], r: [12, 15],
+  { id: 'face-pull', only: { 'eq:bd': { pos: ['stand', 'seat'] } }, akaEn: 'face pulls', aka: 'face pulle, lina do twarzy', g: 'back', pl: 'Przyciąganie liny do twarzy (face pull)', en: 'Face pull', m: ['reardelts'], h: ['upperback', 'traps'], r: [12, 15],
     o: { eq: ['cb', 'bd'], pos: ['stand', 'seat', 'kneel'] }, how: ['Lina do czoła, łokcie wysoko, na końcu kciuki do tyłu.', 'Rope to the forehead, elbows high, thumbs back at the end.'] },
   { id: 'reverse-fly', akaEn: 'reverse pec deck, rear delt fly', aka: 'odwrotny butterfly, tył barków', g: 'back', pl: 'Odwrotne rozpiętki', en: 'Reverse fly', m: ['reardelts'], h: ['upperback'], r: [12, 15],
     o: { eq: ['mc', 'db', 'cb'], pos: ['seat', 'bent', 'chest'] }, when: { pos: ['db', 'cb'] },
@@ -112,17 +112,17 @@ export const BASES = [
     o: { eq: ['bw'], grip: ['over', 'under', 'neutral'] }, how: ['Pełny zwis, barki aktywne, oddychaj spokojnie.', 'Full hang, active shoulders, breathe calmly.'] },
 
   // ---------- shoulders ----------
-  { id: 'ohp', akaEn: 'OHP, military press, shoulder press, strict press, Z-press', aka: 'żołnierskie, wyciskanie żołnierskie, military press, OHP, Z-press', g: 'shoulders', pl: 'Wyciskanie nad głowę', en: 'Overhead press', m: ['shoulders'], h: ['triceps', 'traps'], r: [6, 10],
+  { id: 'ohp', only: { 'eq:mc': { pos: ['seat'] }, 'eq:bb': { side: ['both'] }, 'eq:sm': { pos: ['seat', 'stand'], side: ['both'] } }, akaEn: 'OHP, military press, shoulder press, strict press, Z-press', aka: 'żołnierskie, wyciskanie żołnierskie, military press, OHP, Z-press', g: 'shoulders', pl: 'Wyciskanie nad głowę', en: 'Overhead press', m: ['shoulders'], h: ['triceps', 'traps'], r: [6, 10],
     o: { eq: ['bb', 'db', 'sm', 'mc', 'kb'], pos: ['stand', 'seat', 'floor'], side: ['both', 'one'] }, x: { 'pos:stand': { h: ['abs'] } },
     how: ['Brzuch napięty, sztanga po linii twarzy, na górze głowa pod ciężarem.', 'Brace, bar past the face, head through at the top.'] },
   { id: 'arnold', akaEn: 'Arnolds', aka: 'arnoldki', g: 'shoulders', pl: 'Wyciskanie Arnolda (arnoldki)', en: 'Arnold press', m: ['shoulders'], h: ['triceps'], r: [8, 12],
     o: { eq: ['db'], pos: ['seat', 'stand'] }, how: ['Zaczynasz dłońmi do siebie, w trakcie obracasz na zewnątrz.', 'Start palms facing you, rotate out as you press.'] },
-  { id: 'lateral-raise', akaEn: 'laterals, side raises, side delt raise', aka: 'wznosy bokiem, boki barków', g: 'shoulders', pl: 'Unoszenie ramion bokiem', en: 'Lateral raise', m: ['shoulders'], h: ['traps'], r: [10, 15],
+  { id: 'lateral-raise', only: { 'eq:mc': { pos: ['seat'] }, 'eq:cb': { pos: ['stand', 'seat'] }, 'eq:bd': { pos: ['stand'] } }, akaEn: 'laterals, side raises, side delt raise', aka: 'wznosy bokiem, boki barków', g: 'shoulders', pl: 'Unoszenie ramion bokiem', en: 'Lateral raise', m: ['shoulders'], h: ['traps'], r: [10, 15],
     o: { eq: ['db', 'cb', 'mc', 'bd'], pos: ['stand', 'seat', 'incline', 'lying'], side: ['both', 'one'] }, k: 'boki barków wznosy',
     how: ['Unoś do wysokości barków, łokieć prowadzi, bez machania.', 'Raise to shoulder height, elbow leads, no swinging.'] },
-  { id: 'front-raise', akaEn: 'front raises, front delt raise', aka: 'wznosy w przód', g: 'shoulders', pl: 'Unoszenie ramion w przód', en: 'Front raise', m: ['shoulders'], h: ['chest'], r: [10, 15],
+  { id: 'front-raise', only: { 'eq:bb': { side: ['both'] }, 'eq:pl': { side: ['both'] } }, akaEn: 'front raises, front delt raise', aka: 'wznosy w przód', g: 'shoulders', pl: 'Unoszenie ramion w przód', en: 'Front raise', m: ['shoulders'], h: ['chest'], r: [10, 15],
     o: { eq: ['db', 'bb', 'cb', 'pl'], side: ['both', 'one'] }, how: ['Do wysokości oczu, ramię prawie proste.', 'To eye level, arm almost straight.'] },
-  { id: 'upright-row', akaEn: 'upright rows, high pull', aka: 'wiosłowanie stojąc, sztanga pod brodę', g: 'shoulders', pl: 'Podciąganie wzdłuż tułowia', en: 'Upright row', m: ['shoulders'], r: [10, 12],
+  { id: 'upright-row', akaEn: 'upright rows', aka: 'wiosłowanie stojąc, sztanga pod brodę', g: 'shoulders', pl: 'Podciąganie wzdłuż tułowia', en: 'Upright row', m: ['shoulders'], r: [10, 12],
     o: { eq: ['bb', 'ez', 'db', 'cb', 'sm'], width: ['wide', 'close'] }, x: { 'width:close': { m: ['traps'] } }, h: ['traps', 'biceps'],
     how: ['Szeroki chwyt, łokcie do wysokości barków, nie wyżej.', 'Wide grip, elbows to shoulder height, not higher.'] },
   { id: 'pike-push-up', akaEn: 'pike push-ups, HSPU', aka: 'pompki pike, pompki w staniu na rękach', g: 'shoulders', pl: 'Pompki z biodrami w górze', en: 'Pike push-up', u: 'reps', m: ['shoulders'], h: ['triceps'], r: [6, 12],
@@ -130,17 +130,17 @@ export const BASES = [
     how: ['Biodra wysoko, głowa schodzi przed dłonie.', 'Hips high, head goes down in front of the hands.'] },
 
   // ---------- biceps ----------
-  { id: 'curl', akaEn: 'curls, bicep curls, hammer curls, preacher curls, spider curls, Bayesian curls, Zottman', aka: 'biceps, młotki, modlitewnik, uginanie ze sztangą łamaną', g: 'biceps', pl: 'Uginanie ramion', en: 'Biceps curl', m: ['biceps'], h: ['forearms'], r: [8, 12],
+  { id: 'curl', only: { 'eq:bb': { pos: ['stand', 'preacher', 'chest'], side: ['both'], v: ['normal', 'drag'] }, 'eq:ez': { pos: ['stand', 'preacher', 'chest'], side: ['both'], v: ['normal', 'drag'] }, 'eq:db': { pos: ['stand', 'seat', 'incline', 'preacher', 'conc', 'chest'] }, 'eq:cb': { pos: ['stand', 'seat', 'preacher', 'behind', 'overhead'], v: ['normal', 'cross'] }, 'eq:mc': { pos: ['preacher', 'seat'] }, 'eq:kb': { pos: ['stand', 'seat', 'conc'] }, 'eq:bd': { pos: ['stand', 'seat'] } }, akaEn: 'curls, bicep curls, hammer curls, preacher curls, spider curls, Bayesian curls, Zottman', aka: 'biceps, młotki, modlitewnik, uginanie ze sztangą łamaną', g: 'biceps', pl: 'Uginanie ramion', en: 'Biceps curl', m: ['biceps'], h: ['forearms'], r: [8, 12],
     o: { eq: ['db', 'bb', 'ez', 'cb', 'mc', 'kb', 'bd'], pos: ['stand', 'seat', 'incline', 'preacher', 'conc', 'behind', 'chest', 'overhead'], grip: ['under', 'neutral', 'over'], side: ['both', 'one'] },
     k: 'młotkowe hammer modlitewnik spider bayesian odwrotne reverse drag zottman',
     v: [['normal', 'klasycznie', 'classic'], ['drag', 'wzdłuż tułowia (drag)', 'drag curl'], ['zottman', 'Zottmana', 'Zottman', { m: ['forearms'] }], ['cross', 'w poprzek tułowia', 'cross-body']], vwhen: { eq: ['db', 'bb', 'ez', 'cb'], pos: ['stand', 'seat'] },
     x: { 'grip:neutral': { m: ['forearms'] }, 'grip:over': { m: ['forearms'], d: ['biceps'] } },
     how: ['Łokcie przy tułowiu, pełny zakres, powoli w dół.', 'Elbows at the sides, full range, slow on the way down.'] },
   // ---------- triceps ----------
-  { id: 'pushdown', akaEn: 'pushdowns, rope pushdown, tricep pressdown', aka: 'triceps na wyciągu, prostowanie na wyciągu', g: 'triceps', pl: 'Prostowanie ramion na wyciągu', en: 'Triceps pushdown', m: ['triceps'], r: [10, 12],
-    o: { eq: ['cb', 'bd'], grip: ['over', 'under'], side: ['both', 'one'] }, v: [['rope', 'lina', 'rope'], ['bar', 'drążek', 'bar'], ['vbar', 'V-uchwyt', 'V-bar']],
+  { id: 'pushdown', akaEn: 'pushdowns, rope pushdown, tricep pressdown', aka: 'triceps na wyciągu, prostowanie na wyciągu, ściąganie linki w dół', g: 'triceps', pl: 'Prostowanie ramion w dół (pushdown)', en: 'Triceps pushdown', m: ['triceps'], r: [10, 12],
+    o: { eq: ['cb', 'bd'], grip: ['over', 'under'], side: ['both', 'one'] }, v: [['rope', 'lina', 'rope'], ['bar', 'drążek', 'bar'], ['vbar', 'V-uchwyt', 'V-bar']], vwhen: ['cb'],
     how: ['Łokcie przyklejone do boków, prostuj do końca.', 'Elbows pinned to the sides, lock out fully.'] },
-  { id: 'overhead-ext', akaEn: 'overhead extension, French press, katana extension', aka: 'francuz nad głową', g: 'triceps', pl: 'Prostowanie ramion nad głową', en: 'Overhead triceps extension', m: ['triceps'], r: [10, 12],
+  { id: 'overhead-ext', only: { 'eq:mc': { pos: ['seat'] }, 'eq:ez': { side: ['both'] } }, akaEn: 'overhead extension, French press, katana extension', aka: 'francuz nad głową', g: 'triceps', pl: 'Prostowanie ramion nad głową', en: 'Overhead triceps extension', m: ['triceps'], r: [10, 12],
     o: { eq: ['cb', 'db', 'ez', 'mc'], pos: ['stand', 'seat'], side: ['both', 'one'] }, v: [['rope', 'lina', 'rope'], ['bar', 'drążek', 'bar'], ['katana', 'w poprzek ciała (katana)', 'cross-body (katana)']], vwhen: ['cb'],
     how: ['Łokcie przy głowie, opuszczaj głęboko za głowę.', 'Elbows by the head, lower deep behind the head.'] },
   { id: 'skull-crusher', akaEn: 'skull crushers, lying triceps extension, LTE', aka: 'francuz, francuskie', g: 'triceps', pl: 'Wyciskanie francuskie', en: 'Skull crusher', m: ['triceps'], r: [8, 10],
@@ -155,17 +155,17 @@ export const BASES = [
   // ---------- forearms ----------
   { id: 'wrist-curl', akaEn: 'wrist curls, reverse wrist curls', aka: 'nadgarstki', g: 'forearms', pl: 'Uginanie nadgarstków', en: 'Wrist curl', m: ['forearms'], r: [12, 20],
     o: { eq: ['bb', 'db', 'cb'], grip: ['under', 'over'] }, how: ['Przedramiona na ławce, ruch tylko w nadgarstku.', 'Forearms on a bench, move only the wrist.'] },
-  { id: 'farmer', akaEn: "farmer's carry, farmer carries, suitcase carry", aka: 'farmerski, spacer farmera, suitcase carry (jednorącz)', g: 'forearms', pl: 'Spacer farmera', en: "Farmer's walk", m: ['forearms', 'traps'], h: ['abs', 'obliques', 'glutes'], r: [20, 40],
+  { id: 'farmer', only: { 'eq:hx': { side: ['both'] } }, akaEn: "farmer's carry, farmer carries, suitcase carry", aka: 'farmerski, spacer farmera, suitcase carry (jednorącz)', g: 'forearms', pl: 'Spacer farmera', en: "Farmer's walk", m: ['forearms', 'traps'], h: ['abs', 'obliques', 'glutes'], r: [20, 40],
     o: { eq: ['db', 'kb', 'hx'], side: ['both', 'one'] }, x: { 'side:one': { m: ['obliques'] } },
     how: ['Wyprostowany, krótkie kroki, barki w dół.', 'Tall posture, short steps, shoulders down.'] },
 
   // ---------- quads ----------
-  { id: 'squat', akaEn: 'squats, back squat, front squat, ATG, box squat', aka: 'przysiady, przysiad ze sztangą, front squat', g: 'quads', pl: 'Przysiad', en: 'Squat', m: ['quads', 'glutes'], h: ['adductors', 'lowerback'], r: [6, 10],
+  { id: 'squat', only: { 'eq:sm': { v: ['back', 'front', 'box'] } }, akaEn: 'squats, back squat, front squat, ATG, box squat', aka: 'przysiady, przysiad ze sztangą, front squat', g: 'quads', pl: 'Przysiad', en: 'Squat', m: ['quads', 'glutes'], h: ['adductors', 'lowerback'], r: [6, 10],
     o: { eq: ['bb', 'sm'], stance: ['normal', 'wide', 'narrow'] },
     v: [['back', 'sztanga z tyłu', 'back squat'], ['front', 'przedni', 'front squat', { h: ['abs'] }], ['zercher', 'Zerchera', 'Zercher', { h: ['abs', 'biceps', 'upperback'] }], ['box', 'do skrzyni', 'box squat'], ['overhead', 'nad głową (overhead squat)', 'overhead squat', { h: ['shoulders', 'upperback', 'abs'] }]],
     x: { 'stance:wide': { m: ['adductors'] } },
-    how: ['Kolana nad palcami, plecy proste, schodź co najmniej do równoległej.', 'Knees over the toes, flat back, go at least to parallel.'] },
-  { id: 'hack-squat', akaEn: 'hack squat', aka: 'hack, hacken', g: 'quads', pl: 'Przysiad hack', en: 'Hack squat', m: ['quads'], h: ['glutes', 'adductors'], r: [8, 12],
+    how: ['Kolana w linii stóp, plecy proste, schodź co najmniej do równoległej.', 'Knees in line with the feet, flat back, go at least to parallel.'] },
+  { id: 'hack-squat', only: { 'eq:bb': { stance: ['normal'] } }, akaEn: 'hack squat', aka: 'hack, hacken', g: 'quads', pl: 'Przysiad hack', en: 'Hack squat', m: ['quads'], h: ['glutes', 'adductors'], r: [8, 12],
     o: { eq: ['mc', 'bb'], stance: ['normal', 'narrow', 'wide'] }, how: ['Plecy na oparciu, głęboko w dół, kolana do przodu.', 'Back on the pad, deep, knees travel forward.'] },
   { id: 'pendulum', akaEn: 'pendulum', aka: 'wahadło', g: 'quads', pl: 'Przysiad na maszynie wahadłowej', en: 'Pendulum squat', m: ['quads'], h: ['glutes'], r: [8, 12],
     o: { eq: ['mc'] }, how: ['Pełny zakres, kolana daleko w przód.', 'Full range, knees far forward.'] },
@@ -173,12 +173,12 @@ export const BASES = [
     o: { eq: ['mc'], stance: ['normal', 'wide', 'narrow'], side: ['both', 'one'] },
     v: [['mid', 'stopy na środku', 'feet in the middle'], ['high', 'stopy wysoko', 'feet high'], ['low', 'stopy nisko', 'feet low']],
     how: ['Dolna część pleców przy oparciu, nie blokuj kolan na górze.', 'Lower back on the pad, do not lock the knees at the top.'] },
-  { id: 'lunge', akaEn: 'lunges, walking lunges, reverse lunges', aka: 'wykroki, zakroki (w tył)', g: 'quads', pl: 'Wykroki', en: 'Lunge', m: ['quads', 'glutes'], h: ['adductors', 'hamstrings'], r: [8, 12],
+  { id: 'lunge', only: { 'eq:sm': { v: ['fwd', 'rev'] } }, akaEn: 'lunges, walking lunges, reverse lunges', aka: 'wykroki, zakroki (w tył)', g: 'quads', pl: 'Wykroki', en: 'Lunge', m: ['quads', 'glutes'], h: ['adductors', 'hamstrings'], r: [8, 12],
     o: { eq: ['db', 'bb', 'sm', 'kb', 'bw'] }, uq: { bw: 'reps' },
     v: [['fwd', 'w przód', 'forward'], ['rev', 'w tył', 'reverse'], ['walk', 'chodzone', 'walking'], ['side', 'w bok', 'lateral', { m: ['adductors'] }]],
     how: ['Długi krok, tylne kolano prawie do ziemi, tułów prosto.', 'Long step, back knee near the floor, upright torso.'] },
   { id: 'split-squat', akaEn: 'Bulgarians, BSS, Bulgarian split squat', aka: 'bułgary, przysiad bułgarski', g: 'quads', pl: 'Przysiad wykroczny (split squat)', en: 'Split squat', m: ['quads', 'glutes'], h: ['adductors'], r: [8, 12],
-    o: { eq: ['db', 'bb', 'sm', 'kb', 'bw'] }, uq: { bw: 'reps' }, v: [['bulgarian', 'bułgarski (tylna noga na ławce)', 'Bulgarian (rear foot elevated)'], ['floor', 'obie stopy na podłodze', 'both feet on the floor'], ['front', 'przednia stopa wyżej', 'front foot elevated']], how: ['Tylna stopa na ławce, schodź pionowo w dół.', 'Back foot on a bench, go straight down.'] },
+    o: { eq: ['db', 'bb', 'sm', 'kb', 'bw'] }, uq: { bw: 'reps' }, v: [['bulgarian', 'bułgarski (tylna noga na ławce)', 'Bulgarian (rear foot elevated)'], ['floor', 'obie stopy na podłodze', 'both feet on the floor'], ['front', 'przednia stopa wyżej', 'front foot elevated']], how: ['Tułów prosto, schodź pionowo w dół, przednie kolano nad stopą.', 'Upright torso, go straight down, front knee over the foot.'] },
   { id: 'step-up', akaEn: 'step-ups, box step-ups', aka: 'step-upy, wchodzenie na skrzynię', g: 'quads', pl: 'Wejścia na skrzynię', en: 'Step-up', m: ['quads', 'glutes'], h: ['hamstrings', 'adductors'], r: [8, 12],
     o: { eq: ['db', 'bb', 'kb', 'bw'] }, uq: { bw: 'reps' }, how: ['Pchaj piętą z góry, nie odbijaj się dolną nogą.', 'Drive through the top heel, no push from the bottom leg.'] },
   { id: 'leg-extension', akaEn: 'leg extensions, quad extensions', aka: 'prostowanie nóg, czwórki na maszynie', g: 'quads', pl: 'Prostowanie nóg na maszynie', en: 'Leg extension', m: ['quads'], r: [10, 15],
@@ -187,55 +187,55 @@ export const BASES = [
     o: { eq: ['bw', 'mc', 'pl'] }, uq: { mc: 'kg', pl: 'kg' }, how: ['Kolana daleko w przód, biodra wyprostowane.', 'Knees far forward, hips extended.'] },
 
   // ---------- hamstrings + glutes ----------
-  { id: 'deadlift', akaEn: 'deadlift, DL, deads, sumo, trap bar deadlift, rack pull', aka: 'martwy, MC, sumo, rack pull', g: 'post', pl: 'Martwy ciąg', en: 'Deadlift', m: ['glutes', 'hamstrings', 'lowerback'], h: ['quads', 'upperback', 'traps', 'forearms'], r: [3, 6],
+  { id: 'deadlift', only: { 'eq:db': { stance: ['normal', 'wide'] } }, akaEn: 'deadlift, DL, deads, sumo, trap bar deadlift, rack pull', aka: 'martwy, MC, sumo, rack pull', g: 'post', pl: 'Martwy ciąg', en: 'Deadlift', m: ['glutes', 'hamstrings', 'lowerback'], h: ['quads', 'upperback', 'traps', 'forearms'], r: [3, 6],
     o: { eq: ['bb', 'hx', 'db', 'kb'], stance: ['normal', 'wide'] }, x: { 'stance:wide': { m: ['quads', 'adductors'] }, 'eq:hx': { m: ['quads'] } }, k: 'sumo trap bar rack pull deficyt',
     v: [['floor', 'z podłogi', 'from the floor'], ['deficit', 'z podwyższenia (deficyt)', 'deficit'], ['rack', 'z podpórek (rack pull)', 'rack pull', { m: ['upperback', 'traps'], d: ['hamstrings'] }]], vwhen: ['bb', 'hx'],
-    how: ['Sztanga przy piszczelach, plecy proste, pchaj podłogę nogami.', 'Bar against the shins, flat back, push the floor away.'] },
-  { id: 'rdl', akaEn: 'RDL, SLDL, stiff-legged deadlift, single-leg RDL', aka: 'rumuński, RDL, martwy na prostych nogach', g: 'post', pl: 'Martwy ciąg rumuński', en: 'Romanian deadlift', m: ['hamstrings', 'glutes'], h: ['lowerback', 'forearms'], r: [8, 10],
+    how: ['Ciężar blisko nóg, plecy proste, pchaj podłogę nogami.', 'Weight close to the legs, flat back, push the floor away.'] },
+  { id: 'rdl', only: { 'eq:sm': { v: ['rdl', 'sldl'] } }, akaEn: 'RDL, SLDL, stiff-legged deadlift, single-leg RDL', aka: 'rumuński, RDL, martwy na prostych nogach', g: 'post', pl: 'Martwy ciąg rumuński', en: 'Romanian deadlift', m: ['hamstrings', 'glutes'], h: ['lowerback', 'forearms'], r: [8, 10],
     o: { eq: ['bb', 'db', 'sm', 'kb'] }, v: [['rdl', 'kolana lekko ugięte', 'soft knees'], ['sldl', 'na sztywnych nogach', 'stiff-legged'], ['single', 'na jednej nodze', 'single-leg']],
     how: ['Biodra do tyłu, ciężar blisko nóg, schodź do rozciągnięcia.', 'Hips back, weight close to the legs, lower to a stretch.'] },
-  { id: 'leg-curl', akaEn: 'hamstring curl, lying/seated leg curl', aka: 'dwójki na maszynie, uginanie nóg', g: 'post', pl: 'Uginanie nóg na maszynie', en: 'Leg curl', m: ['hamstrings'], h: ['calves'], r: [10, 12],
+  { id: 'leg-curl', only: { 'eq:db': { pos: ['lying'], side: ['both'] }, 'eq:cb': { pos: ['stand', 'lying'], side: ['one'] } }, akaEn: 'hamstring curl, lying/seated leg curl', aka: 'dwójki na maszynie, uginanie nóg', g: 'post', pl: 'Uginanie nóg (leg curl)', en: 'Leg curl', m: ['hamstrings'], h: ['calves'], r: [10, 12],
     o: { eq: ['mc', 'cb', 'db'], pos: ['seat', 'lying', 'stand'], side: ['both', 'one'] },
-    how: ['Siedząc mięśnie są bardziej rozciągnięte – lepiej rosną.', 'Seated puts the hamstrings in more stretch – better growth.'] },
+    how: ['Biodra dociśnięte, uginaj do końca, powoli wracaj. Siedząc dwugłowe są bardziej rozciągnięte i lepiej rosną.', 'Hips pressed down, curl fully, return slowly. Seated puts the hamstrings in more stretch – better growth.'] },
   { id: 'nordic', akaEn: 'Nordics, Nordic hamstring curl', aka: 'nordyki, nordic curl', g: 'post', pl: 'Uginanie nordyckie', en: 'Nordic curl', u: 'reps', m: ['hamstrings'], r: [3, 8],
     o: { eq: ['bw', 'bd'] }, how: ['Kolana na macie, opadaj jak najwolniej w przód.', 'Knees on a mat, fall forward as slowly as you can.'] },
   { id: 'hip-thrust', akaEn: 'hip thrusts, glute thrust', aka: 'hip thrusty, mostki ze sztangą', g: 'post', pl: 'Wypychanie bioder (hip thrust)', en: 'Hip thrust', m: ['glutes'], h: ['hamstrings', 'quads'], r: [8, 12],
     o: { eq: ['bb', 'sm', 'mc', 'db', 'bd'], side: ['both', 'one'] }, how: ['Łopatki na ławce, broda w dół, wypchnij biodra do linii prostej.', 'Shoulder blades on a bench, chin down, drive the hips to a straight line.'] },
-  { id: 'glute-bridge', akaEn: 'glute bridges, frog pumps', aka: 'mostki, unoszenie bioder', g: 'post', pl: 'Mostek biodrowy', en: 'Glute bridge', u: 'reps', m: ['glutes'], h: ['hamstrings'], r: [10, 20],
+  { id: 'glute-bridge', only: { 'eq:bb': { v: ['classic'] } }, akaEn: 'glute bridges, frog pumps', aka: 'mostki, unoszenie bioder', g: 'post', pl: 'Mostek biodrowy', en: 'Glute bridge', u: 'reps', m: ['glutes'], h: ['hamstrings'], r: [10, 20],
     o: { eq: ['bw', 'bb', 'db', 'bd'], side: ['both', 'one'] }, v: [['classic', 'klasycznie', 'classic'], ['frog', 'żabka (frog pump)', 'frog pump']], uq: { bb: 'kg', db: 'kg' }, how: ['Leżąc, pięty blisko, unoś biodra, pauza na górze.', 'Lying, heels close, lift the hips, pause at the top.'] },
-  { id: 'glute-kickback', akaEn: 'cable kickbacks, donkey kicks', aka: 'kopnięcia w tył, kickback pośladka', g: 'post', pl: 'Odwodzenie nogi w tył', en: 'Glute kickback', m: ['glutes'], h: ['hamstrings'], r: [10, 15],
+  { id: 'glute-kickback', akaEn: 'cable kickbacks, donkey kicks', aka: 'kopnięcia w tył, kickback pośladka', g: 'post', pl: 'Wymachy nogi w tył (kickback)', en: 'Glute kickback', m: ['glutes'], h: ['hamstrings'], r: [10, 15],
     o: { eq: ['cb', 'mc', 'bd'] }, how: ['Biodra nieruchome, noga w tył bez wyginania pleców.', 'Still hips, leg back without arching the back.'] },
-  { id: 'hip-abduction', akaEn: 'abductor machine, clamshells, fire hydrants', aka: 'odwodziciele, muszelki, fire hydrant (w klęku)', g: 'post', pl: 'Odwodzenie nóg', en: 'Hip abduction', m: ['glutes'], r: [12, 20],
+  { id: 'hip-abduction', only: { 'eq:mc': { pos: ['seat'] }, 'eq:cb': { pos: ['stand'] }, 'eq:bw': { pos: ['sidelying', 'kneel'] }, 'pos:seat': { v: ['straight'] }, 'pos:stand': { v: ['straight'] }, 'pos:kneel': { v: ['straight'] } }, akaEn: 'abductor machine, clamshells, fire hydrants', aka: 'odwodziciele, muszelki, fire hydrant (w klęku)', g: 'post', pl: 'Odwodzenie nóg', en: 'Hip abduction', m: ['glutes'], r: [12, 20],
     o: { eq: ['mc', 'cb', 'bd', 'bw'], pos: ['seat', 'stand', 'sidelying', 'kneel'] }, uq: { bw: 'reps' }, v: [['straight', 'prosta noga', 'straight leg'], ['clam', 'muszelki (kolana zgięte)', 'clamshell']], vwhen: ['bw', 'bd'], how: ['Pracuje pośladek średni; pauza przy pełnym rozwarciu.', 'Works the glute medius; pause when fully open.'] },
   { id: 'hip-adduction', akaEn: 'adductor machine', aka: 'przywodziciele', g: 'post', pl: 'Przywodzenie nóg', en: 'Hip adduction', m: ['adductors'], r: [12, 20],
     o: { eq: ['mc', 'cb'] }, how: ['Kontrolowane zamknięcie, bez odbijania.', 'Controlled squeeze, no bouncing.'] },
   { id: 'kb-swing', akaEn: 'KB swings, Russian swing', aka: 'swingi, wymachy', g: 'post', pl: 'Wymachy kettlebell (swing)', en: 'Kettlebell swing', m: ['glutes', 'hamstrings'], h: ['lowerback', 'shoulders', 'forearms'], r: [12, 20],
     o: { eq: ['kb', 'db'] }, how: ['Ruch z bioder, nie z ramion; mocny wyprost na górze.', 'Hinge from the hips, not the arms; snap to lockout.'] },
-  { id: 'pull-through', akaEn: 'pull-throughs', aka: 'pull-through', g: 'post', pl: 'Przeciąganie liny między nogami (pull-through)', en: 'Cable pull-through', m: ['glutes', 'hamstrings'], r: [12, 15],
+  { id: 'pull-through', akaEn: 'pull-throughs', aka: 'pull-through', g: 'post', pl: 'Przeciąganie liny między nogami (pull-through)', en: 'Pull-through', m: ['glutes', 'hamstrings'], h: ['lowerback'], r: [12, 15],
     o: { eq: ['cb', 'bd'] }, how: ['Tyłem do wyciągu, biodra do tyłu, wypchnij w przód.', 'Back to the cable, hips back, drive forward.'] },
 
   // ---------- calves ----------
-  { id: 'calf-raise', akaEn: 'calf raises, calves, donkey calf raise', aka: 'łydki, wspięcia', g: 'calves', pl: 'Wspięcia na palce', en: 'Calf raise', m: ['calves'], r: [12, 15],
+  { id: 'calf-raise', only: { 'eq:sm': { pos: ['stand', 'seat'] }, 'eq:bb': { pos: ['stand', 'seat'] }, 'eq:db': { pos: ['stand', 'seat'] }, 'eq:bw': { pos: ['stand'] } }, akaEn: 'calf raises, calves, donkey calf raise', aka: 'łydki, wspięcia', g: 'calves', pl: 'Wspięcia na palce', en: 'Calf raise', m: ['calves'], r: [12, 15],
     o: { eq: ['mc', 'sm', 'bb', 'db', 'bw'], pos: ['stand', 'seat', 'legpress', 'donkey'], side: ['both', 'one'] }, uq: { bw: 'reps' }, k: 'łydki calves',
     how: ['Pełny zakres z pauzą w rozciągnięciu. Siedząc pracuje głównie płaszczkowaty.', 'Full range with a pause in the stretch. Seated works mostly the soleus.'] },
 
   // ---------- core ----------
-  { id: 'crunch', akaEn: 'crunches, cable crunch, kneeling cable crunch', aka: 'brzuszki, allahy (na wyciągu klęcząc), sięganie do stóp', g: 'core', pl: 'Spięcia brzucha', en: 'Crunch', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 20],
+  { id: 'crunch', only: { 'eq:bw': { pos: ['lying', 'incline', 'ball'] }, 'eq:pl': { pos: ['lying', 'incline', 'ball'] }, 'eq:cb': { pos: ['kneel', 'stand', 'seat'] }, 'eq:mc': { pos: ['seat'] } }, akaEn: 'crunches, cable crunch, kneeling cable crunch', aka: 'brzuszki, allahy (na wyciągu klęcząc), sięganie do stóp', g: 'core', pl: 'Spięcia brzucha', en: 'Crunch', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 20],
     o: { eq: ['bw', 'cb', 'mc', 'pl'], pos: ['lying', 'kneel', 'seat', 'incline', 'stand', 'ball'] }, uq: { cb: 'kg', mc: 'kg', pl: 'kg' }, k: 'allahy brzuszki toe touch',
     v: [['classic', 'klasycznie', 'classic'], ['legsup', 'nogi w górze (sięganie do stóp)', 'legs up (toe touches)']], vwhen: { eq: ['bw', 'pl'], pos: ['lying'] },
     how: ['Zwijaj tułów kręg po kręgu, wydech na górze.', 'Curl the spine one vertebra at a time, exhale at the top.'] },
-  { id: 'leg-raise', akaEn: "hanging leg raise, captain's chair, knee raise, toes to bar, T2B", aka: 'unoszenie nóg na poręczach, kapitańskie krzesło, T2B, palce do drążka', g: 'core', pl: 'Unoszenie nóg', en: 'Leg raise', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 15],
+  { id: 'leg-raise', only: { 'pos:captain': { v: ['bent', 'straight', 'oblique'] }, 'pos:lying': { v: ['bent', 'straight'] }, 'pos:incline': { v: ['bent', 'straight'] } }, akaEn: "hanging leg raise, captain's chair, knee raise, toes to bar, T2B", aka: 'unoszenie nóg na poręczach, kapitańskie krzesło, T2B, palce do drążka', g: 'core', pl: 'Unoszenie nóg', en: 'Leg raise', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 15],
     o: { eq: ['bw', 'db'], pos: ['captain', 'hang', 'lying', 'incline'] }, uq: { db: 'kg' }, v: [['bent', 'kolana zgięte', 'bent knees'], ['straight', 'nogi proste', 'straight legs'], ['oblique', 'skośnie na boki', 'to the sides', { m: ['obliques'] }], ['t2b', 'stopy do drążka (toes to bar)', 'toes to bar', { h: ['lats', 'forearms'] }]],
     how: ['Podwiń miednicę na górze, bez bujania.', 'Tuck the pelvis at the top, no swinging.'] },
   { id: 'plank', akaEn: 'plank, front plank, side plank, RKC plank', aka: 'deska, plank', g: 'core', pl: 'Deska (plank)', en: 'Plank', u: 's', m: ['abs'], h: ['obliques', 'shoulders'], r: [30, 60],
     o: { eq: ['bw', 'pl'] }, v: [['front', 'przodem', 'front'], ['side', 'bokiem', 'side', { m: ['obliques'] }], ['updown', 'z przejściem na dłonie', 'up-downs', { h: ['triceps'] }], ['taps', 'z dotykaniem barków', 'shoulder taps', { m: ['obliques'] }], ['rkc', 'z maksymalnym napięciem (RKC)', 'RKC']],
     how: ['Ciało w linii, pośladki i brzuch napięte.', 'Body in a line, glutes and abs tight.'] },
-  { id: 'ab-wheel', akaEn: 'ab wheel, rollouts', aka: 'kółko, roller', g: 'core', pl: 'Rolowanie kółkiem do brzucha', en: 'Ab wheel rollout', u: 'reps', m: ['abs'], h: ['lats', 'obliques'], r: [6, 12],
+  { id: 'ab-wheel', only: { 'eq:bb': { v: ['knees', 'standing'] } }, akaEn: 'ab wheel, rollouts', aka: 'kółko, roller', g: 'core', pl: 'Rolowanie kółkiem do brzucha', en: 'Ab wheel rollout', u: 'reps', m: ['abs'], h: ['lats', 'obliques'], r: [6, 12],
     o: { eq: ['bw', 'bb'] }, v: [['knees', 'z kolan', 'from the knees'], ['standing', 'ze stania', 'standing'], ['ball', 'na piłce', 'on a stability ball']],
     how: ['Plecy zaokrąglone, nie zapadaj się w lędźwiach.', 'Rounded back, do not sag in the lower back.'] },
   { id: 'pallof', akaEn: 'Pallof, anti-rotation press', aka: 'antyrotacja, Pallof', g: 'core', pl: 'Wyciskanie Pallofa (Pallof press)', en: 'Pallof press', m: ['obliques', 'abs'], r: [10, 12],
     o: { eq: ['cb', 'bd'], pos: ['stand', 'kneel'] }, how: ['Bokiem do wyciągu, wypchnij przed siebie, pauza 2 s, nie daj się obrócić.', 'Side-on to the cable, press out, hold 2 s, do not rotate.'] },
-  { id: 'woodchop', akaEn: 'woodchoppers, cable chop', aka: 'drwal, woodchop', g: 'core', pl: 'Drwal na wyciągu', en: 'Cable woodchop', m: ['obliques'], h: ['abs'], r: [10, 15],
+  { id: 'woodchop', akaEn: 'woodchoppers, cable chop', aka: 'drwal, woodchop', g: 'core', pl: 'Drwal (woodchop)', en: 'Woodchop', m: ['obliques'], h: ['abs'], r: [10, 15],
     o: { eq: ['cb', 'bd'] }, v: [['highlow', 'z góry na dół', 'high to low'], ['lowhigh', 'z dołu do góry', 'low to high']],
     how: ['Obrót z tułowia, ręce prawie proste.', 'Rotate from the torso, arms almost straight.'] },
   { id: 'russian-twist', akaEn: 'Russian twists', aka: 'skręty rosyjskie', g: 'core', pl: 'Rosyjskie skręty', en: 'Russian twist', u: 'reps', m: ['obliques'], h: ['abs'], r: [10, 20],
@@ -250,10 +250,10 @@ export const BASES = [
   { id: 'jumps', akaEn: 'box jumps, jump squats, broad jumps, plyos', aka: 'skoki na skrzynię, wyskoki, box jump', g: 'full', pl: 'Skoki (plyometria)', en: 'Jumps (plyometrics)', u: 'reps', m: ['quads', 'glutes'], h: ['calves', 'hamstrings'], r: [5, 10],
     o: { eq: ['bw', 'db'] }, v: [['box', 'na skrzynię', 'box jump'], ['squat', 'z przysiadu', 'jump squat'], ['broad', 'w dal', 'broad jump'], ['lunge', 'wykroczne', 'jumping lunge']],
     how: ['Wybuchowo w górę, miękkie lądowanie na ugiętych nogach.', 'Explode up, land softly on bent legs.'] },
-  { id: 'forearm-rotation', akaEn: 'pronation/supination, wrist rotations', aka: 'rotacje nadgarstka, pronacja, supinacja', g: 'forearms', pl: 'Obroty przedramienia z młotkiem', en: 'Forearm rotation', m: ['forearms'], r: [12, 20],
+  { id: 'forearm-rotation', akaEn: 'pronation/supination, wrist rotations', aka: 'rotacje nadgarstka, pronacja, supinacja', g: 'forearms', pl: 'Obroty przedramienia (pronacja i supinacja)', en: 'Forearm rotation', m: ['forearms'], r: [12, 20],
     o: { eq: ['db', 'bd'] }, v: [['both', 'w obie strony', 'both ways'], ['pron', 'do środka (pronacja)', 'pronation'], ['sup', 'na zewnątrz (supinacja)', 'supination']],
     how: ['Przedramię oparte, trzymaj hantel z jednej strony i obracaj nadgarstek.', 'Forearm supported, hold a dumbbell by one end and rotate the wrist.'] },
-  { id: 'gripper', akaEn: 'grippers, hand grip, CoC', aka: 'ściskacz, gripper', g: 'forearms', pl: 'Ściskanie gripa (ściskacz)', en: 'Hand gripper', u: 'reps', m: ['forearms'], r: [10, 20],
+  { id: 'gripper', akaEn: 'grippers, hand grip, CoC', aka: 'ściskacz, gripper', g: 'forearms', pl: 'Zaciskanie ściskacza (gripper)', en: 'Hand gripper', u: 'reps', m: ['forearms'], r: [10, 20],
     o: { eq: ['bw'] }, how: ['Zamknij ściskacz do końca, pauza, powoli puść.', 'Close the gripper fully, pause, release slowly.'] },
   { id: 'tibialis-raise', akaEn: 'tib raises, tib bar', aka: 'piszczele, tib raise', g: 'calves', pl: 'Unoszenie palców stóp (tibialis raise)', en: 'Tibialis raise', u: 'reps', m: ['calves'], r: [15, 25],
     o: { eq: ['bw', 'pl', 'mc', 'bd'] }, uq: { pl: 'kg', mc: 'kg' }, how: ['Plecy przy ścianie, pięty na ziemi, unoś palce stóp jak najwyżej.', 'Back against the wall, heels down, lift the toes as high as you can.'] },
@@ -265,7 +265,7 @@ export const BASES = [
   { id: 'flutter', akaEn: 'flutter kicks, scissor kicks', g: 'core', aka: 'nożyce, scissors, flutter kicks', pl: 'Nożyce', en: 'Flutter kicks', u: 'reps', m: ['abs'], r: [20, 40],
     o: { eq: ['bw'] }, v: [['vert', 'pionowe', 'vertical'], ['horiz', 'poziome', 'horizontal (scissors)']],
     how: ['Leżąc, lędźwia przy podłodze, naprzemienne ruchy prostych nóg nisko nad ziemią.', 'Lying, lower back down, alternate straight legs low above the floor.'] },
-  { id: 'wipers', akaEn: 'windshield wipers', g: 'core', aka: 'wycieraczki, windshield wipers', pl: 'Wycieraczki', en: 'Windshield wipers', u: 'reps', m: ['obliques'], h: ['abs'], r: [8, 16],
+  { id: 'wipers', only: { 'eq:db': { pos: ['lying'] } }, akaEn: 'windshield wipers', g: 'core', aka: 'wycieraczki, windshield wipers', pl: 'Wycieraczki', en: 'Windshield wipers', u: 'reps', m: ['obliques'], h: ['abs'], r: [8, 16],
     o: { eq: ['bw', 'db'], pos: ['lying', 'hang'] }, uq: { db: 'kg' }, v: [['bent', 'kolana zgięte', 'bent knees'], ['straight', 'nogi proste', 'straight legs']],
     how: ['Nogi w górze, opuszczaj je na boki bez odrywania łopatek.', 'Legs up, lower them side to side without lifting the shoulder blades.'] },
   { id: 'dragon-flag', akaEn: 'dragon flags', g: 'core', aka: 'flaga, Bruce Lee', pl: 'Flaga smoka (dragon flag)', en: 'Dragon flag', u: 'reps', m: ['abs'], h: ['obliques', 'lats'], r: [3, 8],
@@ -280,7 +280,7 @@ export const BASES = [
   { id: 'heel-touch', akaEn: 'heel taps, alternating heel touches', g: 'core', aka: 'dotykanie pięt, heel taps', pl: 'Dotykanie pięt', en: 'Heel touches', u: 'reps', m: ['obliques'], h: ['abs'], r: [20, 40],
     o: { eq: ['bw'] }, how: ['Łopatki lekko w górze, sięgaj dłonią na zmianę do pięt.', 'Shoulder blades slightly up, reach to each heel in turn.'] },
   { id: 'torso-rotation', akaEn: 'rotary torso, ab twist machine', g: 'core', aka: 'maszyna do skrętów, rotary torso', pl: 'Skręty tułowia na maszynie', en: 'Rotary torso machine', m: ['obliques'], h: ['abs'], r: [10, 15],
-    o: { eq: ['mc', 'cb'] }, how: ['Biodra nieruchome, obracaj tułów powoli w obie strony.', 'Still hips, rotate the torso slowly both ways.'] },
+    o: { eq: ['mc'] }, how: ['Biodra nieruchome, obracaj tułów powoli w obie strony.', 'Still hips, rotate the torso slowly both ways.'] },
   { id: 'stir-pot', akaEn: 'stir the pot', g: 'core', aka: 'stir the pot', pl: 'Mieszanie w garnku (stir the pot)', en: 'Stir the pot', u: 'reps', m: ['abs', 'obliques'], h: ['shoulders'], r: [6, 12],
     o: { eq: ['bw'] }, how: ['Deska z łokciami na piłce, zataczaj nimi małe kółka.', 'Plank with the elbows on a ball, draw small circles.'] },
   { id: 'copenhagen', akaEn: 'Copenhagen, Copenhagen adduction', g: 'core', aka: 'kopenhaska', pl: 'Deska kopenhaska (Copenhagen plank)', en: 'Copenhagen plank', u: 's', m: ['adductors', 'obliques'], h: ['abs'], r: [15, 40],
@@ -303,22 +303,22 @@ export const BASES = [
   { id: 'muscle-up', akaEn: 'muscle-ups, MU', aka: 'wyjście siłowe', g: 'back', pl: 'Wyjście siłowe (muscle-up)', en: 'Muscle-up', u: 'reps', m: ['lats', 'triceps'], h: ['chest', 'biceps', 'shoulders', 'abs'], r: [1, 6],
     o: { eq: ['bw', 'pl'] }, uq: { pl: 'kg' }, v: [['bar', 'na drążku', 'bar'], ['rings', 'na kółkach', 'rings']],
     how: ['Mocne podciągnięcie do pasa, przerzuć łokcie nad drążek i wypchnij się do góry.', 'Explosive pull to the waist, turn the elbows over the bar, press to lockout.'] },
-  { id: 'landmine-row', akaEn: 'Meadows row', aka: 'Meadows row', g: 'back', pl: 'Wiosłowanie Meadowsa (landmine)', en: 'Landmine row (Meadows)', m: ['lats', 'upperback'], h: ['biceps', 'reardelts', 'forearms'], r: [8, 12],
+  { id: 'landmine-row', akaEn: 'landmine row, Meadows row', aka: 'wiosłowanie Meadowsa, wiosło z miną', g: 'back', pl: 'Wiosłowanie Meadowsa (landmine)', en: 'Meadows row', m: ['lats', 'upperback'], h: ['biceps', 'reardelts', 'forearms'], r: [8, 12],
     o: { eq: ['bb'], side: ['one', 'both'] }, how: ['Bokiem do końca sztangi, chwyt za końcówkę, ciągnij łokieć wysoko do tyłu.', 'Side-on to the bar end, grip the sleeve, drive the elbow up and back.'] },
   { id: 'renegade-row', akaEn: 'renegade rows', aka: 'renegade', g: 'back', pl: 'Wiosłowanie w podporze (renegade row)', en: 'Renegade row', m: ['lats', 'upperback'], h: ['abs', 'obliques', 'triceps'], r: [6, 12],
     o: { eq: ['db', 'kb'] }, how: ['W podporze na hantlach, przyciągnij jedną do biodra bez obracania bioder.', 'Plank on the dumbbells, row one to the hip without twisting.'] },
   { id: 'scap-pull-up', akaEn: 'scap pulls', aka: 'łopatki na drążku', g: 'back', pl: 'Podciąganie łopatek w zwisie', en: 'Scapular pull-up', u: 'reps', m: ['traps', 'upperback'], h: ['lats'], r: [8, 15],
     o: { eq: ['bw'] }, how: ['Ręce proste, unoś ciało tylko ściągając łopatki w dół.', 'Arms straight, lift the body only by pulling the shoulder blades down.'] },
-  { id: 'rear-delt-row', akaEn: 'rear delt row, face-away row', aka: 'wiosło na tył barków', g: 'back', pl: 'Wiosłowanie na tył barków', en: 'Rear delt row', m: ['reardelts'], h: ['upperback', 'biceps'], r: [10, 15],
-    o: { eq: ['cb', 'db', 'bb', 'mc'], pos: ['stand', 'seat', 'chest'] }, how: ['Łokcie szeroko na wysokości barków, ciągnij do tyłu.', 'Elbows wide at shoulder height, pull back.'] },
+  { id: 'rear-delt-row', only: { 'eq:cb': { pos: ['stand', 'seat'] }, 'eq:db': { pos: ['chest'] }, 'eq:mc': { pos: ['seat'] } }, akaEn: 'rear delt row, face-away row', aka: 'wiosło na tył barków', g: 'back', pl: 'Wiosłowanie na tył barków', en: 'Rear delt row', m: ['reardelts'], h: ['upperback', 'biceps'], r: [10, 15],
+    o: { eq: ['cb', 'db', 'mc'], pos: ['stand', 'seat', 'chest'] }, how: ['Łokcie szeroko na wysokości barków, ciągnij do tyłu.', 'Elbows wide at shoulder height, pull back.'] },
   { id: 'push-press', akaEn: 'push press', aka: 'push press, wybicie', g: 'shoulders', pl: 'Wyciskanie z wybicia (push press)', en: 'Push press', m: ['shoulders'], h: ['triceps', 'quads', 'glutes', 'traps'], r: [3, 6],
     o: { eq: ['bb', 'db', 'kb'], side: ['both', 'one'] }, how: ['Krótkie ugięcie kolan i mocne wybicie, ręce kończą ruch nad głową.', 'Short dip of the knees, drive up, arms finish overhead.'] },
-  { id: 'y-raise', akaEn: 'Y-raise, trap raise', aka: 'Y-raise', g: 'shoulders', pl: 'Unoszenie ramion w Y', en: 'Y-raise', m: ['shoulders', 'traps'], h: ['reardelts', 'upperback'], r: [10, 15],
+  { id: 'y-raise', only: { 'eq:cb': { pos: ['stand'] }, 'eq:bd': { pos: ['stand'] } }, akaEn: 'Y-raise, trap raise', aka: 'Y-raise', g: 'shoulders', pl: 'Unoszenie ramion w Y', en: 'Y-raise', m: ['shoulders', 'traps'], h: ['reardelts', 'upperback'], r: [10, 15],
     o: { eq: ['db', 'cb', 'pl', 'bd'], pos: ['chest', 'stand'] }, how: ['Ramiona w kształt litery Y, kciuki w górę, unoś do linii uszu.', 'Arms in a Y, thumbs up, raise to ear level.'] },
-  { id: 'ext-rotation', akaEn: 'rotator cuff, ER, cable external rotation', aka: 'rotatory, rotacja zewnętrzna', g: 'shoulders', pl: 'Rotacja zewnętrzna ramienia', en: 'External rotation', m: ['reardelts'], h: ['upperback'], r: [12, 20],
+  { id: 'ext-rotation', only: { 'eq:cb': { pos: ['stand'] }, 'eq:bd': { pos: ['stand'] }, 'eq:db': { pos: ['lying'] } }, akaEn: 'rotator cuff, ER, cable external rotation', aka: 'rotatory, rotacja zewnętrzna', g: 'shoulders', pl: 'Rotacja zewnętrzna ramienia', en: 'External rotation', m: ['reardelts'], h: ['upperback'], r: [12, 20],
     o: { eq: ['cb', 'db', 'bd'], pos: ['stand', 'lying'], side: ['one', 'both'] }, k: 'stożek rotatorów rotator cuff',
     how: ['Łokieć przy boku zgięty 90°, obracaj przedramię na zewnątrz, lekki ciężar.', 'Elbow at the side bent 90°, rotate the forearm out, light weight.'] },
-  { id: 'bench-dip', akaEn: 'bench dips, chair dips', aka: 'dipy na ławce, pompki australijskie', g: 'triceps', pl: 'Pompki w podporze tyłem', en: 'Bench dip', u: 'reps', m: ['triceps'], h: ['chest', 'shoulders'], r: [8, 15],
+  { id: 'bench-dip', akaEn: 'bench dips, chair dips', aka: 'dipy na ławce, pompki tyłem', g: 'triceps', pl: 'Pompki w podporze tyłem', en: 'Bench dip', u: 'reps', m: ['triceps'], h: ['chest', 'shoulders'], r: [8, 15],
     o: { eq: ['bw', 'pl'] }, uq: { pl: 'kg' }, how: ['Dłonie na ławce za plecami, zejdź do 90° w łokciu.', 'Hands on a bench behind you, lower to 90° at the elbow.'] },
   { id: 'tate-press', akaEn: 'Tate press, elbows-out extension', aka: 'Tate', g: 'triceps', pl: 'Wyciskanie Tate', en: 'Tate press', m: ['triceps'], r: [10, 12],
     o: { eq: ['db'], angle: ['flat', 'incline'] }, how: ['Hantle nad klatką, łokcie na boki, opuszczaj główki hantli do klatki.', 'Dumbbells over the chest, elbows out, lower the heads to the chest.'] },
@@ -326,7 +326,7 @@ export const BASES = [
     o: { eq: ['pl'] }, how: ['Ręce wyprostowane przed sobą, nawijaj linkę obracając nadgarstki.', 'Arms straight in front, wind the rope by turning the wrists.'] },
   { id: 'plate-pinch', akaEn: 'pinch grip, plate pinches', aka: 'szczypanie talerzy', g: 'forearms', pl: 'Trzymanie talerzy w palcach', en: 'Plate pinch', u: 's', m: ['forearms'], r: [20, 45],
     o: { eq: ['pl'] }, how: ['Ściśnij dwa talerze gładką stroną na zewnątrz i trzymaj.', 'Pinch two plates smooth side out and hold.'] },
-  { id: 'goblet-squat', akaEn: 'goblet squat, DB squat, KB squat', aka: 'goblet, przysiad z kettlebell, sumo z hantlą', g: 'quads', pl: 'Przysiad z hantlami', en: 'Dumbbell squat', m: ['quads', 'glutes'], h: ['adductors', 'abs'], r: [8, 15],
+  { id: 'goblet-squat', akaEn: 'goblet squat, DB squat, KB squat', aka: 'goblet, przysiad z kettlebell, sumo z hantlą', g: 'quads', pl: 'Przysiad z hantlami lub kettlebell', en: 'Dumbbell or kettlebell squat', m: ['quads', 'glutes'], h: ['adductors', 'abs'], r: [8, 15],
     o: { eq: ['db', 'kb'], stance: ['normal', 'wide'] }, x: { 'stance:wide': { m: ['adductors'] } }, v: [['goblet', 'goblet (ciężar przy klatce)', 'goblet'], ['sides', 'hantle po bokach', 'dumbbells at the sides']],
     how: ['Ciężar przy klatce, łokcie między kolanami na dole.', 'Weight at the chest, elbows between the knees at the bottom.'] },
   { id: 'belt-squat', akaEn: 'belt squat', aka: 'belt squat, przysiad z pasem', g: 'quads', pl: 'Przysiad z pasem (belt squat)', en: 'Belt squat', m: ['quads', 'glutes'], h: ['adductors'], r: [8, 12],
@@ -344,7 +344,7 @@ export const BASES = [
     o: { eq: ['mc', 'bw', 'bd'] }, uq: { bw: 'reps' }, how: ['Leżąc przodem na ławce, unoś proste nogi do linii tułowia.', 'Lying face down on a bench, raise straight legs to body line.'] },
   { id: 'sit-up', akaEn: 'sit-ups, decline sit-ups', aka: 'brzuszki pełne, siady', g: 'core', pl: 'Brzuszki', en: 'Sit-up', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 20],
     o: { eq: ['bw', 'pl', 'db'], pos: ['lying', 'incline'] }, uq: { pl: 'kg', db: 'kg' }, how: ['Unoś cały tułów do siadu, stopy zablokowane.', 'Raise the whole torso to sitting, feet anchored.'] },
-  { id: 'reverse-crunch', akaEn: 'reverse crunches, butt-ups', aka: 'rewersy, odwrotne brzuszki, świeca', g: 'core', pl: 'Odwrotne spięcia brzucha', en: 'Reverse crunch', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 20],
+  { id: 'reverse-crunch', only: { 'eq:cb': { pos: ['lying'] } }, akaEn: 'reverse crunches, butt-ups', aka: 'rewersy, odwrotne brzuszki, świeca', g: 'core', pl: 'Odwrotne spięcia brzucha', en: 'Reverse crunch', u: 'reps', m: ['abs'], h: ['obliques'], r: [10, 20],
     o: { eq: ['bw', 'cb'], pos: ['lying', 'incline'] }, uq: { cb: 'kg' }, v: [['classic', 'klasycznie', 'classic'], ['vertical', 'świeca (biodra w górę)', 'vertical hip raise']], how: ['Leżąc, podwijaj miednicę i kolana do klatki.', 'Lying, roll the pelvis and knees towards the chest.'] },
   { id: 'v-up', akaEn: 'V-ups, jackknives', aka: 'scyzoryk, scyzoryki', g: 'core', pl: 'Scyzoryki (V-up)', en: 'V-up', u: 'reps', m: ['abs'], r: [8, 15],
     o: { eq: ['bw', 'db', 'pl'] }, uq: { db: 'kg', pl: 'kg' }, how: ['Jednocześnie unieś proste nogi i tułów, dłonie do stóp.', 'Lift straight legs and torso together, hands to feet.'] },
@@ -356,21 +356,21 @@ export const BASES = [
     o: { eq: ['bw', 'pl'] }, v: [['hold', 'trzymanie', 'hold'], ['rock', 'kołysanie (hollow rock)', 'hollow rock']], how: ['Lędźwia przy podłodze, nogi i ramiona nisko nad ziemią.', 'Lower back down, legs and arms low above the floor.'] },
   { id: 'landmine-rot', akaEn: 'landmine 180s, landmine twist', aka: 'obroty miny, landmine 180', g: 'core', pl: 'Obroty landmine', en: 'Landmine rotation', m: ['obliques'], h: ['abs', 'shoulders'], r: [8, 12],
     o: { eq: ['bb'] }, how: ['Ręce proste nad głową, prowadź koniec sztangi łukiem od biodra do biodra.', 'Arms straight, move the bar end in an arc hip to hip.'] },
-  { id: 'oblique-crunch', akaEn: 'oblique crunches, side crunches, side jackknife', aka: 'skośne, scyzoryk bokiem (leżąc bokiem)', g: 'core', pl: 'Spięcia skośne', en: 'Oblique crunch', u: 'reps', m: ['obliques'], h: ['abs'], r: [10, 20],
-    o: { eq: ['bw', 'cb', 'mc'], pos: ['lying', 'sidelying', 'stand', 'deg45'] }, uq: { cb: 'kg', mc: 'kg' }, how: ['Skręt i spięcie w bok, bez szarpania szyją.', 'Twist and crunch to the side, no neck pulling.'] },
+  { id: 'oblique-crunch', only: { 'eq:bw': { pos: ['lying', 'sidelying', 'deg45'] }, 'eq:cb': { pos: ['stand'] } }, akaEn: 'oblique crunches, side crunches, side jackknife', aka: 'skośne, scyzoryk bokiem (leżąc bokiem)', g: 'core', pl: 'Spięcia skośne', en: 'Oblique crunch', u: 'reps', m: ['obliques'], h: ['abs'], r: [10, 20],
+    o: { eq: ['bw', 'cb'], pos: ['lying', 'sidelying', 'stand', 'deg45'] }, uq: { cb: 'kg' }, how: ['Skręt i spięcie w bok, bez szarpania szyją.', 'Twist and crunch to the side, no neck pulling.'] },
   { id: 'power-clean', akaEn: 'cleans, hang clean', aka: 'zarzut', g: 'full', pl: 'Zarzut siłowy (power clean)', en: 'Power clean', m: ['glutes', 'hamstrings', 'quads', 'traps'], h: ['upperback', 'shoulders', 'lowerback', 'calves', 'forearms'], r: [2, 5],
     o: { eq: ['bb', 'db', 'kb'] }, v: [['floor', 'z podłogi', 'from the floor'], ['hang', 'ze zwisu', 'hang']],
     how: ['Wybuchowy wyprost bioder, szybko podbij łokcie i przyjmij sztangę na barki.', 'Explosive hip extension, fast elbows, catch on the shoulders.'] },
   { id: 'snatch', akaEn: 'snatch, power snatch', aka: 'rwanie', g: 'full', pl: 'Rwanie', en: 'Snatch', m: ['glutes', 'hamstrings', 'quads', 'shoulders', 'traps'], h: ['upperback', 'lowerback', 'triceps', 'abs'], r: [1, 3],
     o: { eq: ['bb', 'db', 'kb'] }, v: [['power', 'siłowe', 'power'], ['full', 'pełne', 'full'], ['hang', 'ze zwisu', 'hang']],
-    how: ['Szeroki chwyt, jednym ruchem z podłogi nad głowę.', 'Wide grip, from the floor to overhead in one move.'] },
+    how: ['Jednym ruchem z podłogi nad głowę; sztanga szerokim chwytem.', 'From the floor to overhead in one move; barbell with a wide grip.'] },
   { id: 'clean-jerk', akaEn: 'C&J, clean and jerk', aka: 'podrzut', g: 'full', pl: 'Podrzut', en: 'Clean and jerk', m: ['glutes', 'quads', 'shoulders', 'hamstrings'], h: ['traps', 'triceps', 'upperback', 'abs'], r: [1, 3],
     o: { eq: ['bb', 'kb'] }, how: ['Zarzut na klatkę, potem wybicie nogami i wyrzut nad głowę.', 'Clean to the shoulders, then dip, drive and jerk overhead.'] },
   { id: 'thruster', akaEn: 'thrusters', aka: 'thrustery', g: 'full', pl: 'Przysiad z wyciśnięciem (thruster)', en: 'Thruster', m: ['quads', 'shoulders', 'glutes'], h: ['triceps', 'abs'], r: [6, 12],
     o: { eq: ['bb', 'db', 'kb'] }, how: ['Przysiad przedni i z wyjścia od razu wyciśnij nad głowę.', 'Front squat and press overhead straight out of the bottom.'] },
   { id: 'tgu', akaEn: 'TGU, get-ups', aka: 'TGU, get-up', g: 'full', pl: 'Tureckie wstawanie (Turkish get-up)', en: 'Turkish get-up', m: ['shoulders', 'abs', 'obliques'], h: ['glutes', 'triceps', 'quads'], r: [1, 5],
     o: { eq: ['kb', 'db'] }, how: ['Ciężar cały czas nad głową, krok po kroku z leżenia do stania i z powrotem.', 'Weight always overhead, step by step from lying to standing and back.'] },
-  { id: 'sled-push', akaEn: 'sled, prowler push', aka: 'sanie, prowler', g: 'full', pl: 'Pchanie sań', en: 'Sled push', u: 's', m: ['quads', 'glutes', 'calves'], h: ['hamstrings', 'shoulders', 'triceps'], r: [15, 40],
+  { id: 'sled-push', akaEn: 'sled, prowler push', aka: 'sanie, prowler', g: 'full', pl: 'Pchanie i ciągnięcie sań', en: 'Sled push and pull', u: 's', m: ['quads', 'glutes', 'calves'], h: ['hamstrings', 'shoulders', 'triceps'], r: [15, 40],
     o: { eq: ['mc'] }, v: [['push', 'pchanie', 'push'], ['pull', 'ciągnięcie tyłem', 'backward drag']], how: ['Tułów pochylony, krótkie mocne kroki.', 'Lean forward, short powerful steps.'] },
   { id: 'burpee', akaEn: 'burpees', aka: 'burpees, padnij-powstań', g: 'full', pl: 'Padnij-powstań (burpees)', en: 'Burpee', u: 'reps', m: ['quads', 'chest'], h: ['shoulders', 'triceps', 'glutes', 'abs'], r: [10, 20],
     o: { eq: ['bw'] }, how: ['Przysiad, wyrzut nóg do podporu, pompka, powrót i wyskok.', 'Squat, kick back to a plank, push-up, back and jump.'] },
@@ -417,36 +417,46 @@ export const ALIASES = {
 export const byId = Object.fromEntries(BASES.map(b => [b.id, b]))
 const label = (ax, k, en) => AXES[ax].v[k][en ? 1 : 0]
 
-/** axes shown for a base with the current choice (some only for certain equipment) */
-export function axesOf(b, sel = {}) {
-  const eq = sel.eq || b.o.eq[0]
-  const out = Object.keys(b.o).filter(ax => b.o[ax].length > 1 && (!b.when?.[ax] || b.when[ax].includes(eq)))
-  const vw = Array.isArray(b.vwhen) ? { eq: b.vwhen } : b.vwhen || {}
-  const ok = Object.entries(vw).every(([ax, list]) => list.includes(sel[ax] || b.o[ax]?.[0]))
-  return { axes: out, variants: b.v && ok ? b.v : null }
+// values of an axis the rules (`only`) still allow for the choice so far; rule key 'axis:value' → { axis: [allowed] }
+function allowed(b, ax, s) {
+  let list = ax === 'v' ? (b.v || []).map(v => v[0]) : b.o[ax]
+  for (const [k, rule] of Object.entries(b.only || {})) {
+    const [rax, val] = k.split(':')
+    if (rule[ax] && s[rax] === val) list = list.filter(x => rule[ax].includes(x))
+  }
+  return list
 }
-/** the full choice: defaults for anything not picked */
-export function fullSel(b, sel = {}) {
-  const s = {}
-  for (const ax of Object.keys(b.o)) s[ax] = b.o[ax].includes(sel[ax]) ? sel[ax] : b.o[ax][0]
-  const { axes, variants } = axesOf(b, s)
+// the full choice (defaults for anything not picked, only allowed combinations) + what the picker shows
+function resolve(b, sel = {}) {
+  const s = {}, vals = {}, axes = []
+  for (const ax of Object.keys(b.o)) {
+    const list = allowed(b, ax, s)
+    s[ax] = list.includes(sel[ax]) ? sel[ax] : list[0]
+    if (list.length > 1 && (!b.when?.[ax] || b.when[ax].includes(s.eq))) { axes.push(ax); vals[ax] = list }
+  }
+  const vw = Array.isArray(b.vwhen) ? { eq: b.vwhen } : b.vwhen || {}
+  const vlist = b.v && Object.entries(vw).every(([ax, l]) => l.includes(s[ax])) ? allowed(b, 'v', s) : []
+  const variants = vlist.length > 1 ? b.v.filter(v => vlist.includes(v[0])) : null
   for (const ax of Object.keys(b.o)) if (b.o[ax].length > 1 && !axes.includes(ax)) delete s[ax]
   if (variants) s.v = variants.some(v => v[0] === sel.v) ? sel.v : variants[0][0]
-  return s
+  return { s, axes, vals, variants }
 }
+/** axes and values shown for a base with the current choice */
+export function axesOf(b, sel = {}) { const { axes, vals, variants } = resolve(b, sel); return { axes, vals, variants } }
+/** the full choice: defaults for anything not picked */
+export function fullSel(b, sel = {}) { return resolve(b, sel).s }
 
 const ALIAS_BY_SEL = new Map(Object.entries(ALIASES).map(([name, [id, sel]]) => [id + '|' + JSON.stringify(fullSel(byId[id], sel)), name]))
 
 /** name, unit, muscles of a chosen combination */
 export function compose(b, sel = {}) {
-  const s = fullSel(b, sel)
+  const { s, axes, variants } = resolve(b, sel)
   const key = b.id + '|' + JSON.stringify(s)
   const parts = [], partsEn = []
-  const { axes, variants } = axesOf(b, s)
   if (b.o.eq.length > 1) { parts.push(label('eq', s.eq)); partsEn.push(label('eq', s.eq, true)) }
   for (const ax of axes) if (ax !== 'eq' && s[ax] !== b.o[ax][0]) { parts.push(label(ax, s[ax])); partsEn.push(label(ax, s[ax], true)) }
   const vv = variants?.find(v => v[0] === s.v)
-  if (vv && vv !== variants[0]) { parts.push(vv[1]); partsEn.push(vv[2]) }
+  if (vv && vv[0] !== b.v[0][0]) { parts.push(vv[1]); partsEn.push(vv[2]) }
   const name = ALIAS_BY_SEL.get(key) || (parts.length ? `${b.pl} – ${parts.join(', ')}` : b.pl)
   const nameEn = parts.length ? `${b.en} – ${partsEn.join(', ')}` : b.en
   let main = [...b.m], help = [...(b.h || [])]
@@ -458,7 +468,9 @@ export function compose(b, sel = {}) {
     for (const m of e.h || []) if (!main.includes(m) && !help.includes(m)) help.push(m)
   }
   if (!main.length) main = [help.shift()]
-  return { id: key, name, nameEn, unit: b.uq?.[s.eq] || b.u || 'kg', assisted: !!b.assisted?.includes(s.eq), main, help, sel: s, range: b.r || [8, 12] }
+  let unit = b.uq?.[s.eq] || b.u || 'kg'
+  if (unit === 'kg' && (s.eq === 'bd' || s.eq === 'bw')) unit = 'reps' // a band or bodyweight has no kg to log
+  return { id: key, name, nameEn, unit, assisted: !!b.assisted?.includes(s.eq), main, help, sel: s, range: b.r || [8, 12] }
 }
 
 /** the base + choice behind a name (plan aliases, or a composed "Base – a, b" name) */

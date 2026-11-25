@@ -30,7 +30,7 @@
         <div v-for="ax in opts.axes" :key="ax" class="ep-axis">
           <span class="lbl">{{ AXES[ax].pl }}</span>
           <div class="ochips">
-            <button v-for="k in base.o[ax]" :key="k" class="ochip press" :class="{ on: sel[ax] === k }" @click="setOpt(ax, k)">{{ AXES[ax].v[k][0] }}</button>
+            <button v-for="k in opts.vals[ax]" :key="k" class="ochip press" :class="{ on: sel[ax] === k }" @click="setOpt(ax, k)">{{ AXES[ax].v[k][0] }}</button>
           </div>
         </div>
         <div v-if="opts.variants" class="ep-axis">

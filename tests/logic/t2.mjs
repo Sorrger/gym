@@ -183,7 +183,7 @@ ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
   const all = C.BASES.flatMap(b => [...combos(b)].map(s => C.compose(b, s)))
   const byNm = new Map(); let dup = null
   for (const r of all) { if (byNm.has(r.name) && byNm.get(r.name) !== r.id) dup = r.name; byNm.set(r.name, r.id) }
-  ok(C.BASES.length >= 110 && byNm.size > 1100, 'catalogue: many bases and combinations', [C.BASES.length, byNm.size])
+  ok(C.BASES.length >= 110 && byNm.size > 1000, 'catalogue: many bases and combinations', [C.BASES.length, byNm.size])
   ok(new Set(C.BASES.map(b => b.id)).size === C.BASES.length && new Set(C.BASES.map(b => b.pl)).size === C.BASES.length, 'catalogue: unique ids and names')
   ok(C.BASES.every(b => C.GROUPS.some(g => g.k === b.g) && Object.entries(b.o).every(([ax, ks]) => ks.every(k => C.AXES[ax]?.v[k]))), 'catalogue: groups and options exist')
   ok(C.BASES.every(b => Object.keys(b.x || {}).every(k => { const [ax, v] = k.split(':'); return b.o[ax]?.includes(v) })), 'catalogue: every option effect belongs to an option of that exercise')
@@ -221,6 +221,16 @@ ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
   ok(C.BASES.every(b => b.aka && b.akaEn && !/[ąćęłńóśźż]/i.test(b.akaEn)), 'catalogue: gym names in Polish and English for every exercise')
   const seenPl = new Map(); C.BASES.forEach(b => seenPl.set(b.pl.toLowerCase(), (seenPl.get(b.pl.toLowerCase()) || 0) + 1))
   ok([...seenPl.values()].every(n => n === 1) && new Set(C.BASES.map(b => b.en.toLowerCase())).size === C.BASES.length, 'catalogue: no duplicate exercise names (PL / EN)')
+  const ruleBad = C.BASES.flatMap(b => [
+    ...Object.entries(b.only || {}).flatMap(([k, rule]) => { const [ax, val] = k.split(':'); return [...(b.o[ax]?.includes(val) ? [] : [b.id + ' ' + k]), ...Object.entries(rule).flatMap(([ra, l]) => l.filter(x => !(ra === 'v' ? (b.v || []).map(v => v[0]) : b.o[ra] || []).includes(x)).map(x => b.id + ' ' + ra + ':' + x))] }),
+    ...Object.keys(b.uq || {}).filter(k => !b.o.eq.includes(k)).map(k => b.id + ' uq ' + k),
+    ...Object.entries(Array.isArray(b.vwhen) ? { eq: b.vwhen } : b.vwhen || {}).flatMap(([ax, l]) => l.filter(x => !b.o[ax]?.includes(x)).map(x => b.id + ' vwhen ' + x)),
+    ...(b.r[0] < b.r[1] ? [] : [b.id + ' range']),
+  ])
+  ok(!ruleBad.length, 'catalogue: option rules, units per equipment and ranges point at real options', ruleBad)
+  const db = C.compose(C.byId['db-row'], { pos: 'bench', side: 'both' }), cbc = C.compose(C.byId['curl'], { eq: 'bb', side: 'one' })
+  ok(db.sel.side === undefined && db.name === 'Wiosłowanie hantlem jednorącz z podparciem' && !cbc.name.includes('jednostronnie'), 'impossible combinations are not offered (two-arm row on a bench, one-arm barbell curl)')
+  ok(all.every(r => !(r.unit === 'kg' && (r.sel.eq === 'bd' || r.sel.eq === 'bw'))), 'catalogue: band and bodyweight are never logged in kg')
   ok(C.BASES.every(b => b.how && b.how.length === 2), 'catalogue: technique cue in both languages')
 }
 
