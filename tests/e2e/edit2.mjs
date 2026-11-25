@@ -10,12 +10,12 @@ const mock = async ctx => ctx.route('https://api.github.com/**', async r => {
   if (u.includes('/gists/G1')) return j({ id: 'G1', files: Object.fromEntries(Object.entries(files).map(([k, v]) => [k, { content: v.content }])) })
   return r.fulfill({ status: 404, body: '{}' })
 })
-const ctx = await b.newContext({ ...devices['iPhone 15'], acceptDownloads: true }); await mock(ctx)
+const ctx = await b.newContext({ ...devices['iPhone 15'], acceptDownloads: true }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await mock(ctx)
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + p.url()))
 const go = async h => { await p.goto('http://localhost:4173/' + h); await p.reload(); await p.waitForTimeout(1500) }
 const close = async () => { while (await p.locator('.dlg-btn:visible').count()) { await p.locator('.dlg-btn:visible').last().click(); await p.waitForTimeout(400) } }
 // connect backup first
-await go('#/tabs/settings'); await p.locator('button', { hasText: 'Połącz z GitHub' }).click(); await p.waitForTimeout(400)
+await go('#/settings/backup'); await p.locator('button:visible', { hasText: 'Połącz z GitHub' }).click(); await p.waitForTimeout(400)
 await p.locator('.dlg-in').fill('ghp_x'); await p.locator('.dlg-btn', { hasText: 'Połącz' }).click(); await p.waitForTimeout(3000)
 // start Push, tick bench set 1, go to last exercise (6)
 await go('#/plan/0'); await p.locator('.go:visible').click(); await p.waitForTimeout(1300); await close()
@@ -36,14 +36,14 @@ await p.locator('.save-btn').click(); await p.waitForTimeout(1500)
 await go('#/tabs/history'); await p.locator('.hist-list ion-item:visible').first().click({ force: true }); await p.waitForTimeout(1300)
 console.log('session view exercises:', await p.locator('.ex-head b:visible').allTextContents())
 // export file contains plan
-await go('#/tabs/settings')
+await go('#/settings/backup')
 const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }).catch(() => null), p.locator('button.row', { hasText: 'Zapisz kopię do pliku' }).click()])
 const txt = dl ? Buffer.concat(await (await dl.createReadStream()).toArray()).toString() : '{}'
 console.log('export has plan:', !!JSON.parse(txt).plan?.days)
 // phone 2: restore from gist → plan comes too
-const c2 = await b.newContext({ ...devices['iPhone 15'] }); await mock(c2); const q = await c2.newPage(); q.on('pageerror', e => errs.push('p2 ' + e.message))
-await q.goto('http://localhost:4173/#/tabs/settings'); await q.waitForTimeout(1500)
-await q.locator('button', { hasText: 'Połącz z GitHub' }).click(); await q.waitForTimeout(400)
+const c2 = await b.newContext({ ...devices['iPhone 15'] }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await mock(c2); const q = await c2.newPage(); q.on('pageerror', e => errs.push('p2 ' + e.message))
+await q.goto('http://localhost:4173/#/settings/backup'); await q.waitForTimeout(1500)
+await q.locator('button:visible', { hasText: 'Połącz z GitHub' }).click(); await q.waitForTimeout(400)
 await q.locator('.dlg-in').fill('ghp_x'); await q.locator('.dlg-btn', { hasText: 'Połącz' }).click(); await q.waitForTimeout(3000)
 await q.goto('http://localhost:4173/#/tabs/home'); await q.waitForTimeout(6000)
 await q.goto('http://localhost:4173/#/plan/0'); await q.reload(); await q.waitForTimeout(1500)

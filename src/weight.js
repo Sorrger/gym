@@ -2,7 +2,7 @@
 // Stored on the phone (IndexedDB key `weights`) and, when the GitHub backup is connected, in the same secret gist (file gym-weights.json).
 import { reactive, computed, watch } from 'vue'
 import { get, set } from 'idb-keyval'
-import { cloud, readGistFile, writeGistFile } from './cloud'
+import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
 import { iso } from './store'
 
 const FILE = 'gym-weights.json'
@@ -46,29 +46,29 @@ function merge(remote) {
 // from a backup file (Kopia → Wczytaj z pliku)
 export function importWeights(remote) { const n = merge(remote); if (n) schedulePush(); return n }
 export async function push() {
-  if (!cloud.token || !cloud.gistId || !navigator.onLine) return
+  if (!canSync()) return
   try {
     wstate.syncing = true
-    const remote = await readGistFile(FILE)
+    const remote = await readFile(FILE)
     merge(remote)
-    await writeGistFile(FILE, wstate.entries)
+    await writeFile(FILE, wstate.entries)
     wstate.error = ''
   } catch (e) { wstate.error = e.message } finally { wstate.syncing = false }
 }
 export async function pull() {
-  if (!cloud.token || !cloud.gistId || !navigator.onLine) return
+  if (!canSync()) return
   try {
-    const remote = await readGistFile(FILE)
+    const remote = await readFile(FILE)
     merge(remote)
     // anything newer here than in the gist goes up
-    if (Object.entries(wstate.entries).some(([d, e]) => !remote?.[d] || (e.t || 0) > (remote[d].t || 0))) await writeGistFile(FILE, wstate.entries)
+    if (Object.entries(wstate.entries).some(([d, e]) => !remote?.[d] || (e.t || 0) > (remote[d].t || 0))) await writeFile(FILE, wstate.entries)
   } catch (e) { wstate.error = e.message }
 }
 
 export async function initWeights() {
   try { Object.assign(wstate.entries, (await get('weights')) || {}) } catch (e) { wstate.error = e.message }
   wstate.loaded = true
-  watch(() => cloud.gistId, id => { if (id) pull() })
+  onConnected(pull)
   setTimeout(pull, 3000)
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') setTimeout(pull, 2500) })
 }

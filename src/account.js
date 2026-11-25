@@ -4,7 +4,7 @@
 //   { uid, nick, created, updated, provider: 'local' | 'google', email? }
 import { reactive, watch } from 'vue'
 import { get, set } from 'idb-keyval'
-import { cloud, readGistFile, writeGistFile } from './cloud'
+import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
 import { prefs, setPrefsLocal, prefsData } from './prefs'
 
 export const account = reactive({ uid: '', nick: '', created: 0, updated: 0, provider: 'local', email: '', loaded: false })
@@ -20,16 +20,16 @@ const FILE = 'gym-profile.json'
 // Today the GitHub gist plays the role of the account: one gist = one person. A phone restored from the same gist
 // takes over its uid, so every phone of that person has the same id (ready to become the database user id).
 export async function syncAccount() {
-  if (!cloud.token || !cloud.gistId || !navigator.onLine || !account.uid) return
+  if (!canSync() || !account.uid) return
   try {
-    const r = await readGistFile(FILE)
+    const r = await readFile(FILE)
     let up = !r?.uid
     if (r?.uid) {
       if (r.uid !== account.uid) { account.uid = r.uid; account.created = Math.min(r.created || Infinity, account.created || Infinity) }
       if ((r.updated || 0) > (account.updated || 0)) { account.nick = r.nick || ''; setPrefsLocal(r.prefs); account.updated = r.updated } else if ((account.updated || 0) > (r.updated || 0)) up = true
       save()
     }
-    if (up) await writeGistFile(FILE, accountData())
+    if (up) await writeFile(FILE, accountData())
   } catch {}
 }
 
@@ -40,7 +40,7 @@ export async function initAccount() {
   setPrefsLocal(a.prefs)
   const { prefs: _p, ...rest } = a
   Object.assign(account, rest, { loaded: true })
-  watch(() => cloud.gistId, id => { if (id) syncAccount() })
+  onConnected(syncAccount)
   setTimeout(syncAccount, 3500)
 }
 export const accountData = () => ({ uid: account.uid, nick: account.nick, created: account.created, updated: account.updated, provider: account.provider, prefs: prefsData(), ...(account.email ? { email: account.email } : {}) })

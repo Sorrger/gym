@@ -2,7 +2,7 @@
 // the GitHub Action (scripts/strava-sync.mjs) talks to Strava with the secret and writes strava.json into the backup gist.
 import { reactive } from 'vue'
 import { get, set } from 'idb-keyval'
-import { cloud, readGistFile, writeGistFile } from './cloud'
+import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
 import { ask } from './dialog'
 
 export const STRAVA_ICON = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' class='ionicon' viewBox='0 0 512 512'><path d='M226 32 90 294h80l56-105 55 105h80zm110 262-40 78-40-78h-60l100 186 100-186z'/></svg>"
@@ -46,7 +46,7 @@ export async function sendCode(code = strava.code) {
   if (!code) return false
   strava.code = code; persist()
   try {
-    await writeGistFile('strava-auth.json', { code, at: new Date().toISOString() })
+    await writeFile('strava-auth.json', { code, at: new Date().toISOString() })
     strava.code = ''; strava.sent = new Date().toISOString(); strava.msg = 'Wysłano. Strava połączy się w ciągu ~10 minut.'
     persist()
     return true
@@ -54,17 +54,17 @@ export async function sendCode(code = strava.code) {
 }
 
 export async function disconnectStrava() {
-  await writeGistFile('strava-auth.json', {})
-  await writeGistFile('strava.json', {})
+  await writeFile('strava-auth.json', {})
+  await writeFile('strava.json', {})
   strava.data = null; strava.sent = ''; strava.code = ''; persist()
 }
 
 export async function pull() {
-  if (!cloud.token || !cloud.gistId || strava.busy || !navigator.onLine) return
+  if (!canSync() || strava.busy) return
   strava.busy = true
   try {
     if (strava.code) await sendCode()
-    const d = await readGistFile('strava.json')
+    const d = await readFile('strava.json')
     if (d) { strava.data = d; if (d.at > strava.sent && strava.sent) strava.sent = ''; persist() }
   } catch (e) { console.warn(e) } finally { strava.busy = false }
 }
@@ -81,8 +81,8 @@ export async function initStrava() {
   // Strava often sends us back into Safari, which does not share data with the home-screen app:
   // there is no GitHub token here, so let the user copy the code and paste it in the app
   if (strava.code) {
-    for (let i = 0; i < 20 && !cloud.loaded; i++) await new Promise(r => setTimeout(r, 100))
-    if (!cloud.token) {
+    for (let i = 0; i < 20 && !cloudLoaded(); i++) await new Promise(r => setTimeout(r, 100))
+    if (!hasBackend()) {
       const code = strava.code
       const { role } = await ask({ icon: STRAVA_ICON, color: '#fc4c02', title: 'Jeszcze jeden krok',
         message: 'Strava otworzyła się w Safari, a nie w apce Gym. Skopiuj kod, otwórz Gym z ekranu głównego i wejdź w Profil → Ustawienia → Strava → Wklej kod.',

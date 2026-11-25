@@ -16,6 +16,15 @@
             <ion-icon :icon="chevronForward" class="chev" />
           </button>
         </div>
+        <template v-if="!sec">
+          <p class="section-foot ver">Gym · wersja {{ VERSION }}</p>
+          <div v-if="errs.length" class="ios-group">
+            <button class="row press" @click="copyErrors">
+              <span class="sq" style="--c: #ff3b30"><ion-icon :icon="warningOutline" /></span>
+              <div class="grow"><b>Błędy apki: {{ errs.length }}</b><span>Dotknij, żeby skopiować (do zgłoszenia)</span></div>
+            </button>
+          </div>
+        </template>
 
 <template v-if="sec === 'look'">
         <!-- look -->
@@ -227,10 +236,11 @@ import { t, lang as curLang, setLang } from '../i18n'
 import { useScrolled } from '../useScrolled'
 import { accountData, importAccount, setPref } from '../account'
 import { prefs, DEFAULT_PREFS } from '../prefs'
+import { VERSION, readErrors, clearErrors } from '../errors'
 import { ask } from '../dialog'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast  } from '@ionic/vue'
-import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, trendingUpOutline, scaleOutline, heartOutline } from 'ionicons/icons'
+import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, clipboardOutline, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, trendingUpOutline, scaleOutline, heartOutline, warningOutline } from 'ionicons/icons'
 import { useRoute } from 'vue-router'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../store'
 import { wstate, importWeights } from '../weight'
@@ -246,6 +256,13 @@ const router = useIonRouter()
 const route = useRoute()
 const sec = String(route.params.sec || '') // fixed per page (Ionic keeps hidden pages alive)
 const goBack = () => (router.canGoBack() ? router.back() : router.navigate(sec ? '/settings' : '/tabs/profile', 'back', 'replace'))
+const errs = ref(readErrors())
+async function copyErrors() {
+  const txt = 'Gym ' + VERSION + '\n' + errs.value.map(e => new Date(e.t).toISOString() + ' ' + e.at + ' ' + e.msg).join('\n')
+  try { await navigator.clipboard.writeText(txt); msg.value = 'Skopiowano – wklej w zgłoszeniu' } catch { msg.value = 'Nie udało się skopiować' }
+  const { role } = await ask({ title: 'Wyczyścić listę błędów?', message: 'Lista jest tylko na tym telefonie.', buttons: [{ text: 'Wyczyść', role: 'ok', kind: 'primary' }, { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
+  if (role === 'ok') { clearErrors(); errs.value = [] }
+}
 const MENU = [
   { k: 'look', t: 'Wygląd', i: colorPaletteOutline, c: '#af52de', sub: () => ({ system: 'Jak telefon', light: 'Jasny', dark: 'Ciemny' })[look.mode] + ' · ' + (ACCENTS.find(a => a.id === look.accent)?.name || '') },
   { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => (curLang === 'en' ? 'English' : 'Polski') },
@@ -455,4 +472,5 @@ async function askDisconnect() {
 .stepper b { min-width: 54px; white-space: nowrap; font-size: 16px; }
 .menu { margin-top: 4px; }
 .dot-warn { width: 9px; height: 9px; border-radius: 50%; background: var(--app-bad); flex: none; }
+.ver { text-align: center; margin-top: 18px; }
 </style>

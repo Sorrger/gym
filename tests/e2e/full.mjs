@@ -12,7 +12,7 @@ const mock = async ctx => ctx.route('https://api.github.com/**', async r => {
   return r.fulfill({ status: 404, body: '{}' })
 })
 const res = []; const ok = (c, m) => { res.push((c ? 'ok  ' : 'FAIL') + ' ' + m) }
-const ctx = await b.newContext({ ...devices['iPhone 15'], acceptDownloads: true }); await mock(ctx); await ctx.clock.install({ time: new Date('2026-11-21T12:00:00') })
+const ctx = await b.newContext({ ...devices['iPhone 15'], acceptDownloads: true }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await mock(ctx); await ctx.clock.install({ time: new Date('2026-11-21T12:00:00') })
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 const go = async h => { await p.goto('http://localhost:4173/' + h); await p.reload(); await p.waitForTimeout(1400) }
 const close = async () => { if (await p.locator('.dlg-btn:visible').count()) { await p.locator('.dlg-btn:visible').last().click(); await p.waitForTimeout(400) } }
@@ -57,8 +57,8 @@ ok(await p.locator('.tm, .timer, [class*=tm-]').count() > 0, 'timer opens')
 await p.keyboard.press('Escape'); await p.waitForTimeout(300)
 await go('#/tabs/home')
 // backup connect
-await go('#/tabs/settings')
-await p.locator('button', { hasText: 'Połącz z GitHub' }).click(); await p.waitForTimeout(500)
+await go('#/settings/backup')
+await p.locator('button:visible', { hasText: 'Połącz z GitHub' }).click(); await p.waitForTimeout(500)
 await p.locator('.dlg-in').fill('ghp_test'); await p.locator('.dlg-btn', { hasText: 'Połącz' }).click(); await p.waitForTimeout(3500)
 const bk = files['gym-backup.json'] && JSON.parse(files['gym-backup.json'].content)
 const ss = bk ? Object.values(bk.sessions) : []
@@ -67,18 +67,18 @@ ok(ss.some(s => s.offApp) && ss.some(s => s.day === 0 && Object.values(s.ex).som
 const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 5000 }).catch(() => null), p.locator('button.row', { hasText: 'Zapisz kopię do pliku' }).first().click().catch(() => {})])
 if (dl) { const t = JSON.parse(await (await dl.createReadStream()).toArray().then(a => Buffer.concat(a).toString())); ok(t.sessions && Object.keys(t.sessions).length === ss.length, 'JSON export has all sessions') } else res.push('skip JSON export (no download event)')
 // restore on a "new phone"
-const ctx2 = await b.newContext({ ...devices['iPhone 15'] }); await mock(ctx2); await ctx2.clock.install({ time: new Date('2026-11-21T12:00:00') })
+const ctx2 = await b.newContext({ ...devices['iPhone 15'] }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await mock(ctx2); await ctx2.clock.install({ time: new Date('2026-11-21T12:00:00') })
 const q = await ctx2.newPage(); q.on('pageerror', e => errs.push('phone2: ' + e.message))
-await q.goto('http://localhost:4173/#/tabs/settings'); await q.waitForTimeout(1500)
-await q.locator('button', { hasText: 'Połącz z GitHub' }).click(); await q.waitForTimeout(500)
+await q.goto('http://localhost:4173/#/settings/backup'); await q.waitForTimeout(1500)
+await q.locator('button:visible', { hasText: 'Połącz z GitHub' }).click(); await q.waitForTimeout(500)
 await q.locator('.dlg-in').fill('ghp_test'); await q.locator('.dlg-btn', { hasText: 'Połącz' }).click(); await q.waitForTimeout(3500)
 await q.goto('http://localhost:4173/#/tabs/home'); await q.reload(); await q.waitForTimeout(1500)
 ok((await q.locator('.day.off:visible').count()) === 1 && /2 treningi/.test(await q.locator('.t-foot:visible').first().textContent()), 'restore on new phone: workout + off-app mark (2 treningi)')
 // import the exported file on phone 3
 if (dl) {
   const path = '/tmp/pw/exp.json'; await dl.saveAs(path)
-  const ctx3 = await b.newContext({ ...devices['iPhone 15'] }); await ctx3.clock.install({ time: new Date('2026-11-21T12:00:00') }); const z = await ctx3.newPage(); z.on('pageerror', e => errs.push('phone3: ' + e.message))
-  await z.goto('http://localhost:4173/#/tabs/settings'); await z.waitForTimeout(1500)
+  const ctx3 = await b.newContext({ ...devices['iPhone 15'] }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await ctx3.clock.install({ time: new Date('2026-11-21T12:00:00') }); const z = await ctx3.newPage(); z.on('pageerror', e => errs.push('phone3: ' + e.message))
+  await z.goto('http://localhost:4173/#/settings/backup'); await z.waitForTimeout(1500)
   await z.locator('input[type=file]').setInputFiles(path); await z.waitForTimeout(1500)
   await z.locator('.dlg-btn:visible').first().click().catch(() => {}); await z.waitForTimeout(800)
   await z.goto('http://localhost:4173/#/tabs/home'); await z.reload(); await z.waitForTimeout(1500)

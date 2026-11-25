@@ -11,6 +11,8 @@ import { initStrava } from './strava'
 import { initWeights } from './weight'
 import { initAccount, account } from './account'
 import { initI18n } from './i18n'
+import { initErrors } from './errors'
+initErrors()
 import { initUpdater } from './updater'
 import { initPlan } from './customPlan'
 import { applyLook } from './theme'

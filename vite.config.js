@@ -1,8 +1,13 @@
 import { defineConfig } from 'vite'
+import { execSync } from 'node:child_process'
+// version shown in Ustawienia: build date + git commit
+const sha = (() => { try { return execSync('git rev-parse --short HEAD').toString().trim() } catch { return 'dev' } })()
+const BUILD = new Date().toISOString().slice(0, 10) + ' · ' + sha
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
+  define: { __BUILD__: JSON.stringify(BUILD) },
   base: './',
   build: { outDir: 'docs', emptyOutDir: true }, // GitHub Pages serves main:/docs
   plugins: [

@@ -4,7 +4,7 @@ import { reactive } from 'vue'
 import { get, set } from 'idb-keyval'
 import { applyPlan, ALT } from './plan'
 import { MUSCLES } from './muscles'
-import { cloud, readGistFile, writeGistFile } from './cloud'
+import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
 
 const FILE = 'gym-plan.json'
 export const custom = reactive({ data: null })
@@ -28,21 +28,21 @@ export async function initPlan() {
 export async function savePlan(c, go) {
   const data = c ? { ...c, t: Date.now() } : { t: Date.now(), days: null }
   await set('plan', JSON.parse(JSON.stringify(data)))
-  try { if (cloud.token && cloud.gistId && navigator.onLine) await writeGistFile(FILE, data) } catch {}
+  try { if (canSync()) await writeFile(FILE, data) } catch {}
   if (go) history.replaceState(history.state, '', go) // no hashchange: the router must not start navigating right before the reload
   location.reload()
 }
 
 // a newer plan in the gist (e.g. restored on a new phone): take it; reload only when no workout is open
 async function pull() {
-  if (!cloud.token || !cloud.gistId || !navigator.onLine) return
+  if (!canSync()) return
   try {
-    const remote = await readGistFile(FILE), local = (await get('plan')) || null
+    const remote = await readFile(FILE), local = (await get('plan')) || null
     if (remote && (remote.t || 0) > (local?.t || 0)) {
       await set('plan', remote)
       const { activeSession } = await import('./store')
       if (!activeSession()) location.reload()
-    } else if (local && (local.t || 0) > (remote?.t || 0)) await writeGistFile(FILE, local)
+    } else if (local && (local.t || 0) > (remote?.t || 0)) await writeFile(FILE, local)
   } catch {}
 }
 // from a backup file (Kopia → Wczytaj z pliku)
