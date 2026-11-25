@@ -17,6 +17,7 @@
       <g v-if="s.t === 'plate'" :transform="`translate(${s.at.x} ${s.at.y})`" class="plate" :class="{ far: s.far }">
         <circle :r="s.r" class="plate-fill" /><circle :r="s.r" class="plate-rim" /><circle :r="s.r * 0.7" class="plate-ring" /><circle r="4" class="plate-hub" />
       </g>
+      <text v-else-if="s.t === 'text'" :class="s.c" v-bind="s.a">{{ s.txt }}</text>
       <component v-else :is="s.t" :class="s.c" v-bind="s.a" />
     </template>
     <text v-if="phase" class="ph" :x="phX" :y="phY" text-anchor="end" :font-size="fs">{{ phase }}</text>
@@ -76,6 +77,9 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .xa circle.far { fill: color-mix(in srgb, var(--ion-text-color) 32%, var(--box)); stroke: none; }
 .xa .gear.far, .xa .rim.far, .xa .hub.far, .xa .plate.far { opacity: .55; }
 .xa .outline { stroke: var(--box); }
+.xa .ins-l { stroke: color-mix(in srgb, var(--ion-text-color) 16%, var(--box)); }
+.xa .ins-t { fill: color-mix(in srgb, var(--ion-text-color) 50%, var(--box)); font-weight: 600; }
+.xa .gear-line.ins { stroke: color-mix(in srgb, var(--ion-text-color) 45%, var(--box)); }
 .xa .bodyf { fill: var(--fig); }
 .xa .farf { fill: color-mix(in srgb, var(--ion-text-color) 32%, var(--box)); }
 .xa .nearf { fill: color-mix(in srgb, var(--ion-text-color) 72%, var(--box)); }

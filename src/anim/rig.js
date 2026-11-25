@@ -154,11 +154,11 @@ function foot(K, A, fo, cls = 'body') {
 }
 
 function gear(g, J, pose, near) {
-  const W = g.at === 'hold' && J.P ? J.P : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : g.at === 'hip' ? J.H : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
+  const W = g.at === 'hold' && J.P ? J.P : g.at === 'back' ? add(lerpPt(J.H, J.S, 0.62), J.L, 15) : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : g.at === 'hip' ? J.H : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
   switch (g.k) {
     case 'bb': return [{ t: 'plate', at: W, r: g.r || 22, far: !near }]
     case 'pl': return [{ t: 'plate', at: W, r: g.r || 15, far: !near }]
-    case 'db': return [circle(W, g.r || 10, 'gear' + f), circle(W, g.r || 10, 'rim' + f), circle(W, 3, 'hub' + f)]
+    case 'db': { const r = (g.r || 10) * 0.85, o = { x: 8, y: -5 }, A = add(W, o), B = add(W, o, -1); return [circle(A, r, 'gear' + f), circle(A, r, 'rim' + f), line(A, B, 4, 'gear-line' + f), circle(B, r, 'gear' + f), circle(B, r, 'rim' + f)] }
     case 'kb': { const dd = g.up ? ang(E, W) : 90, c = at(W, dd, 11); return [line(W, at(W, dd, 6), 4, 'gear-line' + f), circle(c, 10, 'gear' + f), circle(c, 10, 'rim' + f)] }
     case 'ball': { const c = at(W, g.dir ?? -90, g.off ?? 10); return [circle(c, g.r || 15, 'gear'), circle(c, g.r || 15, 'rim')] }
     case 'handle': return [circle(W, 5, 'gear' + f)]
@@ -176,18 +176,22 @@ function gear(g, J, pose, near) {
       const T = g.to === 'shoulder' ? add(J.S, J.L, 14) : g.to === 'hip' ? add(J.H, J.L, -16) : g.to === 'foot' ? J.A : g.to === 'roller' ? at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13) : W
       return [line(P0, T, 7, 'gear frame'), circle(P0, 6, 'gear')]
     }
+    case 'lift': { // assisted machine: platform under the knees on a lever from a fixed pivot
+      const y = Math.max(J.K.y, J.K2.y) + 10, c = { x: (J.K.x + J.K2.x) / 2, y }
+      return [line(g.pivot, c, 7, 'gear frame'), circle(g.pivot, 6, 'gear'), line({ x: c.x - 24, y }, { x: c.x + 24, y }, 10, 'pad')]
+    }
+    case 'kneepads': { const o = g.side ?? 1, P0 = { x: J.H.x, y: J.H.y + 24 }, a = { x: J.K.x + 13 * o, y: J.K.y }, b = { x: J.K2.x - 13 * o, y: J.K2.y }; return [line(P0, a, 5, 'gear frame'), line(P0, b, 5, 'gear frame'), circle(a, 9, 'pad'), circle(b, 9, 'pad')] } // ab/adductor machine pads outside (1) or inside (-1) the knees, on arms from under the seat
     case 'armpads': return [line(lerpPt(J.SR, J.E, 0.45), at(J.E, ang(J.SR, J.E), 8), 12, 'pad'), line(lerpPt(J.SL, J.E2, 0.45), at(J.E2, ang(J.SL, J.E2), 8), 12, 'pad'), circle(J.SR, 5, 'gear'), circle(J.SL, 5, 'gear')] // lateral-raise machine pads on the upper arms
     case 'pad': { const c = g.at === 'shoulder' ? add(J.S, J.L, 14) : g.at === 'hip' ? add(J.H, J.L, -16) : W; return [circle(c, g.r || 10, 'pad')] } // round machine pad on the body
-    case 'kneepads': { const o = g.side ?? 1; return [circle({ x: J.K.x + 13 * o, y: J.K.y }, 9, 'pad'), circle({ x: J.K2.x - 13 * o, y: J.K2.y }, 9, 'pad')] } // ab/adductor machine pads outside (1) or inside (-1) the knees
     case 'deck': return [line({ x: 26, y: g.y }, J.W, 6, 'gear frame'), line({ x: -26, y: g.y }, J.W2, 6, 'gear frame'), line({ x: -34, y: g.y }, { x: 34, y: g.y }, 7, 'gear frame')] // pec-deck arms hanging from pivots above the shoulders
     case 'kneepad': { const d = ang(J.H, J.K), c = at(lerpPt(J.H, J.K, 0.85), d - 90, 14); return [line(at(c, d, -16), at(c, d, 16), 10, 'pad')] } // machine pad on top of the thighs
     case 'bar2': { const d = ang(J.W2, J.W), m = lerpPt(J.W, J.W2, 0.5); return [line({ x: m.x, y: m.y }, { x: m.x, y: g.top ?? -330 }, 1.5, 'cable'), line(at(J.W2, d, -14), at(J.W, d, 14), 5, 'gear frame')] } // straight bar between both hands (front view)
     case 'shin': { const c = at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13); return [circle(c, 9, 'pad'), circle(c, 3, 'gear')] } // roller on the front (-1) or back (+1) of the shin
     case 'plat': { const a = g.ang ?? 0, c = at(J.A, a, 9); return [line(at(c, a + 90, 30), at(c, a - 90, 30), 8, 'pad')] }
     case 'rope': { // waving rope from the hands to an anchor
-      const A = W, B = g.from, n = 24, pts = []
-      for (let i = 0; i <= n; i++) { const q = lerpPt(A, B, i / n), amp = 9 * (1 - i / n); pts.push(`${q.x} ${q.y + Math.sin((i / n) * 3 * Math.PI * 2 - (pose.wv || 0)) * amp}`) }
-      return [{ t: 'path', a: { d: 'M' + pts.join(' L'), 'stroke-width': 4 }, c: 'gear-line' }]
+      const A = W, B = g.from, n = 32, pts = [], ph = (pose.wv || 0) + (near ? 0 : Math.PI)
+      for (let i = 0; i <= n; i++) { const u = i / n, q = lerpPt(A, B, u), amp = 14 * (1 - u) * Math.min(1, u * 6); pts.push(`${q.x} ${q.y + Math.sin(u * Math.PI) * 8 + Math.sin(u * 2.5 * Math.PI * 2 - ph) * amp}`) }
+      return [{ t: 'path', a: { d: 'M' + pts.join(' L'), 'stroke-width': near ? 5 : 4 }, c: 'gear-line' + f }]
     }
     case 'grip': { const s = 6 - (pose.sq ?? 0) * 4; return [line(at(W, -60, 2), at(W, -60, 14), 3, 'gear-line'), line(at(W, -60 + 20 + s * 3, 2), at(W, -60 + 20 + s * 3, 14), 3, 'gear-line')] }
     case 'dbrot': { const a = pose.rot ?? 0; return [line(at(W, a, 14), at(W, a + 180, 14), 3, 'gear-line'), circle(at(W, a, 14), 6, 'gear'), circle(at(W, a + 180, 14), 6, 'gear')] }
@@ -224,6 +228,47 @@ function prop(p) {
 }
 
 export function draw(scene, pose) {
+  const out = drawFig(scene, pose)
+  if (scene.inset) out.push(...insetShapes(scene.inset, scene.box))
+  return out
+}
+
+// equipment / cable attachment pictured in the top-left corner, separated by a line
+const INSET = 92
+const ICONS = {
+  bb: [['l', -32, 0, 32, 0, 3], ['r', -27, -13, 6, 26], ['r', 21, -13, 6, 26], ['r', -20, -6, 3, 12], ['r', 17, -6, 3, 12]],
+  ez: [['p', 'M-32 0 L-15 0 L-10 -4 L-5 3 L0 -4 L5 3 L10 -4 L15 0 L32 0', 3], ['r', -27, -11, 6, 22], ['r', 21, -11, 6, 22]],
+  db: [['l', -10, 0, 10, 0, 4], ['r', -22, -10, 11, 20], ['r', 11, -10, 11, 20]],
+  kb: [['c', 0, 6, 13], ['p', 'M-9 -1 Q-11 -18 0 -18 Q11 -18 9 -1', 4]],
+  hx: [['p', 'M-20 0 L-11 -14 L11 -14 L20 0 L11 14 L-11 14 Z', 3], ['l', -32, 0, -20, 0, 3], ['l', 20, 0, 32, 0, 3], ['r', -32, -11, 5, 22], ['r', 27, -11, 5, 22], ['l', -6, -14, 6, -14, 6], ['l', -6, 14, 6, 14, 6]],
+  tb: [['l', -30, 12, 26, -6, 3], ['r', -30, 0, 5, 22], ['l', 14, -2, 8, -14, 3], ['l', 14, -2, 22, 8, 3]],
+  bd: [['b', 'M-26 0 Q-26 -10 -14 -10 L14 -10 Q26 -10 26 0 Q26 10 14 10 L-14 10 Q-26 10 -26 0 Z', 4]],
+  rope: [['k', 0, -24, 0, -16], ['o', 0, -13, 4], ['p', 'M-2 -10 Q-8 2 -11 14', 4], ['p', 'M2 -10 Q8 2 11 14', 4], ['c', -11, 17, 5], ['c', 11, 17, 5]],
+  vbar: [['k', 0, -24, 0, -16], ['o', 0, -13, 4], ['p', 'M-2 -10 L-9 4 L-9 18', 4], ['p', 'M2 -10 L9 4 L9 18', 4]],
+  bar: [['k', 0, -24, 0, -16], ['o', 0, -13, 4], ['l', 0, -9, 0, 6, 3], ['l', -25, 6, 25, 6, 4]],
+  lat: [['k', 0, -24, 0, -16], ['o', 0, -13, 4], ['l', 0, -9, 0, 6, 3], ['p', 'M-33 -4 L-25 6 L25 6 L33 -4', 4]],
+  d: [['k', 0, -24, 0, -16], ['o', 0, -13, 4], ['p', 'M0 -9 L-13 10 L13 10 Z', 3], ['l', -10, 10, 10, 10, 6]],
+  ankle: [['k', 0, -24, 0, -16], ['o', 0, -13, 4], ['l', 0, -9, 0, -2, 3], ['r', -15, -2, 30, 16]],
+}
+function insetShapes({ kind, label }, box) {
+  const k = box.w / 380, x0 = box.x + 6 * k, y0 = box.y + 8 * k, cx = x0 + (INSET / 2 - 2) * k, cy = y0 + 30 * k
+  const P = (x, y) => ({ x: cx + x * k * 1.15, y: cy + y * k * 1.15 })
+  const path = d => d.replace(/(-?[\d.]+) (-?[\d.]+)/g, (_, x, y) => { const q = P(+x, +y); return `${q.x} ${q.y}` })
+  /** @type {any[]} */
+  const out = [line({ x: x0 + (INSET - 6) * k, y: y0 }, { x: x0 + (INSET - 6) * k, y: y0 + 76 * k }, 1.5 * k, 'ins-l')]
+  for (const [t, a, b, c, d, w] of ICONS[kind] || []) {
+    if (t === 'l') out.push(line(P(a, b), P(c, d), w * k, 'gear-line ins'))
+    else if (t === 'k') out.push(line(P(a, b), P(c, d), 1.6 * k, 'cable'))
+    else if (t === 'r') out.push({ t: 'rect', a: { x: P(a, b).x, y: P(a, b).y, width: c * k, height: d * k, rx: 3 * k }, c: 'pad' })
+    else if (t === 'c') out.push(circle(P(a, b), c * k, 'pad'))
+    else if (t === 'o') out.push({ t: 'circle', a: { cx: P(a, b).x, cy: P(a, b).y, r: c * k, 'stroke-width': 2.5 * k }, c: 'gear-line ins' })
+    else out.push({ t: 'path', a: { d: path(a), 'stroke-width': b * k }, c: t === 'b' ? 'band' : 'gear-line ins' })
+  }
+  out.push({ t: 'text', a: { x: cx, y: y0 + 70 * k, 'font-size': 12.5 * k, 'text-anchor': 'middle' }, c: 'ins-t', txt: label })
+  return out
+}
+
+function drawFig(scene, pose) {
   const front = scene.view === 'f'
   const J = joints(pose, scene.view)
   const g = scene.gear || [], main = scene.main || [], help = scene.help || []
@@ -276,7 +321,10 @@ export function frameBox(scene) {
   for (const g of scene.gear || []) { if (g.from) pts.push(g.from); if (g.from2) pts.push(g.from2); if (g.pivot?.x != null) pts.push(g.pivot) }
   let x0 = Math.min(...pts.map(p => p.x)) - 36, x1 = Math.max(...pts.map(p => p.x)) + 36
   let y0 = Math.min(...pts.map(p => p.y)) - 40, y1 = scene.top ? Math.max(...pts.map(p => p.y)) + 36 : 16
-  const w = x1 - x0, h = y1 - y0, want = 380 / 250
-  if (w / h < want) { const nw = h * want; x0 -= (nw - w) / 2; x1 = x0 + nw } else { const nh = w / want; y0 -= nh - h }
+  const want = 380 / 250
+  const fit = () => { const w = x1 - x0, h = y1 - y0; if (w / h < want) { const nw = h * want; x0 -= (nw - w) / 2; x1 = x0 + nw } else { const nh = w / want; y0 -= nh - h } }
+  fit()
+  // room on the left for the equipment picture: it scales with the final box, so reserve its share of the width
+  if (scene.inset) { x0 -= INSET * (x1 - x0) / (380 - INSET); fit() }
   return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }
 }

@@ -15,32 +15,82 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   const lab = d.lab || ['', '']
   const phases = d.ph || [[1300, lab[0], 0, 1], [300, lab[0], 1, 1], [1000, lab[1], 1, 0], [400, lab[1], 0, 0]]
   const scene = { rig: true, ...d, phases, main: mus.main || [], help: mus.help || [] }
+  const att = attachFor(baseId, sel)
+  if (att) scene.inset = { kind: att, label: ATT[att] }
   if (baseId === 'bench-press' && (sel.eq === 'bb' || sel.eq === 'sm') && sel.angle === 'flat' && sel.width !== 'close') scene.cues = BENCH_CUES
   scene.box = frameBox(scene)
+  const J0 = joints(scene.frames[0], scene.view)
+  // cable version of a free-weight scene: the weight becomes a handle on a cable from a low pulley in front (lying: beyond the head)
+  if (sel.eq === 'cb' && !(scene.gear || []).some(g => ['cable', 'band', 'rope', 'lever', 'bar2', 'deck'].includes(g.k))) {
+    const lying = Math.abs(Math.cos(scene.frames[0].t * Math.PI / 180)) > 0.8
+    const from = lying ? { x: J0.S.x + (J0.S.x < J0.H.x ? -90 : 90), y: -14 } : { x: J0.W.x + (scene.view === 'f' ? 0 : 70), y: -14 }
+    scene.gear = [{ k: 'cable', from, both: scene.view === 'f' }, { k: 'handle' }]
+    if (scene.view !== 'f') scene.props = [...(scene.props || []), { k: 'tower', x: from.x + 6, top: -60, pulley: from.y }]
+    scene.box = frameBox(scene)
+  }
+  const own = sel.eq === 'mc' ? MACHINE[baseId]?.(J0, sel) : null
+  if (own) scene.gear = own
   // machines get a weight stack behind the figure (left in side view, right in front view)
-  if (sel.eq === 'mc' && !NO_STACK.has(baseId) && !(baseId === 'calf-raise' && sel.pos === 'legpress')) {
-    const b = scene.box
-    const x = scene.view === 'f' ? b.x + b.w + 4 : b.x + 6
+  const stacked = (sel.eq === 'mc' && !NO_STACK.has(baseId) && !(baseId === 'calf-raise' && sel.pos === 'legpress')) || sel.eq === 'as'
+  if (stacked) {
+    const b = scene.box, front = scene.view === 'f'
+    const x = front ? b.x + b.w + 4 : b.x + 6
     scene.props = [{ k: 'stack', x }, ...(scene.props || [])]
-    const own = MACHINE[baseId]?.(joints(scene.frames[0], scene.view), sel)
-    if (own) scene.gear = own
+    if (sel.eq === 'as') { // assisted machine: a platform under the knees / feet on a lever that the stack pushes up
+      const ys = scene.frames.map(f => { const J = joints(f, scene.view); return Math.max(J.K.y, J.K2.y) })
+      scene.gear = [...(scene.gear || []).filter(g => g.k !== 'footpad'), { k: 'lift', pivot: { x: x + (front ? -26 : 26), y: Math.max(...ys) + 30 } }]
+    }
     // the handles hang on a cable from the stack, unless a machine arm or a cable is drawn already
-    if (!(scene.gear || []).some(g => ['lever', 'cable', 'pole', 'plat', 'backpad', 'deck', 'armpads', 'bar2', 'kneepads', 'pad', 'shin'].includes(g.k))) {
+    if (!(scene.gear || []).some(g => ['lever', 'cable', 'pole', 'plat', 'backpad', 'deck', 'armpads', 'bar2', 'kneepads', 'pad', 'shin', 'lift'].includes(g.k))) {
       // pulley at the average height of the hands (like an adjustable cable column)
       const ys = scene.frames.map(f => joints(f, scene.view).W.y), y = Math.max(-220, Math.min(-30, ys.reduce((a, b) => a + b, 0) / ys.length))
-      scene.gear = [{ k: 'cable', from: { x, y }, both: scene.view === 'f' }, ...(scene.gear || [])]
+      scene.gear = [{ k: 'cable', from: { x, y }, both: front }, ...(scene.gear || [])]
     }
+    // every machine arm hangs on a frame joined to the stack, so handles, arm and weights read as one machine
+    const fixed = name => { const ps = scene.frames.map(f => joints(f, scene.view)[name]); return ps.every(p => Math.hypot(p.x - ps[0].x, p.y - ps[0].y) < 6) ? ps[0] : null }
+    const top0 = -230
+    for (const g of scene.gear || []) {
+      const P = g.k === 'lever' || g.k === 'lift' ? (typeof g.pivot === 'object' ? g.pivot : g.pivot === 'knee' ? fixed('K') : g.pivot === 'elbow' ? fixed('E') : null)
+        : g.k === 'deck' ? { x: 0, y: g.y } : g.k === 'bar2' ? { x: 0, y: g.top ?? -330 } : g.k === 'armpads' ? { x: J0.SR.x, y: J0.SR.y } : g.k === 'kneepads' ? { x: J0.H.x, y: J0.H.y + 24 } : null
+      if (!P) continue
+      const fr = (x1, y1, x2, y2) => scene.props.push({ k: 'line', x1, y1, x2, y2, w: 6, c: 'gear frame' })
+      if (P.y > -130) fr(x, P.y, P.x, P.y) // low pivot: straight across from the stack
+      else { const top = Math.min(top0, P.y - 18); fr(x, top0, x, top); fr(x, top, P.x, top); fr(P.x, top, P.x, P.y) }
+    }
+    // belt squat: the belt cable runs under the platform to the stack
+    if (baseId === 'belt-squat') scene.props.push({ k: 'line', x1: x, y1: -4, x2: J0.H.x, y2: -4, w: 1.6, c: 'cable' })
     scene.box = frameBox(scene)
   }
   // Smith machine: the bar runs in vertical rails
   if (sel.eq === 'sm') {
     const xs = scene.frames.map(f => { const J = joints(f, scene.view); return (J.P || J.W).x })
     const x = xs.reduce((a, b) => a + b, 0) / xs.length
-    scene.props = [{ k: 'line', x1: x - 6, y1: 0, x2: x - 6, y2: -340, w: 6, c: 'gear frame' }, { k: 'line', x1: x - 20, y1: -340, x2: x + 8, y2: -340, w: 7, c: 'gear frame' }, ...(scene.props || [])]
+    scene.frames = scene.frames.map(f => (f.hold || f.ax == null ? f : { ...f, ax: x, ...(f.bx != null ? { bx: x } : {}) }))
+    scene.props = [{ k: 'line', x1: x, y1: 0, x2: x, y2: -340, w: 6, c: 'gear frame' }, { k: 'line', x1: x - 16, y1: -340, x2: x + 16, y2: -340, w: 7, c: 'gear frame' }, ...(scene.props || [])]
     scene.box = frameBox(scene)
   }
   return scene
 }
+// what the hands hold: free-weight kind, or the attachment on the cable
+const ATT = { bb: 'Sztanga', ez: 'Gryf łamany', db: 'Hantle', kb: 'Kettlebell', hx: 'Gryf heksagonalny', tb: 'T-gryf', bd: 'Guma',
+  rope: 'Lina', vbar: 'V-uchwyt', bar: 'Drążek', lat: 'Szeroki drążek', d: 'Uchwyt D', ankle: 'Opaska na kostkę' }
+const ANKLE = new Set(['leg-curl', 'glute-kickback', 'hip-abduction', 'hip-adduction', 'reverse-crunch'])
+const ROPE = new Set(['face-pull', 'pull-through', 'crunch', 'rear-delt-row', 'oblique-crunch'])
+const BAR = new Set(['pullover', 'shrug', 'upright-row', 'curl', 'skull-crusher', 'wrist-curl', 'straight-arm', 'front-raise', 'pushdown', 'overhead-ext'])
+export function attachFor(id, sel) {
+  const eq = sel.eq
+  if (id === 'battle-ropes') return null
+  if (eq !== 'cb') return ['bb', 'ez', 'db', 'kb', 'hx', 'tb', 'bd'].includes(eq) ? eq : null
+  if (ANKLE.has(id)) return 'ankle'
+  if (sel.v === 'rope' || ROPE.has(id)) return 'rope'
+  if (sel.v === 'vbar') return 'vbar'
+  if (sel.side === 'one' || sel.v === 'katana' || (id === 'curl' && (sel.pos === 'behind' || sel.pos === 'overhead'))) return 'd'
+  if (id === 'lat-pulldown') return sel.width === 'close' || sel.grip === 'neutral' ? 'vbar' : 'lat'
+  if (id === 'cable-row') return sel.width === 'wide' ? 'lat' : sel.grip === 'neutral' || !sel.grip || sel.width === 'close' ? 'vbar' : 'bar'
+  if (sel.v === 'bar' || BAR.has(id)) return 'bar'
+  return 'd'
+}
+
 // machine parts for exercises whose free-weight scene doesn't show the machine (J0 = joints of the first frame)
 const MACHINE = {
   'torso-rotation': J0 => [{ k: 'lever', pivot: { x: J0.S.x + 10, y: J0.S.y - 70 } }, { k: 'handle' }],
@@ -55,7 +105,7 @@ const MACHINE = {
   'reverse-hyper': () => [{ k: 'lever', pivot: { x: 40, y: -112 }, to: 'foot' }, { k: 'shin' }],
   'sissy-squat': () => [{ k: 'shin', side: -1 }],
 }
-const NO_STACK = new Set(['leg-press', 'hack-squat', 'pendulum', 'sled-push'])
+const NO_STACK = new Set(['leg-press', 'hack-squat', 'pendulum', 'sled-push', 'tibialis-raise', 'sissy-squat'])
 
 // "Nauka podciągania": one scene + cues per part of the stage (dead hang, negatives, assisted, full)
 const PULL_CUES = {

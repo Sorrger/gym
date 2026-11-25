@@ -5,6 +5,14 @@
 const pl = (n, one, many) => (+n === 1 ? one : many)
 
 export const EN = {
+  "Drążek": "Straight bar",
+  "Gryf heksagonalny": "Trap bar",
+  "Gryf łamany": "EZ bar",
+  "Guma": "Band",
+  "Hantle": "Dumbbells",
+  "Kettlebell": "Kettlebell",
+  "Lina": "Rope",
+  "Opaska na kostkę": "Ankle strap",
   "plecy": "back", "ręce": "arms", "nogi": "legs",
   "Czerwony": "Red",
   "czerń i mocne karty": "black with strong cards",
@@ -22,6 +30,11 @@ export const EN = {
   "Morski": "Teal",
   "Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.": "Nothing found. Type your own name in the exercise field.",
   "Rozciągnij": "Stretch",
+  "Szeroki drążek": "Wide bar",
+  "Sztanga": "Barbell",
+  "T-gryf": "T-bar",
+  "Uchwyt D": "D-handle",
+  "V-uchwyt": "V-handle",
   "Złącz": "Bring together",
   "Rozsuń": "Push apart",
   "Przenieś": "Move over",
