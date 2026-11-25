@@ -1,5 +1,6 @@
-import { chromium, devices } from 'playwright-core'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitScript(() => localStorage.setItem('onboarded', '1')); const p = await ctx.newPage(); const errs = []
 p.on('pageerror', e => errs.push(e.message))
 const IDB = () => p.evaluate(() => new Promise(r => { const q = indexedDB.open('keyval-store'); q.onsuccess = () => { const g = q.result.transaction('keyval').objectStore('keyval').get('sessions'); g.onsuccess = () => r(g.result || {}) } }))

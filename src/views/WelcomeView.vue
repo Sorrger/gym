@@ -41,7 +41,7 @@
           <button class="soc press" @click="soon('Apple')"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9a4.9 4.9 0 0 0-4.1 2.5c-1.8 3.1-.5 7.6 1.3 10.1.8 1.2 1.8 2.6 3.1 2.5 1.3 0 1.7-.8 3.3-.8s2 .8 3.3.8c1.4 0 2.2-1.2 3-2.4a10 10 0 0 0 1.4-2.8 4.3 4.3 0 0 1-2.7-4.2zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.2-.6 2.9-1.4z"/></svg>Kontynuuj z Apple<small>wkrótce</small></button>
         </section>
 
-        <!-- 3: ready -->
+        <!-- 4: ready -->
         <section v-else class="st">
           <h1>{{ nick ? 'Gotowe, ' + nick + '!' : 'Gotowe!' }}</h1>
           <p class="lead">Na start masz plan podstawowy: {{ planNames }}. Zmienisz go w Trening → Edytuj plan – ćwiczenia, dni, ile chcesz treningów.</p>

@@ -4,7 +4,7 @@ import { reactive } from 'vue'
 import { get, set } from 'idb-keyval'
 import { applyPlan, ALT } from './plan'
 import { MUSCLES } from './muscles'
-import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
+import { canSync, readFile, writeFile } from './sync'
 
 const FILE = 'gym-plan.json'
 export const custom = reactive({ data: null })

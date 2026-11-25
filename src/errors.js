@@ -1,5 +1,5 @@
 // Local error log (no external service): the last 20 app errors are kept on the phone (localStorage `errs`)
-// and shown in Ustawienia → "Informacje", so a bug can be copied and reported. Nothing is sent anywhere.
+// and listed in Settings ("Błędy apki"), so a bug can be copied and reported. Nothing is sent anywhere.
 const KEY = 'errs'
 export const readErrors = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch { return [] } }
 export const clearErrors = () => { try { localStorage.removeItem(KEY) } catch {} }

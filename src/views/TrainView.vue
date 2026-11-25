@@ -40,12 +40,12 @@
 import { addDoneDialog } from '../addDone'
 import { computed } from 'vue'
 import { IonPage, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
-import { add, createOutline, addCircleOutline, refreshOutline, chevronForward } from 'ionicons/icons'
-import { PLAN, COLORS, WEEKDAY_TO_DAY, DEFAULT_PLAN } from '../plan'
+import { createOutline, addCircleOutline, chevronForward } from 'ionicons/icons'
+import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { dayMuscles } from '../muscles'
 import { state, activeSession, suggestion } from '../store'
-import { custom, savePlan } from '../customPlan'
-import { ask } from '../dialog'
+
+
 import { useScrolled } from '../useScrolled'
 import BodyMap from './BodyMap.vue'
 const { scrolled, onScroll } = useScrolled()
@@ -55,15 +55,6 @@ const days = i => [1, 2, 3, 4, 5, 6, 0].filter(js => WEEKDAY_TO_DAY[js] === i).m
 const active = computed(() => { void state.sessions; return activeSession() })
 const sug = computed(() => { void state.sessions; return suggestion() })
 const next = computed(() => sug.value.day)
-const isCustom = computed(() => !!custom.data)
-async function reset() {
-  const { role } = await ask({ icon: refreshOutline, title: 'Przywrócić plan podstawowy?', message: 'Wrócą treningi, ćwiczenia, zamienniki i dni z apki. Twoje dodatkowe treningi znikną z planu, ale zrobione treningi zostają w historii.',
-    buttons: [{ text: 'Przywróć', role: 'ok', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role !== 'ok') return
-  // extra trainings stay as hidden (old workouts point at them)
-  const daysArr = PLAN.map((p, i) => (i < DEFAULT_PLAN.length ? null : { ...(custom.data?.days?.[i] || { name: p.name, note: p.note, ex: p.ex }), hidden: true }))
-  await savePlan(daysArr.some(Boolean) ? { days: daysArr, muscles: custom.data?.muscles || {} } : null, '#/tabs/train')
-}
 </script>
 
 <style scoped>

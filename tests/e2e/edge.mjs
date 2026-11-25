@@ -1,5 +1,6 @@
-import { chromium, devices } from 'playwright-core'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.clock.install({ time: new Date('2026-11-24T12:00:00') })
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + p.url()))
 const res = []; const ok = (c, m) => res.push((c ? 'ok   ' : 'FAIL ') + m)
@@ -37,11 +38,11 @@ for (const n of ['Pull', 'Nogi', 'Upper', 'Klatka A']) { await p.locator('.row',
 ok((await p.locator('.row .grow b:visible').allTextContents()).join() === 'Trening 5', 'deleted down to one training')
 await p.locator('.row').first().click(); await p.waitForTimeout(1100); await p.locator('.reset', { hasText: 'Usuń ten trening' }).click(); await p.waitForTimeout(400)
 ok(/jedyny/.test(await dlg()), 'last training cannot be deleted'); await close()
-await go('#/tabs/home'); ok((await p.locator('.plans.solo .plan:visible').count()) === 1, 'home: one training, suggested (rotation)')
+await go('#/tabs/home'); ok((await p.locator('.banner:visible').count()) === 1, 'home: one training, suggested (rotation)')
 await go('#/tabs/progress'); await go('#/tabs/history'); await go('#/session/' + (await p.evaluate(async () => { const r = await new Promise(res => { const q = indexedDB.open('keyval-store'); q.onsuccess = () => { const g = q.result.transaction('keyval').objectStore('keyval').get('sessions'); g.onsuccess = () => res(g.result) } }); return Object.keys(r || {})[0] || 'x' })))
 ok(true, 'progress/history/session render with hidden trainings')
 // 4. reset all
 await go('#/plans'); await p.locator('.reset:visible').click(); await p.waitForTimeout(400); await p.locator('.dlg-btn', { hasText: 'Przywróć' }).click(); await p.waitForTimeout(2500)
 ok((await p.locator('.row .grow b:visible').allTextContents()).join() === 'Push,Pull,Nogi,Upper', 'reset → basic plan back')
-await go('#/tabs/home'); ok(/Pull/.test(await p.locator('.plan.next:visible > b').textContent()), 'Tuesday → Pull again')
+await go('#/tabs/home'); ok(/Pull/.test(await p.locator('.b-plan:visible').textContent()), 'Tuesday → Pull again')
 console.log(res.join('\n')); console.log('errors:', errs); await b.close()

@@ -8,7 +8,10 @@
     "build": "vite build",
     "preview": "vite preview --host",
     "deploy": "node scripts/deploy.mjs",
-    "test": "node tests/logic/run.mjs"
+    "test": "node tests/logic/run.mjs",
+    "lint": "eslint .",
+    "e2e": "node tests/e2e/run.mjs",
+    "check": "npm run lint && npm test && npm run build && npm run e2e"
   },
   "dependencies": {
     "@ionic/vue": "^9.0.12",
@@ -20,7 +23,12 @@
     "vue-router": "^5.5.1"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@vitejs/plugin-vue": "^6.0.11",
+    "eslint": "^10.15.0",
+    "eslint-plugin-vue": "^10.12.1",
+    "globals": "^17.14.0",
+    "playwright-core": "^1.65.1",
     "vite": "^8.3.8",
     "vite-plugin-pwa": "^2.0.0",
     "workbox-core": "^7.4.1",

@@ -1,5 +1,6 @@
-import { chromium, devices } from 'playwright-core'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'], colorScheme: process.argv[2] || 'light' }); await ctx.clock.install({ time: new Date('2026-11-24T12:00:00') })
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + p.url()))
 const go = async h => { await p.goto('http://localhost:4173/' + h); await p.reload(); await p.waitForTimeout(1500) }

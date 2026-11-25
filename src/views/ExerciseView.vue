@@ -51,7 +51,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, onIonViewDidEnter } from '@ionic/vue'
 import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip } from 'chart.js'
 import { PLAN, COLORS, UNITS, entriesOf, fmtNum, isAssisted } from '../plan'
-import { state, sorted, fmtKg, fmtDate, fmtShort } from '../store'
+import { state, sorted, fmtDate, fmtShort } from '../store'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip)
 

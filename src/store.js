@@ -118,7 +118,7 @@ export function startSession(day) {
   const deload = dl.active || dl.due
   const s = { id: now.toString(36), date: iso(new Date()), day, ex: {}, started: now, finished: false, updated: now }
   if (deload) s.deload = true
-  // always the planned number of sets (user asked; half of it in a deload week); extra sets can still be added
+  // always the planned number of sets (half of it in a light week); extra sets can still be added
   entriesOf(day).forEach(g => { const n = g.sets || 1; s.ex[g.key] = prefill(g, deload ? deloadSets(n) : n, deload) })
   state.sessions[s.id] = s
   saveNow()
@@ -137,7 +137,7 @@ export function swapExercise(s, orig, to) {
   for (const g of groupsOf(ex, s)) if (!s.ex[g.key]) { const n = g.sets || 1; s.ex[g.key] = prefill(g, s.deload ? deloadSets(n) : n, !!s.deload, s.id) }
   s.updated = Date.now()
 }
-// "Trenuj normalnie" in a deload workout: back to the full plan and numbers; the deload waits one more week
+// "Dziś trenuj normalnie" in a light-week workout: back to the full plan and numbers; the deload waits one more week
 export function cancelDeload(s) {
   delete s.deload
   s.noDeload = true
@@ -149,8 +149,8 @@ export function cancelDeload(s) {
   s.updated = Date.now()
 }
 
-// ---------- automatic deload (research: most lifters take ~1 lighter week every ~5-6 weeks) ----------
-// every 6 weeks of training, or from week 4 when most exercises stopped improving. A break of 7+ days counts as rest
+// ---------- automatic light week (deload) ----------
+// due every prefs.deloadEvery weeks of training, or sooner (from DELOAD_MIN) when most exercises stopped improving. A break of 7+ days counts as rest
 // and starts the count again. The light week lasts 7 days from its first workout.
 export const DELOAD_EVERY = 6, DELOAD_MIN = 4
 const dayN = d => Math.round(new Date(d + 'T12:00:00').getTime() / 864e5)
@@ -247,7 +247,7 @@ export function mergeSessions(src) {
 }
 
 export function lastDoneOf(day) { return sorted().find(s => s.day === day && hasData(s)) || null }
-// which plan to do now. Weekly schedule Mon Push, Tue Pull, Thu Legs, Fri Upper (week = Mon–Sun):
+// which plan to do now, from the plan's weekdays (week = Mon–Sun):
 // 1) today's scheduled plan if not done this week yet ("Dziś")
 // 2) else a plan of this week whose day already passed and wasn't done – earliest first ("Zaległy"),
 //    e.g. Pull skipped on Tuesday → Wednesday or the weekend suggests Pull
@@ -273,7 +273,7 @@ export function suggestion(now = new Date()) {
 }
 export const suggestedDay = () => suggestion().day
 
-// "Zrobiłem poza apką": a plan done this week without logging it (e.g. before the app was installed).
+// a training done without logging it in the app (forgot the phone, before installing it)
 // Stored as an empty finished session { offApp: true } on that plan's scheduled day, so it syncs with the backup;
 // it has no sets, so it never shows in history or stats – it only stops the plan from being suggested as missed.
 // date: the day it was done (picked by the user); default = the plan's scheduled day this week, or today if that's later.

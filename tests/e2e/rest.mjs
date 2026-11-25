@@ -1,6 +1,7 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 import { seed, load } from './seed.mjs'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitScript(() => localStorage.setItem('onboarded', '1'))
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 await load(p, seed())

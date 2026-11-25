@@ -2,9 +2,9 @@
 // Later (planned): sign-in (Google) and an own database instead of the GitHub gist. The shape is plain JSON so it can
 // become a row in a "profiles" table 1:1, and `uid` is what the phone's data gets attached to on the first sign-in.
 //   { uid, nick, created, updated, provider: 'local' | 'google', email? }
-import { reactive, watch } from 'vue'
+import { reactive } from 'vue'
 import { get, set } from 'idb-keyval'
-import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
+import { canSync, readFile, writeFile, onConnected } from './sync'
 import { prefs, setPrefsLocal, prefsData } from './prefs'
 
 export const account = reactive({ uid: '', nick: '', created: 0, updated: 0, provider: 'local', email: '', loaded: false })

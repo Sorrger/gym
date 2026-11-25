@@ -1,5 +1,6 @@
-import { chromium, devices } from 'playwright-core'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
+const b = await launch()
 const files = {}
 const mock = async ctx => ctx.route('https://api.github.com/**', async r => {
   const u = r.request().url(), m = r.request().method()

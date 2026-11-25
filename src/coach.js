@@ -1,9 +1,9 @@
 // Progression hints (double progression). Work in a rep range, e.g. 6-8:
 // • every planned set reached the top (8) at the same weight → add weight, start again at the bottom (6)
 // • otherwise stay on the weight and beat last time by 1 rep per set (up to the top)
-// • two workouts in a row below the bottom of the range at that weight → go ~10 % lighter and build back up
+// • stuck below the bottom of the range (prefs.failN workouts in a row) → go prefs.dropPct % lighter and build back up
 // Optional reps in reserve per set (x.q: 0, 1, 2, 3 = "3+") refine it:
-// • every set with 3+ left → too light: add weight now, even below the top of the range
+// • every set with prefs.rirUp+ left → too light: add weight now, even below the top of the range
 // • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
 import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf, DEF_REPS } from './plan'
 import { sorted, deloadKg, deloadSets } from './store'
@@ -86,9 +86,8 @@ export function suggest(g, session) {
       text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? `za lekko, w każdej serii zostało ${prefs.rirUp}+ powtórzeń` : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
-  // stuck: two workouts in a row at this weight with a set under the bottom of the range AND no more total reps
+  // stuck: prefs.failN workouts in a row at this weight with a set under the bottom of the range AND no more total reps
   // than the time before (a normal 8, 7, 6 right after adding weight, then 8, 8, 7, is progress – not a reason to go lighter)
-  // failN workouts in a row (default 2) at this weight with a set under the range, and total reps not improving
   const sum = a => a.reduce((t, r) => t + (r ?? 0), 0)
   const runs = hist.slice(0, prefs.failN).map(h => h.sets.filter(x => x.w === W))
   const failed = reps.some(r => r < lo) && runs.length === prefs.failN && runs.every(a => a.length && a.some(x => x.r != null && x.r < lo)) &&
@@ -110,7 +109,7 @@ export function suggest(g, session) {
     sets: target.map(r => ({ w: W, r })) }
 }
 
-// during the workout (Alpha Progression style): after a ticked set, advice for the sets still to do.
+// during the workout: after a ticked set, advice for the sets still to do.
 // Only for clear cases, a normal drop like 8, 7, 6 says nothing:
 //  - below the range with 0 (or unknown) left → lighter (~10 %, at least one step) and the bottom of the range
 //  - 3+ left at the top of the range, or 3+ reps over it → one step heavier
@@ -141,7 +140,7 @@ export function live(g, session) {
   return null
 }
 
-// light week: same exercises, half the sets, ~10 % lighter, bottom of the range, 3-4 reps left in every set
+// light week: same exercises, fewer sets and lighter (prefs.deloadHalf / deloadPct), bottom of the range, 3-4 reps left
 function deload(g, session, hist, { lo }) {
   const n = deloadSets(g.sets || 1), unit = UNITS[g.unit].short
   const note = `Tydzień lżejszy (deload): ${deloadWords()}, bez dochodzenia do upadku – zostaw 3-4 powtórzenia w zapasie. Mięśnie odpoczywają, siła wraca, a w przyszłym tygodniu wracasz do normalnych ciężarów.`

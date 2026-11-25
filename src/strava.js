@@ -2,7 +2,7 @@
 // the GitHub Action (scripts/strava-sync.mjs) talks to Strava with the secret and writes strava.json into the backup gist.
 import { reactive } from 'vue'
 import { get, set } from 'idb-keyval'
-import { canSync, hasBackend, readFile, writeFile, onConnected, cloudLoaded } from './sync'
+import { canSync, hasBackend, readFile, writeFile, cloudLoaded } from './sync'
 import { ask } from './dialog'
 
 export const STRAVA_ICON = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' class='ionicon' viewBox='0 0 512 512'><path d='M226 32 90 294h80l56-105 55 105h80zm110 262-40 78-40-78h-60l100 186 100-186z'/></svg>"

@@ -60,8 +60,7 @@
 <script setup>
 import { computed } from 'vue'
 const props = defineProps({ name: String })
-let n = 0
-const id = 'ig' + Math.random().toString(36).slice(2, 8) + (n++)
+const id = 'ig' + Math.random().toString(36).slice(2, 10) // gradient id, unique per icon
 const PAL = {
   flame: ['#ffb340', '#ff3b30'], scale: ['#5ac8fa', '#0a84ff'], dumbbell: ['#b9a2ff', '#7346f5'],
   trophy: ['#ffe066', '#f5a300'], check: ['#4cd964', '#1f9d55'], warn: ['#ffcc00', '#ff9500'],

@@ -1,6 +1,7 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 import { seed, load } from './seed.mjs'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 for (const mode of ['light', 'dark']) {
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitScript(m => localStorage.setItem('look', JSON.stringify({ mode: m })), mode)
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
@@ -14,7 +15,7 @@ await row('Zejdź o').locator('button[aria-label="Więcej"]').click()
 await p.waitForTimeout(300)
 console.log('values:', await p.locator('.row.every .stepper b').allInnerTexts(), 'reset btn:', await p.locator('.reset-btn').count())
 await row('Progresja').count()
-await p.locator('.section-title', { hasText: 'Progresja' }).scrollIntoViewIfNeeded(); await p.waitForTimeout(300); await p.screenshot({ path: `pg2-${mode}.png` })
+await p.locator('h1.t-large:visible', { hasText: 'Progresja' }).waitFor()
 // zapas chips in the workout now go to 5+
 await p.goto('http://localhost:4173/#/plan/0'); await p.reload(); await p.waitForTimeout(1500); await p.locator('.go:visible').click(); await p.waitForTimeout(1800)
 await p.locator('.dlg-btn:visible').last().click().catch(() => {}); await p.waitForTimeout(300)

@@ -1,5 +1,5 @@
 import { ref } from 'vue'
-// tab pages draw their own large title (instant, no Ionic collapse setup – that made the header show up 1,5-2 s late on the phone);
+// tab pages draw their own large title (no Ionic collapse header – it appears late on the phone);
 // a small title bar fades in once the large title is scrolled away
 export function useScrolled(px = 40) {
   const scrolled = ref(false)

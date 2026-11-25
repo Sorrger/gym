@@ -1,9 +1,10 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 const S = {}
 const mk = (id, date, day, ex) => { const st = new Date(date + 'T18:00:00').getTime(); S[id] = { id, date, day, ex, started: st, finished: true, updated: st + 3600e3 } }
 mk('a', '2026-11-13', 3, { 'Rozpiętki na maszynie (butterfly)': [50, 50, 50].map(w => ({ w, r: 12, d: true })) })
 mk('b', '2026-11-16', 0, { 'Rozpiętki na bramie z dołu do góry': [10, 10, 10].map(w => ({ w, r: 15, d: true })) })
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 const p = await (await b.newContext({ ...devices['iPhone 15'] })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1200)
 await p.evaluate(async S => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); tx.objectStore('keyval').put(S, 'sessions'); tx.oncomplete = res } }) }, S)

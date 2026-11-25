@@ -21,7 +21,6 @@ export function volumeOf(s) {
 }
 export const setsOf = s => Object.values(s.ex || {}).reduce((a, arr) => a + arr.filter(x => x.d && x.t !== 'w').length, 0)
 
-// exercises (of one plan, or all) whose best in the last `days` beat everything before
 // new records in a period (days = null → all time): every workout where an exercise beat all its earlier workouts
 export function prEvents(day = null, days = null) {
   const cut = days ? daysAgoIso(days) : ''
@@ -41,7 +40,7 @@ export function prEvents(day = null, days = null) {
   }
   return n
 }
-// kept for the plan page (30 days): exercises whose best in the window beat everything before
+// records of one plan in the last `days` (plan page): exercises whose best in the window beat everything before
 export function prCount(day = null, days = 30) {
   const cut = daysAgoIso(days)
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
@@ -156,7 +155,6 @@ export function strengthTrend(max = 16) {
   return roll.slice(-max)
 }
 
-// last 4 weeks, all plans
 // period stats, days = null → all time
 export function overview(days = null) {
   const cut = days ? daysAgoIso(days) : ''
@@ -185,7 +183,6 @@ export function muscleSets(days = null) {
 // distinct plans (Push, Pull…) trained at least once, all time
 export const plansDone = (days = null) => { const cut = days ? daysAgoIso(days) : ''; return new Set(sorted().filter(s => s.date >= cut && ticked(s) && !PLAN[s.day]?.hidden).map(s => s.day)).size }
 
-// sets per muscle per week, averaged over the last 4 weeks
 // sets per muscle per week in a period (days = null → all time)
 export function muscleWeek(days = null) {
   const out = muscleSets(days)

@@ -1,8 +1,9 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 import { seed, load } from './seed.mjs'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 // fresh phone: interview
-const c1 = await b.newContext({ ...devices['iPhone 15'] }); const q = await c1.newPage(); const errs = []; q.on('pageerror', e => errs.push(e.message))
+const c1 = await b.newContext({ ...devices['iPhone 15'], fresh: true }); const q = await c1.newPage(); const errs = []; q.on('pageerror', e => errs.push(e.message))
 await q.goto('http://localhost:4173/#/tabs/home'); await q.waitForTimeout(1500); console.log('fresh →', q.url().split('#')[1])
 await q.locator('.big').first().click(); await q.waitForTimeout(500)
 console.log('interview items:', await q.locator('.int').count())

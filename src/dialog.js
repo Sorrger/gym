@@ -1,7 +1,7 @@
 import { reactive } from 'vue'
 
 // One custom dialog for the whole app (replaces Ionic alerts).
-// ask({ icon, color, title, message, input, buttons: [{ text, role, kind: 'primary'|'danger'|'plain' }] })
+// ask({ icon, color, title, message, input, buttons: [{ text, role, kind: 'primary'|'danger'|'soft'|'plain' }] })
 // resolves to { role, value, picks }; tapping outside or "Anuluj" gives role 'cancel'.
 // choices: [{ key, label, value, options: [{ value, label, sub? }] }] = rows of chips, the picked values come back in picks[key]
 export const dialog = reactive({ open: false, opts: null, value: '', picks: {}, _res: null })

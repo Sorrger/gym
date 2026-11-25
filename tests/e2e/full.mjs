@@ -1,5 +1,6 @@
-import { chromium, devices } from 'playwright-core'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
+const b = await launch()
 const files = {}
 const mock = async ctx => ctx.route('https://api.github.com/**', async r => {
   const u = r.request().url(), m = r.request().method()
@@ -77,7 +78,7 @@ await q.goto('http://localhost:4173/#/tabs/home'); await q.reload(); await q.wai
 ok((await q.locator('.day.off:visible').count()) === 1 && /2 treningi/.test(await q.locator('.t-foot:visible').first().textContent()), 'restore on new phone: workout + off-app mark (2 treningi)')
 // import the exported file on phone 3
 if (dl) {
-  const path = '/tmp/pw/exp.json'; await dl.saveAs(path)
+  const path = '/tmp/gym-exp.json'; await dl.saveAs(path)
   const ctx3 = await b.newContext({ ...devices['iPhone 15'] }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await ctx3.clock.install({ time: new Date('2026-11-21T12:00:00') }); const z = await ctx3.newPage(); z.on('pageerror', e => errs.push('phone3: ' + e.message))
   await z.goto('http://localhost:4173/#/settings/backup'); await z.waitForTimeout(1500)
   await z.locator('input[type=file]').setInputFiles(path); await z.waitForTimeout(1500)

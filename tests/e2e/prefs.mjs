@@ -1,6 +1,7 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 import { seed, load } from './seed.mjs'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 await load(p, seed())
 await p.evaluate(async () => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); const W = {}; [[20,104.2],[14,103.6],[10,103.5],[6,103.1],[3,102.9],[1,102.6],[0,102.7]].forEach(([n,kg]) => W[new Date(Date.now()-n*864e5).toISOString().slice(0,10)] = { kg, t: 1 }); tx.objectStore('keyval').put(W, 'weights'); tx.oncomplete = res } }) })

@@ -1,4 +1,5 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 const { plan } = await import('/tmp/t2/b.mjs')
 const S = {}
 const isoD = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
@@ -15,7 +16,7 @@ for (let w = 6; w >= 0; w--) for (const [off, day] of [[0, 0], [1, 1], [3, 2], [
   const id = 'z' + w + day, st = d.getTime()
   S[id] = { id, date: isoD(d), day, ex, started: st, finished: true, updated: st + 3600e3 }
 }
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'], colorScheme: 'dark' })
 const p = await ctx.newPage()
 const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && errs.push(m.text()))
@@ -26,7 +27,7 @@ const txt = async sel => (await p.locator(sel).first().textContent())?.trim()
 console.log('deload card:', await txt('.dl-card:visible'))
 console.log('pill:', await txt('.b-pill:visible'), '| on', await p.locator('.b-plan:visible').first().textContent())
 await p.screenshot({ path: 'z-home.png' })
-await p.locator('.b-go:visible').first().click(); await p.waitForTimeout(900)
+await p.locator('.banner:visible').first().click(); await p.waitForTimeout(900)
 console.log('plan tip:', await txt('.dl-box:visible'))
 console.log('stage:', await p.locator('.stage:visible').count())
 console.log('rows:', (await p.locator('.ex:visible .tgt').allTextContents()).slice(0, 3))

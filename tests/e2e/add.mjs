@@ -1,8 +1,9 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 const S = {}
 const mk = (id, date, day, key) => { const st = new Date(date + 'T18:00:00').getTime(); S[id] = { id, date, day, ex: { [key]: [{ w: 60, r: 8, d: true }, { w: 60, r: 8, d: true }, { w: 60, r: 7, d: true }] }, started: st, finished: true, updated: st + 3600e3 } }
 mk('a', '2026-11-10', 0, 'Wyciskanie sztangi na ławce płaskiej')
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 const cx = await b.newContext({ ...devices['iPhone 15'] }); await cx.clock.install({ time: new Date('2026-11-21T12:00:00') }); await cx.addInitScript(() => localStorage.setItem('onboarded', '1')); const p = await cx.newPage(); const errs = []
 p.on('pageerror', e => errs.push(e.message))
 await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1200)

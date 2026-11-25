@@ -1,10 +1,10 @@
 import { createAnimation } from '@ionic/vue'
-// Light page transition (iOS-like slide). Ionic's own iOS transition also clones and animates every header,
-// title and back button – on the phone going back to Start took 1,5-2 s (Nov 21 2026). This one only moves the pages.
+// Light page transition (iOS-like slide) that only moves the pages – Ionic's own iOS transition clones and
+// animates every header and back button, which is slow on the phone.
 export function pageAnim(_, opts) {
   const back = opts.direction === 'back'
   const root = createAnimation().duration(opts.duration ?? 300).easing('cubic-bezier(0.32, 0.72, 0, 1)')
-  // the entering page gets the app background while it slides (iPhone showed a black screen from Profil → Waga, Nov 25 2026)
+  // the entering page gets the app background while it slides (otherwise iOS can show it black)
   const enter = createAnimation().addElement(opts.enteringEl).beforeRemoveClass('ion-page-invisible')
     .beforeStyles({ background: 'var(--app-bg)' }).afterClearStyles(['background', 'transform', 'opacity']).afterRemoveClass('ion-page-invisible')
   if (back) enter.fromTo('transform', 'translateX(-30%)', 'translateX(0)').fromTo('opacity', '0.7', '1')

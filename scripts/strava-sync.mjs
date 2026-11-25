@@ -50,7 +50,6 @@ async function oauth(body) {
 
 const UNIT = Object.fromEntries([...PLAN.flatMap(d => d.ex.flatMap(e => groupsOf(e).map(g => [g.key, g.unit]))),
   ...PULLUP_STAGES.flatMap(st => st.parts.map(p => [PULLUP + ' · ' + p.label, p.unit]))])
-const PL = Object.fromEntries(Object.entries(MUSCLE_NAMES).map(([k, v]) => [k, v.toLowerCase()]))
 // default names from Strava / Garmin ("Night Weight Training", "Siła", "Trening siłowy"…) may be replaced; a name the user typed stays
 const DEFAULT_NAME = /^((morning|lunch|afternoon|evening|night)\s+)?(weight training|workout|strength( training)?|si[łl]a|trening( si[łl]owy)?|[a-ząćęłńóśźż ]*trening si[łl]owy)$/i
 const fmt = v => String(+(+v).toFixed(2)).replace('.', ',')

@@ -12,7 +12,7 @@
           <div><b>Kopia na GitHubie nie działa</b><span>{{ cloud.error || 'Nie wysłano od kilku dni' }}</span></div>
         </div>
 
-        <!-- banner: logo + name, today's training in its own colour (the brand lives in the content) -->
+        <!-- banner: logo + name, today's training in its own colour; the whole card opens it -->
         <section v-if="bDay != null" class="banner press" role="button" :aria-label="(active ? 'Kontynuuj trening ' : 'Otwórz trening ') + PLAN[bDay].name" :style="{ '--c': COLORS[PLAN[bDay].key] }" @click="active ? open(active.id) : start(bDay)">
           <div class="b-top">
             <span class="logo" aria-hidden="true"><ion-icon :icon="barbell" /></span>
@@ -79,19 +79,18 @@ import BodyMap from './BodyMap.vue'
 import { dayMuscles, MUSCLE_NAMES } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
-import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, addCircle, barbell, play } from 'ionicons/icons'
-import { PLAN, COLORS, WEEKDAY_TO_DAY, groupsOf } from '../plan'
+import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, barbell } from 'ionicons/icons'
+import { PLAN, COLORS, groupsOf } from '../plan'
 import { cloud } from '../cloud'
 import { weights, smooth, trend } from '../weight'
 import { askWeight } from '../weightQuick'
 import { weekStreak, overview } from '../stats'
-import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove, addPastSession, dropEmptyManual } from '../store'
+import { state, activeSession, suggestion, deloadState, doneSessions, counts, iso, offMarks, remove, dropEmptyManual } from '../store'
 import { ask } from '../dialog'
 
 const router = useIonRouter()
 const active = computed(() => { void state.sessions; return activeSession() })
 const activeCounts = computed(() => (active.value ? counts(active.value) : { n: 0, t: 0 }))
-const activePct = computed(() => (activeCounts.value.t ? activeCounts.value.n / activeCounts.value.t : 0))
 const nowTick = ref(Date.now()); let tk
 onIonViewWillEnter(() => dropEmptyManual())
 onMounted(() => { dropEmptyManual(); tk = setInterval(() => (nowTick.value = Date.now()), 30000) })
@@ -106,7 +105,6 @@ const next = computed(() => sug.value.day)
 const dlEnd = computed(() => dl.value.end ? dl.value.end.slice(8) + '.' + dl.value.end.slice(5, 7) : '')
 const dl = computed(() => { void state.sessions; void nowTick.value; return deloadState() })
 const done = computed(() => { void state.sessions; return doneSessions() })
-const totalSets = computed(() => done.value.reduce((a, s) => a + counts(s).n, 0))
 
 
 // tapping a day with "done without the app" marks: remove one
@@ -143,15 +141,11 @@ const week = computed(() => {
   })
 })
 const weekCount = computed(() => week.value.reduce((a, d) => a + d.real.length + d.offs.length, 0))
-const monthCount = computed(() => { const p = iso(new Date()).slice(0, 7); return done.value.filter(s => s.date.startsWith(p)).length })
-
-function lastText(i) { void state.sessions; const l = lastDoneOf(i); return l ? ago(l.date) : 'jeszcze nie było' }
 
 // warn only when the backup has been failing for a while, not after one missed upload at the gym
 const backupWarn = computed(() => cloud.token && cloud.dirty && cloud.error && cloud.error !== 'Brak połączenia' ||
   (cloud.token && cloud.dirty && cloud.lastSync && Date.now() - cloud.lastSync > 3 * 864e5))
 const reload = () => location.reload()
-const isToday = i => WEEKDAY_TO_DAY[new Date().getDay()] === i
 
 function open(id) { router.push('/workout/' + id) }
 

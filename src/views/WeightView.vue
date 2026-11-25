@@ -75,7 +75,7 @@
 
         <div class="card" v-if="list.length">
           <div class="card-title">Pomiary</div>
-          <button class="row press" v-for="(r, k) in rows" :key="r.date" @click="edit(r)">
+          <button class="row press" v-for="r in rows" :key="r.date" @click="edit(r)">
             <div class="r-left"><b class="num">{{ fmtDate(r.date) }}</b><span>{{ dayName(r.date) }}</span></div>
             <div class="r-right num">
               <small v-if="r.d" :class="{ ok: r.d < 0, bad: r.d > 0 }">{{ sign(r.d) }}</small>
@@ -101,7 +101,7 @@ import { useScrolled } from '../useScrolled'
 import { computed, ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { IonPage, IonContent, IonSegment, IonSegmentButton, IonLabel, IonIcon, onIonViewDidEnter } from '@ionic/vue'
 import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, Tooltip } from 'chart.js'
-import { add as add_, clipboardOutline, scale, trashOutline } from 'ionicons/icons'
+import { add as add_, clipboardOutline, scale } from 'ionicons/icons'
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
 import { cloud } from '../cloud'
 import { weights, setWeight, delWeight, parseList, smooth, trend } from '../weight'
@@ -157,7 +157,7 @@ const target = computed(() => {
   if (!g || now == null) return { left: 0, pct: 0, eta: '' }
   const start = list.value[0].kg, left = Math.abs(now - g)
   const pct = Math.max(0, Math.min(100, Math.round(start === g ? 100 : (start - now) / (start - g) * 100)))
-  let eta = ''
+  let eta
   if (left <= 0.05) eta = 'Gratulacje – trzymaj wagę.'
   else if (wk.value == null) eta = 'Termin pokażę, gdy będzie tempo (3 pomiary w 3 tygodnie).'
   else if (Math.sign(g - now) !== Math.sign(wk.value) || Math.abs(wk.value) < 0.02) eta = 'Przy obecnym tempie waga nie idzie w stronę celu.'

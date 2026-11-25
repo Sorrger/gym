@@ -100,7 +100,6 @@ reset(); weeks(20, 3, false)
 dl = store.deloadState(); ok(!dl.due, '<4 weeks stalled → not yet', dl)
 // start a session when due
 reset(); weeks(43, 7)
-const before = state.sessions[Object.keys(state.sessions).find(k => state.sessions[k].day === 0 && state.sessions[k].date === dAgo(1))] || store.sorted().find(s => s.day === 0)
 const lastBench = store.sorted().find(s => s.day === 0).ex[bench][0].w
 const ds = store.startSession(0)
 ok(ds.deload === true, 'new workout when due → deload')
@@ -166,7 +165,7 @@ ok(sug(22).day === 0 && sug(22).kind === 'missed', 'Sun, empty week → Push mis
 // unfinished but ticked counts; empty doesn't
 S(W(16), 0, {})
 ok(sug(16).day === 0, 'empty started workout does not count as done')
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- assisted numbers ----------
 reset()
 const AK = P + 'Ze wspomaganiem'
@@ -174,13 +173,13 @@ S(dAgo(9), 1, { [AK]: done([30, 30], [8, 8]) }); S(dAgo(2), 1, { [AK]: done([25,
 const ser = store.series(AK); ok(ser[1].w === 25, 'series assisted = least help')
 ok(stats.volumeOf(store.sorted()[0]) === 0, 'assisted kg not counted as volume')
 const dk = store.deloadKg(25, { key: AK, name: plan.PULLUP }); ok(dk === 30, 'deload assisted = +5 kg help', dk)
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 reset()
 S(dAgo(40), 3, { 'Podciąganie nachwytem (wspomagane)': done([30, 30, 30], [8, 7, 6]) })
 S(dAgo(3), 1, { [P + 'Wiszenie']: done([30, 30, 30]), [P + 'Negatywy']: done([5, 5, 5]) })
 const ns = store.startSession(1)
 ok(ns.ex[AK]?.[0]?.w === 30 && ns.ex[AK].length === 3 && ns.ex[P + 'Negatywy'].length === 2, 'stage 2 start: assisted prefilled from old assisted pull-ups (30 kg), negatives 2 sets', ns.ex[AK])
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- live advice + warm-up ----------
 const bg = plan.entriesOf(0).find(g => g.name === bench)
 const L = ex => coach.live(bg, { ex: { [bench]: ex } })
@@ -201,7 +200,7 @@ ok(JSON.stringify(plan.warmupSets(60).map(x => x.w + 'x' + x.r)) === '["20x10","
 ok(plan.warmupSets(20).length === 0 && plan.warmupSets(null).length === 0, 'no warm-up for empty bar / no weight')
 ok(plan.platesPerSide(42.5).join() === '10,1.25', 'plates 42,5 → 10 + 1,25', plan.platesPerSide(42.5))
 ok(plan.platesPerSide(100).join() === '25,15', 'plates 100 → 25 + 15')
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- done outside the app ----------
 reset()
 S(W(19), 2, { 'Przysiad Zerchera': done([60], [8]) }); S(W(20), 3, { 'Wyciskanie na skosie na Smithie': done([40], [8]) })
@@ -213,7 +212,7 @@ ok(sug(21).day === 0 && sug(21).kind === 'next', 'both marked → Push next week
 ok(stats.muscleSets().constructor === Object && store.doneSessions().length === 2, 'markers not in history/stats')
 ok(store.lastDoneOf(0) === null, 'marker is not "last workout"')
 const ps = store.startSession(0); ok(ps.ex[bench].length === 3, 'new Push still normal')
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- pick plan + day ----------
 reset()
 S(W(16), 1, { 'Face pull na wyciągu': done([20], [12]) }) // Pull done on Monday (Push's day)
@@ -228,7 +227,7 @@ for (const k of [8, 9, 10, 11, 12, 13, 14, 15]) for (const id of Object.keys(sta
 ok(!store.deloadState().due, 'gap of 8+ days → count restarts')
 store.markDoneOff(0, dAgo(12))
 ok(store.deloadState().due, 'off-app training in the gap → no break, deload still due')
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- progress tab helpers ----------
 reset()
 S(dAgo(20), 1, { [P + 'Negatywy']: done([3, 3, 3]) }); S(dAgo(18), 3, { [P + 'Negatywy']: done([4, 4, 4]) })
@@ -236,7 +235,7 @@ ok(stats.prEvents() === 1, 'shared exercise (Pull+Upper) record counted once', s
 const rp = stats.recentPRs(5); ok(rp.length === 1 && rp[0].w === 4 && rp[0].prev === 3, 'recentPRs: 4 (was 3)', rp)
 ok(stats.weekly(8).length === 8 && stats.weekly(8).reduce((a, w) => a + w.n, 0) === 2, 'weekly counts 2 workouts')
 reset(); ok(stats.strengthTrend().length === 0 && stats.recentPRs().length === 0, 'empty: no trend, no records')
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- swap a busy machine ----------
 reset()
 const FLY = 'Rozpiętki na bramie z dołu do góry', BF = 'Rozpiętki na maszynie (butterfly)'
@@ -254,13 +253,13 @@ ok(stats.volumeOf(sw) === 50 * 12 * 3, 'volume counts the swapped exercise')
 ok(plan.entriesOf(0, 'all').some(g => g.key === BF && g.alt), "progress ('all') lists the alternative")
 store.swapExercise(sw, FLY, FLY); ok(sw.ex[BF]?.length === 3 && sw.ex[FLY]?.length === 3 && !sw.swap, 'swap back keeps ticked butterfly sets, adds fly')
 const sd = store.startSession(3); store.swapExercise(sd, BF, FLY); ok(sd.ex[FLY][0].w === 10, 'Upper: butterfly → fly prefilled 10 kg')
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- removed exercises / units ----------
 reset()
 ok(plan.unitOfKey(P + 'Wiszenie') === 's' && plan.unitOfKey('Face pull na wyciągu') === 'kg' && plan.unitOfKey('Stare', [{ w: 5 }]) === 'reps', 'unitOfKey')
 const old = S(dAgo(3), 0, { 'Szrugsy': done([40, 40], [10, 10]), [bench]: done([60], [6]) })
 ok(stats.volumeOf(old) === 40 * 10 * 2 + 360, 'volume counts exercises no longer in the plan', stats.volumeOf(old))
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- own plans: count, hidden, weekdays, alternatives ----------
 reset()
 const W0 = { ...plan.WEEKDAY_TO_DAY }
@@ -306,7 +305,7 @@ plan.PLAN.length = 4; plan.applyPlan(null)
   prefs.deloadPct = 20; ok(store.deloadKg(100, g) === 80, 'deload 20 % lighter'); prefs.deloadHalf = false; ok(store.deloadSets(4) === 4, 'deload keeps all sets when half is off')
   prefs.deloadHalf = true; ok(store.deloadSets(4) === 2 && (prefs.deloadPct = 10, store.deloadKg(100, g) === 90), 'defaults back')
   ok(Object.keys(DEFAULT_PREFS).every(k => prefs[k] === DEFAULT_PREFS[k]), 'all prefs back to defaults') }
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }
 // ---------- edge cases round (Nov 24) ----------
 reset()
 plan.applyPlan({ days: [{ name: 'Push', ex: [[bench, '3 × 6-8'], ['Face pull na wyciągu', '3 × 12-15', null, 'reps']] }, null, null, null], muscles: {} }) // old saved format (no wd/alts)
@@ -357,4 +356,4 @@ plan.applyPlan(null)
   prefs.deloadPct = 20; ok(store.deloadKg(100, g) === 80, 'deload 20 % lighter'); prefs.deloadHalf = false; ok(store.deloadSets(4) === 4, 'deload keeps all sets when half is off')
   prefs.deloadHalf = true; ok(store.deloadSets(4) === 2 && (prefs.deloadPct = 10, store.deloadKg(100, g) === 90), 'defaults back')
   ok(Object.keys(DEFAULT_PREFS).every(k => prefs[k] === DEFAULT_PREFS[k]), 'all prefs back to defaults') }
-console.log(`\n${n - fails}/${n} passed`)
+globalThis.T1 = { n, fails }

@@ -18,7 +18,7 @@ export const DEFAULT_PREFS = {
   dropPct: 10,      // … by this much
   deloadPct: 10,    // light week: this much lighter
   deloadHalf: true, // light week: half the sets
-  restTimer: false, // rest timer starts by itself after a ticked set (off for the owner – user asked)
+  restTimer: false, // rest timer starts by itself after a ticked set
   restSec: 120,     // … this long
   weightOn: true,   // body weight tracking (tile on Start, Waga page links); off = hidden everywhere
   goalKg: null,     // target body weight (Waga page), optional

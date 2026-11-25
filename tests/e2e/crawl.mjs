@@ -1,8 +1,9 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 import { seed, load } from './seed.mjs'
 import fs from 'fs'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
-const all = new Set(), left = new Set()
+const b = await launch()
+const all = new Set()
 const ctx = await b.newContext({ ...devices['iPhone 15'] })
 await ctx.addInitScript(() => { localStorage.setItem('lang', 'en'); localStorage.setItem('onboarded', '1') })
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
@@ -38,12 +39,12 @@ await p.locator('button', { hasText: 'Zapisz' }).first().click().catch(() => {})
 await go('/plan/0'); await p.locator('.go:visible').click(); await p.waitForTimeout(1800); await grab()
 await p.locator('.tb-trash:visible').click().catch(() => {}); await p.waitForTimeout(500); await grab(); await p.locator('.dlg-btn:visible').first().click().catch(() => {}); await p.waitForTimeout(800)
 // welcome
-const c2 = await b.newContext({ ...devices['iPhone 15'] }); const q = await c2.newPage()
+const c2 = await b.newContext({ ...devices['iPhone 15'], fresh: true }); const q = await c2.newPage()
 await q.goto('http://localhost:4173/#/tabs/home'); await q.waitForTimeout(1500)
 const g2 = async () => (await q.evaluate(() => [...document.querySelectorAll('h1,p,b,button,span,small,label')].map(e => e.childNodes).flatMap(n => [...n]).filter(n => n.nodeType === 3).map(n => n.nodeValue.trim()).filter(v => /[a-ząćęłńóśźż]/i.test(v)))).forEach(x => all.add(x))
 await g2(); await q.locator('.big').first().click(); await q.waitForTimeout(500); await g2(); await q.locator('.next').click(); await q.waitForTimeout(500); await g2()
 // welcome in English
-const c3 = await b.newContext({ ...devices['iPhone 15'] }); await c3.addInitScript(() => localStorage.setItem('lang', 'en')); const z = await c3.newPage()
+const c3 = await b.newContext({ ...devices['iPhone 15'], fresh: true }); await c3.addInitScript(() => localStorage.setItem('lang', 'en')); const z = await c3.newPage()
 await z.goto('http://localhost:4173/#/welcome'); await z.waitForTimeout(1500)
 for (let i = 0; i < 4; i++) { (await z.evaluate(() => [...document.querySelectorAll('body *')].flatMap(e => [...e.childNodes]).filter(n => n.nodeType === 3).map(n => n.nodeValue.trim()).filter(v => /[a-ząćęłńóśźż]/i.test(v)))).forEach(x => all.add(x)); await z.locator('.next, button.big').last().click().catch(() => {}); await z.waitForTimeout(600) }
 fs.writeFileSync('strings.json', JSON.stringify([...all].sort(), null, 0))

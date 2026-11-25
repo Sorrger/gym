@@ -18,16 +18,16 @@ export const PLAN = [
     ['Odwrotne rozpiętki na maszynie (reverse butterfly)', '3 × 12-15', 'Tył barków'], ['Unoszenie ramienia bokiem na wyciągu', '3 × 10-15 / stronę', 'Boki barków']] }
 ]
 export const COLORS = { push: '#ff5a4f', pull: '#2f8cff', legs: '#22b864', chestback: '#ff9500' }
-// the user's week: Mon Push, Tue Pull, Thu Legs, Fri Upper (JS getDay: 0 = Sunday)
+// default weekdays: Mon Push, Tue Pull, Thu Legs, Fri Upper (JS getDay: 0 = Sunday)
 export const WEEKDAY_TO_DAY = { 1: 0, 2: 1, 4: 2, 5: 3 }
 export function nSets(t) { const m = t.match(/^(\d+)(?:-(\d+))?/); return m ? +(m[2] || m[1]) : 3 }
 
 // Units: most exercises are weight in kg; some parts are time (s) or reps.
-// ---- own plan (Nov 24 2026, user: others can edit the plan on their phone) ----
+// ---- own plan: each phone can edit its plan (customPlan.js); PLAN above is the basic default ----
 // The plan above is the default. A phone can keep its own version: { t, days: [{ name, note, ex } | null], muscles: { name: [[main],[help]] } }
 // stored in IndexedDB (key `plan`) and the backup gist (gym-plan.json). applyPlan() swaps it into PLAN in place
 // (everything imports the same PLAN), null = back to the default.
-// Nov 24 2026: any number of trainings (extra ones get keys 'p4', 'p5'…), a removed one stays as { hidden: true }
+// any number of trainings (extra ones get keys 'p4', 'p5'…); a removed one stays as { hidden: true }
 // (workouts store the plan by its index, so indices never shift), own weekdays `wd` ({ jsWeekday: index }) and
 // own alternatives `alts` ({ name: [names] }). The default plan above is the basic one for everybody.
 export const DEFAULT_PLAN = JSON.parse(JSON.stringify(PLAN))
@@ -159,7 +159,7 @@ export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].sh
 // An exercise may be made of parts with their own sets (e.g. Nauka podciągania = Wiszenie + Negatywy).
 // A plain exercise may name its unit instead of parts: [name, target, tag, 'reps'].
 // Each part is stored under its own key "Name · Part"; a plain exercise is stored under its name.
-// Interchangeable exercises (Nov 23 2026, user): do whichever machine is free. Chosen per workout on the
+// Interchangeable exercises: do whichever machine is free. Chosen per workout on the
 // Workout screen (session.swap = { planName: chosenName }); each exercise keeps its own history and progression.
 export const ALT = {
   'Rozpiętki na bramie z dołu do góry': ['Rozpiętki na maszynie (butterfly)'],

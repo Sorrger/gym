@@ -1,6 +1,7 @@
-import { chromium, devices } from 'playwright-core'
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
 import { seed, load } from './seed.mjs'
-const b = await chromium.launch({ executablePath: '/usr/bin/google-chrome' })
+const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitScript(() => { localStorage.setItem('onboarded', '1'); localStorage.setItem('look', '{"mode":"dark"}') })
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 await load(p, seed())
@@ -16,7 +17,6 @@ console.log('target:', (await p.locator('.target').innerText()).replace(/\s+/g, 
 console.log('details:', (await p.locator('.det').innerText()).replace(/\s+/g, ' '))
 console.log('weeks:', (await p.locator('.weeks').innerText()).replace(/\s+/g, ' ').slice(0, 160))
 await p.screenshot({ path: 'wq1.png', fullPage: false })
-await p.evaluate(async () => { const c = document.querySelector('ion-content:not(.ion-page-hidden *)'); })
 await p.mouse.wheel(0, 900); await p.waitForTimeout(400); await p.screenshot({ path: 'wq2.png' })
 // profile → weight → back, invisible pages?
 await p.goto('http://localhost:4173/#/tabs/profile'); await p.reload(); await p.waitForTimeout(1300)
