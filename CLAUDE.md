@@ -127,6 +127,20 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - Type checking: `npm run typecheck` (vue-tsc over the JS + Vue files, `checkJs`, not strict; data shapes in `src/types.d.ts` – Training, Session, SetRow). Code stays JS; add JSDoc types where the checker can't guess. CI runs it.
 - Languages: `LANGS` in src/i18n.js (code → name, locale, dictionary). A new language = one file like i18n-en.js + one line there; the pickers (Settings, first start) list LANGS. The DOM translation stays (Polish text = key); switching to vue-i18n keys was judged not worth the risk while it works.
 
+## Ready for a database? (review Nov 25 2026)
+Done so the switch stays small:
+- Local storage: everything goes through `src/db.js` (IndexedDB get/set/del) – a store per account = change that file only.
+- Cloud files: weight / plan / profile / strava go through `src/sync.js`; the workout backup is `cloud.js` (whole file).
+- Every record has merge rules: sessions `updated` (newer wins) + tombstones `state.deleted` (id → time, IndexedDB key `deleted`, in the gist backup and the file export) so a deleted workout never comes back from another phone/backup; weights `t` + `del`; plan `t`; profile `updated`.
+- Upload pulls first: `syncNow` reads the gist and merges before writing, so two phones don't overwrite each other's workouts.
+- New sessions store `plan` = the training's key (stable id) next to `day` (index).
+- Logic is separate from screens (store, coach, stats, records, weight) and covered by 217 logic tests.
+Still to solve when the database comes:
+- Sessions point at a training by index (`day`); old ones have no `plan` key → backfill `plan` from `PLAN[day].key` on the first upload.
+- Exercise history is keyed by the Polish exercise name (`RENAMED` maps renames). The exercise catalogue should bring stable exercise ids + a name→id map (same idea as RENAMED); do it together with the catalogue.
+- Sync per record (only changed sessions since the last sync) instead of one big file – the `updated`/`deleted` fields already allow it.
+- Strava runs as the owner's GitHub Action – other users need it on the backend (per-user OAuth).
+
 ## TODO (user, Nov 25 2026 – next sessions, in this spirit)
 - Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).
 - Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).

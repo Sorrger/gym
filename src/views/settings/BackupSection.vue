@@ -90,7 +90,7 @@ function markBackup() { lastBackup.value = iso(new Date()); try { localStorage.s
 
 // one JSON file with everything: workouts, weights, own plan, account + settings
 async function exportData() {
-  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, weights: wstate.entries, plan: await planData(), profile: accountData() }, null, 1)
+  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, deleted: state.deleted, weights: wstate.entries, plan: await planData(), profile: accountData() }, null, 1)
   const name = 'silownia-' + iso(new Date()) + '.json'
   try {
     const f = new File([json], name, { type: 'application/json' })
@@ -109,7 +109,7 @@ function importData(e) {
     try {
       const d = JSON.parse(String(r.result))
       if (!d?.sessions) throw 0
-      const n = mergeSessions(d.sessions)
+      const n = mergeSessions(d.sessions, d.deleted)
       const w = d.weights ? importWeights(d.weights) : 0
       if (d.profile) importAccount(d.profile)
       if (d.plan && await importPlan(d.plan)) setTimeout(() => location.reload(), 1500)

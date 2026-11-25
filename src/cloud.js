@@ -1,6 +1,6 @@
 // Automatic backup to a secret GitHub Gist. Token + gist id live only on this phone.
-import { reactive, watch } from 'vue'
-import { get, set, del } from 'idb-keyval'
+import { reactive, watch, nextTick } from 'vue'
+import { get, set, del } from './db'
 import { state, mergeSessions } from './store'
 
 const FILE = 'gym-backup.json'
@@ -23,7 +23,7 @@ async function api(path, opts = {}) {
   return r.status === 204 ? null : r.json()
 }
 
-const payload = () => JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions })
+const payload = () => JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, deleted: state.deleted })
 const hasData = sessions => Object.values(sessions || {}).some(s => Object.values(s.ex || {}).some(a => a.some(x => x.d)))
 
 async function findGist() {
@@ -61,12 +61,17 @@ export async function syncNow({ leaving = false } = {}) {
   if (!cloud.token || !navigator.onLine || state.loadError) return false
   if (cloud.busy) { again = true; return false }
   cloud.busy = true
-  const at = rev
+  let at = rev
   try {
     // safety net: never overwrite a backup that has workouts with a phone that has none (wiped storage) - restore instead
     if (cloud.gistId && !hasData(state.sessions)) {
       const d = await readGist().catch(() => null)
-      if (hasData(d?.sessions)) { mergeSessions(d.sessions); cloud.dirty = false; cloud.lastSync = Date.now(); cloud.error = ''; return true }
+      if (hasData(d?.sessions)) { mergeSessions(d.sessions, d.deleted); cloud.dirty = false; cloud.lastSync = Date.now(); cloud.error = ''; return true }
+    }
+    // take in what another phone sent since (so this upload never drops its workouts); skipped when leaving the app
+    if (cloud.gistId && !leaving) {
+      const d = await readGist().catch(() => null)
+      if (d?.sessions) { mergeSessions(d.sessions, d.deleted); await nextTick(); at = rev }
     }
     const body = payload()
     const files = { [FILE]: { content: body } }
@@ -100,7 +105,7 @@ export async function connect(token) {
     cloud.login = u.login
     cloud.gistId = await findGist()
     let n = 0
-    if (cloud.gistId) { const d = await readGist(); if (d?.sessions) n = mergeSessions(d.sessions) }
+    if (cloud.gistId) { const d = await readGist(); if (d?.sessions) n = mergeSessions(d.sessions, d.deleted) }
     await persist()
     const sent = await syncNow()
     return { ok: true, restored: n, sent }
@@ -114,7 +119,7 @@ export async function connect(token) {
 export async function restoreNow() {
   if (!cloud.gistId) return 0
   const d = await readGist()
-  return d?.sessions ? mergeSessions(d.sessions) : 0
+  return d?.sessions ? mergeSessions(d.sessions, d.deleted) : 0
 }
 
 export async function disconnect() {
@@ -129,7 +134,7 @@ export async function initCloud() {
   try { Object.assign(cloud, (await get('cloud')) || {}) } catch (e) { console.warn(e) }
   cloud.loaded = true
   // any change to workouts marks the backup as out of date; sent a few seconds later when online
-  watch(() => state.sessions, () => { if (cloud.token) { rev++; if (!cloud.dirty) { cloud.dirty = true; persist() } schedule() } }, { deep: true })
+  watch(() => [state.sessions, state.deleted], () => { if (cloud.token) { rev++; if (!cloud.dirty) { cloud.dirty = true; persist() } schedule() } }, { deep: true })
   window.addEventListener('online', () => schedule(1000))
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && cloud.dirty) { clearTimeout(timer); syncNow({ leaving: true }) } // leaving the app: try right away

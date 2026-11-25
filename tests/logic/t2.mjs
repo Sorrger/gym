@@ -79,6 +79,24 @@ ok(state.sessions[local.id] && state.sessions.x1, 'an empty backup deletes nothi
 store.mergeSessions({ x9: { date: dAgo(1), day: 7, ex: {}, updated: 1 } })
 ok(plan.PLAN[7] && plan.PLAN[7].hidden, 'unknown training index from a backup gets a hidden placeholder')
 
+// ---------- deleted workouts don't come back ----------
+reset(); for (const k of Object.keys(state.deleted)) delete state.deleted[k]
+const del1 = S(dAgo(3), 0, { [BENCH]: kg([60]) }, { updated: 1000 })
+const copy = JSON.parse(JSON.stringify(state.sessions))
+store.remove(del1.id)
+ok(!state.sessions[del1.id] && state.deleted[del1.id] > 0, 'delete leaves a tombstone')
+store.mergeSessions(copy, {})
+ok(!state.sessions[del1.id], 'an old backup that still has it does not bring it back')
+reset(); for (const k of Object.keys(state.deleted)) delete state.deleted[k]
+const other = S(dAgo(2), 1, { [BENCH]: kg([50]) }, { updated: 1000 })
+store.mergeSessions({}, { [other.id]: 2000 })
+ok(!state.sessions[other.id] && state.deleted[other.id] === 2000, 'deleted on another phone → removed here too')
+const edited = S(dAgo(1), 1, { [BENCH]: kg([55]) }, { updated: 5000 })
+store.mergeSessions({}, { [edited.id]: 3000 })
+ok(!!state.sessions[edited.id], 'a workout changed after the deletion elsewhere is kept')
+const remoteNew = { id: 'n1', date: dAgo(1), day: 0, ex: { [BENCH]: kg([70]) }, started: 10, finished: true, updated: 10 }
+ok(store.mergeSessions({ n1: remoteNew }, {}) === 1 && state.sessions.n1, 'new workouts still come in with tombstones around')
+
 // ---------- open workouts left for >12 h ----------
 reset()
 const old = Date.now() - 13 * 3600e3

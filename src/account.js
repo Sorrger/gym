@@ -3,7 +3,7 @@
 // become a row in a "profiles" table 1:1, and `uid` is what the phone's data gets attached to on the first sign-in.
 //   { uid, nick, created, updated, provider: 'local' | 'google', email? }
 import { reactive } from 'vue'
-import { get, set } from 'idb-keyval'
+import { get, set } from './db'
 import { canSync, readFile, writeFile, onConnected } from './sync'
 import { prefs, setPrefsLocal, prefsData } from './prefs'
 

@@ -20,6 +20,7 @@ interface Session {
   id: string
   date: string            // YYYY-MM-DD
   day: number             // index into PLAN
+  plan?: string           // the training's key (stable id, for a future database; older workouts don't have it)
   ex: Record<string, SetRow[]>
   started: number
   finished: boolean

@@ -1,7 +1,7 @@
 // The phone's own version of the plan (see applyPlan in plan.js). IndexedDB key `plan` + gist file gym-plan.json
 // (newer `t` wins). Changes take effect after a reload, so every screen and cache starts from the same plan.
 import { reactive } from 'vue'
-import { get, set } from 'idb-keyval'
+import { get, set } from './db'
 import { applyPlan, ALT } from './plan'
 import { MUSCLES } from './muscles'
 import { canSync, readFile, writeFile } from './sync'

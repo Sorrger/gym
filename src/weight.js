@@ -1,7 +1,7 @@
 // Body weight log. One entry per day: date -> { kg, t } (t = when changed; deleted days keep { del: true, t } so deletes sync).
 // Stored on the phone (IndexedDB key `weights`) and, when the GitHub backup is connected, in the same secret gist (file gym-weights.json).
 import { reactive, computed } from 'vue'
-import { get, set } from 'idb-keyval'
+import { get, set } from './db'
 import { canSync, readFile, writeFile, onConnected } from './sync'
 import { iso } from './store'
 

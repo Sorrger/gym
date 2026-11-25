@@ -1,6 +1,6 @@
 import { prefs } from './prefs'
 import { reactive, watch, computed } from 'vue'
-import { get, set } from 'idb-keyval'
+import { get, set } from './db'
 import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
@@ -15,13 +15,14 @@ export function ago(date) {
 }
 
 // sessions: id -> { id, date, day, ex: { name: [{ w, d }] }, started, finished, updated }
-export const state = reactive({ sessions: {}, ready: false, flash: '', loadError: false })
+// deleted: id -> time of deletion, so a workout deleted here doesn't come back from a backup / another phone
+export const state = reactive({ sessions: {}, deleted: {}, ready: false, flash: '', loadError: false })
 export const ui = reactive({ progressDay: 0, period: null, ptab: 'all' }) // period: days for the Progress tab, null = all time
 
 export async function load() {
   // if storage can't be read, do NOT continue with an empty list: the first save would wipe the real data
   for (let k = 0; k < 3; k++) {
-    try { const s = await get('sessions'); if (s) state.sessions = s; state.loadError = false; break }
+    try { const s = await get('sessions'); if (s) state.sessions = s; state.deleted = (await get('deleted')) || {}; state.loadError = false; break }
     catch (e) { console.warn(e); state.loadError = true; await new Promise(r => setTimeout(r, 300)) }
   }
   // older versions keyed sessions by "date_day" and had no id/started/finished
@@ -44,9 +45,11 @@ export async function load() {
 let queued = false
 function saveNow() {
   if (state.loadError) return Promise.resolve()
-  return set('sessions', JSON.parse(JSON.stringify(state.sessions))).catch(console.warn)
+  return Promise.all([set('sessions', JSON.parse(JSON.stringify(state.sessions))), set('deleted', { ...state.deleted })]).catch(console.warn)
 }
-watch(() => state.sessions, () => {
+// remove a workout and remember that it was deleted (see state.deleted)
+function forget(id) { delete state.sessions[id]; state.deleted[id] = Date.now() }
+watch(() => [state.sessions, state.deleted], () => {
   if (!state.ready || queued) return
   queued = true
   queueMicrotask(() => { queued = false; saveNow() })
@@ -79,7 +82,7 @@ export function closeStale() {
   Object.values(state.sessions).forEach(s => {
     if (s.finished || (s.updated || s.started || 0) > limit) return
     if (hasData(s) || (s.updated || 0) > (s.started || 0) + 1000) s.finished = true
-    else delete state.sessions[s.id]
+    else forget(s.id)
   })
 }
 
@@ -116,7 +119,7 @@ export function startSession(day) {
   const now = Date.now()
   const dl = deloadState()
   const deload = dl.active || dl.due
-  const s = { id: now.toString(36), date: iso(new Date()), day, ex: {}, started: now, finished: false, updated: now }
+  const s = { id: now.toString(36), date: iso(new Date()), day, plan: PLAN[day]?.key, ex: {}, started: now, finished: false, updated: now }
   if (deload) s.deload = true
   // always the planned number of sets (half of it in a light week); extra sets can still be added
   entriesOf(day).forEach(g => { const n = g.sets || 1; s.ex[g.key] = prefill(g, deload ? deloadSets(n) : n, deload) })
@@ -223,18 +226,25 @@ export const activeSession = () => sorted().find(s => !s.finished) || null
 export function finishSession(id) {
   const s = state.sessions[id]
   if (!s) return null
-  if (!hasData(s)) { delete state.sessions[id]; saveNow(); return null }
+  if (!hasData(s)) { forget(id); saveNow(); return null }
   s.finished = true; s.updated = Date.now(); saveNow()
   return s
 }
 
-export function remove(id) { delete state.sessions[id]; saveNow() }
+export function remove(id) { forget(id); saveNow() }
 
-// merge sessions from a backup: adds missing ones, newer versions win, nothing is deleted
-export function mergeSessions(src) {
-  let n = 0
+// merge sessions from a backup: adds missing ones, newer versions win. Deletions travel as tombstones
+// (deleted: id -> time): a workout deleted after its last change is removed on every phone.
+export function mergeSessions(src, deleted = {}) {
+  let n = 0, gone = 0 // n = workouts added or updated
+  for (const [k, t] of Object.entries(deleted || {})) if (t > (state.deleted[k] || 0)) state.deleted[k] = t
+  for (const [k, t] of Object.entries(state.deleted)) {
+    const a = state.sessions[k]
+    if (a && (a.updated || a.started || 0) <= t) { delete state.sessions[k]; gone++ }
+  }
   Object.entries(src || {}).forEach(([k, b]) => {
     if (k.includes('~draft') || !b?.date) return
+    if ((state.deleted[k] || 0) >= (b.updated || b.started || 0)) return
     const a = state.sessions[k]
     if (!a || (b.updated || 0) > (a.updated || 0)) {
       migrateNames(b)
@@ -242,7 +252,7 @@ export function mergeSessions(src) {
       n++
     }
   })
-  if (n) { ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0))); saveNow() }
+  if (n || gone) { ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0))); saveNow() }
   return n
 }
 
@@ -285,7 +295,7 @@ export function markDoneOff(day, date = null, now = new Date()) {
     date = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - back))
   }
   const id = 'off' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
-  state.sessions[id] = { id, date, day, ex: {}, started: 0, finished: true, updated: Date.now(), offApp: true }
+  state.sessions[id] = { id, date, day, plan: PLAN[day]?.key, ex: {}, started: 0, finished: true, updated: Date.now(), offApp: true }
   saveNow()
   return state.sessions[id]
 }
@@ -293,7 +303,7 @@ export function markDoneOff(day, date = null, now = new Date()) {
 // Opens in edit mode; the user ticks what was done. Left without any ticked set → removed (dropEmptyManual).
 export function addPastSession(day, date) {
   const now = Date.now(), started = new Date(date + 'T18:00:00').getTime()
-  const s = { id: now.toString(36), date, day, ex: {}, started, finished: true, updated: now, manual: true }
+  const s = { id: now.toString(36), date, day, plan: PLAN[day]?.key, ex: {}, started, finished: true, updated: now, manual: true }
   entriesOf(day).forEach(g => { s.ex[g.key] = prefill(g, g.sets || 1, false) })
   state.sessions[s.id] = s
   saveNow()
@@ -301,7 +311,7 @@ export function addPastSession(day, date) {
 }
 export function dropEmptyManual() {
   let n = 0
-  for (const s of Object.values(state.sessions)) if (s.manual && s.finished && !hasData(s)) { delete state.sessions[s.id]; n++ }
+  for (const s of Object.values(state.sessions)) if (s.manual && s.finished && !hasData(s)) { forget(s.id); n++ }
   if (n) saveNow()
 }
 export const offMarks = () => Object.values(state.sessions).filter(s => s.offApp)

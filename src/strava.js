@@ -1,7 +1,7 @@
 // Strava link. The phone only starts the Strava login and shows the results;
 // the GitHub Action (scripts/strava-sync.mjs) talks to Strava with the secret and writes strava.json into the backup gist.
 import { reactive } from 'vue'
-import { get, set } from 'idb-keyval'
+import { get, set } from './db'
 import { canSync, hasBackend, readFile, writeFile, cloudLoaded } from './sync'
 import { ask } from './dialog'
 
