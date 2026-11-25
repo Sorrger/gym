@@ -39,8 +39,9 @@ if (!p.url().includes('/workout')) { await go('#/plan/0'); await p.locator('.go:
 await close()
 await p.locator('.tb-finish').click(); await p.waitForTimeout(900); await p.locator('.save-btn').click(); await p.waitForTimeout(1300)
 // mark Pull done without the app
-const link = p.locator('.off-link:visible')
+await go('#/tabs/train'); const link = p.locator('.row:visible', { hasText: 'Dodaj zrobiony trening' })
 if (await link.count()) { await link.click(); await p.waitForTimeout(500); await p.locator('.dlg-chip:has-text("Pull")').click(); await p.locator('.dlg-chip:has-text("Wt")').click(); await p.locator('.dlg-btn:has-text("Bez serii")').click(); await p.waitForTimeout(700) }
+await go('#/tabs/home')
 ok(await p.locator('.day.off:visible').count() === 1, 'off-app mark shown')
 // history → session → edit
 await go('#/tabs/history'); await p.locator('.hist-list ion-item:visible').first().click({ force: true }); await p.waitForTimeout(1300)
