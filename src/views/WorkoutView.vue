@@ -41,7 +41,8 @@
                   <ion-icon :icon="swapHorizontal" /> {{ planName !== exName ? 'Zamiennik · zmień' : 'Zajęte? Zamień ćwiczenie' }}
                 </button>
               </div>
-              <div class="ex-body"><BodyMap v-bind="exMuscles" /></div>
+              <button class="ex-body press" @click="howOpen = true" aria-label="Jak to zrobić"><BodyMap v-bind="exMuscles" /><span class="how-q" aria-hidden="true">?</span></button>
+              <HowToSheet :open="howOpen" :name="exName" :color="color" :muscles="exMuscles" @close="howOpen = false" />
             </div>
             <div class="groups" :class="{ multi: groups.length > 1 }">
               <div class="group" v-for="g in groups" :key="g.key">
@@ -155,6 +156,7 @@ import { unlockAudio, vibrate } from './workout/beep'
 import { bestBefore } from './workout/records'
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
+import HowToSheet from './HowToSheet.vue'
 import { suggest, applySuggestion, live } from '../coach'
 import { musclesOf } from '../muscles'
 import { computed, ref, watch, watchEffect, nextTick } from 'vue'
@@ -207,6 +209,7 @@ async function swapAsk() {
 const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value], s.value) || '' : ''))
 const exTag = computed(() => plan.value?.ex[idx.value][2])
 const exMuscles = computed(() => musclesOf(exName.value))
+const howOpen = ref(false)
 const groups = computed(() => (plan.value ? groupsOf(plan.value.ex[idx.value], s.value) : []))
 /** @returns {SetRow[]} */
 function sets(key) {
@@ -438,7 +441,8 @@ h1.xlong { font-size: 21px; }
 h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; text-wrap: balance; }
 .ex-title { display: flex; gap: 8px; align-items: center; }
 .ex-tt { flex: 1; min-width: 0; }
-.ex-body { flex: none; height: 112px; }
+.ex-body { flex: none; height: 112px; position: relative; border: 0; padding: 0; background: none; font: inherit; }
+.how-q { position: absolute; top: -2px; right: -6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 800; color: #fff; background: var(--c, var(--accent)); box-shadow: 0 0 0 2px var(--app-bg); }
 .swap { display: inline-flex; align-items: center; gap: 6px; margin: 8px 4px 0; padding: 6px 11px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600;
   color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
 .swap ion-icon { font-size: 15px; }
