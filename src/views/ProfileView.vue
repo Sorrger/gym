@@ -27,7 +27,7 @@
 
         <h3 class="section-title">Moje dane</h3>
         <div class="ios-group">
-          <button class="row press" @click="router.push('/weight')">
+          <button v-if="prefs.weightOn" class="row press" @click="router.push('/weight')">
             <span class="r-ico" style="--c: #30b0c7"><ion-icon :icon="scaleOutline" /></span>
             <div class="grow"><b>Waga</b><span>{{ lastW ? 'Ostatnio ' + String(lastW.kg).replace('.', ',') + ' kg · ' + ago(lastW.date) : 'Zapisuj wagę i patrz na trend' }}</span></div>
             <ion-icon :icon="chevronForward" class="chev" />
@@ -74,6 +74,7 @@
 </template>
 
 <script setup>
+import { prefs } from '../prefs'
 import { t } from '../i18n'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'

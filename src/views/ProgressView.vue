@@ -100,7 +100,7 @@
 
         <template v-if="tab === 'body'">
         <!-- body weight (log in Profil → Waga) -->
-        <button class="card wcard press" @click="router.push('/weight')">
+        <button v-if="prefs.weightOn" class="card wcard press" @click="router.push('/weight')">
           <div class="wc-l">
             <small>Waga · średnia 7 dni</small>
             <b class="num">{{ wNow == null ? 'Dodaj pomiar' : fmt(wNow) + ' kg' }}</b>
@@ -157,6 +157,7 @@
 </template>
 
 <script setup>
+import { prefs } from '../prefs'
 import { weightTone } from '../prefs'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'

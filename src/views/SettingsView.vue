@@ -112,6 +112,13 @@
 
 </template>
         <template v-if="sec === 'weight'">
+        <div class="ios-group toggles">
+          <button class="row press" role="switch" :aria-checked="prefs.weightOn" @click="setPref('weightOn', !prefs.weightOn)">
+            <div class="grow"><b>Śledzenie wagi</b><span>Kafelek na Starcie, ekran Waga, cel sylwetki</span></div>
+            <span class="sw-t" :class="{ on: prefs.weightOn }"><i></i></span>
+          </button>
+        </div>
+        <template v-if="prefs.weightOn">
         <h3 class="section-title">Waga ciała</h3>
         <div class="card look">
           <span class="lbl">Twój cel</span>
@@ -122,6 +129,7 @@
         </div>
 
 </template>
+        </template>
         <template v-if="sec === 'backup'">
         <h3 class="section-title">Kopia zapasowa</h3>
         <p class="kop">{{ cloud.token ? 'Automatyczna kopia na GitHub włączona.' : 'Twoje treningi są tylko w tym telefonie.' }}</p>
@@ -268,7 +276,7 @@ const MENU = [
   { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => (curLang === 'en' ? 'English' : 'Polski') },
   { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => ({ auto: 'Podpowiedzi same', chip: 'Podpowiedzi na dotyk', off: 'Bez podpowiedzi' })[prefs.coach] + (prefs.restTimer ? ' · przerwa ' + REST.fmt(prefs.restSec) : '') + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
   { k: 'progress', t: 'Progresja', i: trendingUpOutline, c: '#34c759', sub: () => 'Zapas ' + prefs.rirUp + '+ · krok ' + String(prefs.stepKg).replace('.', ',') + ' kg' },
-  { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] },
+  { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => (prefs.weightOn ? ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] : 'Wyłączone') },
   { k: 'backup', t: 'Kopia zapasowa', i: cloudUploadOutline, c: '#0a84ff', sub: () => (cloud.token ? (cloud.error ? 'Błąd kopii' : 'GitHub · automatycznie') : 'Tylko w telefonie'), warn: () => cloud.token && cloud.error && cloud.error !== 'Brak połączenia' },
   { k: 'strava', t: 'Strava', i: heartOutline, c: '#fc4c02', sub: () => (sst.value === 'on' ? 'Połączona' : sst.value === 'waiting' ? 'Czeka' : 'Niepołączona') }]
 const COACH = [

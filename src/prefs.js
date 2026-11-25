@@ -20,6 +20,7 @@ export const DEFAULT_PREFS = {
   deloadHalf: true, // light week: half the sets
   restTimer: false, // rest timer starts by itself after a ticked set (off for the owner – user asked)
   restSec: 120,     // … this long
+  weightOn: true,   // body weight tracking (tile on Start, Waga page links); off = hidden everywhere
   goalKg: null,     // target body weight (Waga page), optional
   setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }

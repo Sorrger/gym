@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content :fullscreen="true">
       <div class="wel">
-        <div class="dots" aria-hidden="true"><i v-for="k in 3" :key="k" :class="{ on: step >= k - 1 }"></i></div>
+        <div class="dots" aria-hidden="true"><i v-for="k in 4" :key="k" :class="{ on: step >= k - 1 }"></i></div>
 
         <!-- 1: language -->
         <section v-if="step === 0" class="st" data-no-tr>
@@ -13,15 +13,29 @@
           <button class="big press" :class="{ on: cur === 'en' }" @click="pick('en')"><span class="flag">EN</span><b>English</b></button>
         </section>
 
-        <!-- 2: account -->
+        <!-- 2: what interests you (features you don't want stay off) -->
         <section v-else-if="step === 1" class="st">
+          <h1>Co Cię interesuje?</h1>
+          <p class="lead">Zaznacz, czego chcesz używać. Resztę schowam – zmienisz to później w Ustawieniach.</p>
+          <div class="ints">
+            <button v-for="f in FEATS" :key="f.k" class="int press" role="switch" :aria-checked="want[f.k]" @click="want[f.k] = !want[f.k]">
+              <div class="grow"><b>{{ f.t }}</b><span>{{ f.d }}</span></div>
+              <span class="sw-t" :class="{ on: want[f.k] }"><i></i></span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 3: account -->
+        <section v-else-if="step === 2" class="st">
           <h1>Twoje konto</h1>
           <p class="lead">Dane zostają na tym telefonie. Logowanie i kopia w chmurze – wkrótce.</p>
           <label class="fld"><span>Nick</span><input v-model="nick" maxlength="24" placeholder="np. Kuba" autocomplete="nickname" /></label>
+          <template v-if="want.weightOn">
           <div class="fld"><span>Cel</span>
             <div class="seg3"><button v-for="g in GOALS" :key="g.v" class="press" :class="{ on: goal === g.v }" @click="goal = g.v">{{ g.t }}</button></div>
           </div>
           <label class="fld"><span>Waga dziś (kg, opcjonalnie)</span><input v-model="kg" inputmode="decimal" placeholder="np. 82,5" /></label>
+          </template>
           <div class="or"><span>albo</span></div>
           <button class="soc press" @click="soon('Google')"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285f4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34a853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#fbbc05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#ea4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 5.9 12 5.9z"/></svg>Kontynuuj z Google<small>wkrótce</small></button>
           <button class="soc press" @click="soon('Apple')"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.5 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9a4.9 4.9 0 0 0-4.1 2.5c-1.8 3.1-.5 7.6 1.3 10.1.8 1.2 1.8 2.6 3.1 2.5 1.3 0 1.7-.8 3.3-.8s2 .8 3.3.8c1.4 0 2.2-1.2 3-2.4a10 10 0 0 0 1.4-2.8 4.3 4.3 0 0 1-2.7-4.2zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-2.9 1.5-.6.7-1.2 1.9-1 3.1 1.1.1 2.2-.6 2.9-1.4z"/></svg>Kontynuuj z Apple<small>wkrótce</small></button>
@@ -40,7 +54,7 @@
 
         <div class="foot">
           <button v-if="step > 0" class="back press" @click="step--">Wstecz</button>
-          <button class="next press" @click="next">{{ step === 2 ? 'Zaczynamy' : 'Dalej' }}</button>
+          <button class="next press" @click="next">{{ step === 3 ? 'Zaczynamy' : 'Dalej' }}</button>
         </div>
       </div>
     </ion-content>
@@ -48,7 +62,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, reactive } from 'vue'
 import { IonPage, IonContent, useIonRouter } from '@ionic/vue'
 import { lang, setLang } from '../i18n'
 import { setNick, setPref } from '../account'
@@ -61,6 +75,16 @@ const router = useIonRouter()
 const step = ref((() => { try { return +sessionStorage.getItem('welStep') || 0 } catch { return 0 } })())
 const cur = ref(lang)
 const nick = ref(''), goal = ref('cut'), kg = ref('')
+// interview: new users choose the features; what they don't want is switched off (Ustawienia can bring it back)
+const FEATS = [
+  { k: 'weightOn', t: 'Waga i sylwetka', d: 'Zapisywanie wagi, tempo, cel' },
+  { k: 'coach', t: 'Podpowiedzi trenera', d: 'Ile dźwignąć dziś, kiedy dodać ciężar' },
+  { k: 'restTimer', t: 'Minutnik przerwy', d: 'Odlicza przerwę po każdej serii' },
+  { k: 'warmup', t: 'Rozgrzewka', d: 'Serie rozgrzewkowe przy sztandze' },
+  { k: 'rir', t: 'Zapas powtórzeń', d: 'Ile zostało do upadku – dla dokładniejszych podpowiedzi' },
+  { k: 'deload', t: 'Lżejszy tydzień', d: 'Co kilka tygodni lżej, żeby odpocząć' },
+  { k: 'setTypes', t: 'Rodzaje serii', d: 'Rozgrzewkowa, drop set, do upadku' }]
+const want = reactive({ weightOn: true, coach: true, restTimer: true, warmup: true, rir: false, deload: true, setTypes: false })
 const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
 const planNames = computed(() => PLAN.filter(p => !p.hidden).map(p => p.name).join(', '))
 
@@ -74,11 +98,18 @@ function soon(p) { ask({ title: 'Logowanie przez ' + p, message: 'Będzie wkrót
 function next() {
   if (step.value === 0) { pick(cur.value); return }
   if (step.value === 1) {
-    if (nick.value.trim()) setNick(nick.value)
-    setPref('goal', goal.value)
-    const w = parseFloat(String(kg.value).replace(',', '.'))
-    if (w > 20 && w < 400) setWeight(iso(new Date()), w)
+    setPref('weightOn', want.weightOn); setPref('coach', want.coach ? 'auto' : 'off'); setPref('live', want.coach)
+    for (const k of ['rir', 'warmup', 'restTimer', 'deload', 'setTypes']) setPref(k, want[k])
     step.value = 2; return
+  }
+  if (step.value === 2) {
+    if (nick.value.trim()) setNick(nick.value)
+    if (want.weightOn) {
+      setPref('goal', goal.value)
+      const w = parseFloat(String(kg.value).replace(',', '.'))
+      if (w > 20 && w < 400) setWeight(iso(new Date()), w)
+    }
+    step.value = 3; return
   }
   try { localStorage.setItem('onboarded', '1'); sessionStorage.removeItem('welStep') } catch {}
   router.navigate('/tabs/home', 'root', 'replace')
@@ -114,4 +145,14 @@ h1 { font-size: 32px; font-weight: 800; letter-spacing: -.5px; margin: 8px 0 6px
 .foot button { flex: 1; padding: 16px; border: 0; border-radius: 16px; font: inherit; font-size: 17px; font-weight: 700; }
 .next { background: var(--accent); color: #fff; flex: 2 !important; }
 .back { background: var(--app-card); color: var(--accent); }
+.ints { display: flex; flex-direction: column; background: var(--app-card); border-radius: 16px; overflow: hidden; }
+.int { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
+.int + .int { border-top: 0.5px solid var(--app-line); }
+.int .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.int b { font-size: 16px; font-weight: 600; }
+.int span { font-size: 13px; color: var(--app-muted); }
+.sw-t { width: 51px; height: 31px; border-radius: 999px; background: var(--app-field); position: relative; flex: none; transition: background .2s; }
+.sw-t i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform .2s; }
+.sw-t.on { background: #34c759; }
+.sw-t.on i { transform: translateX(20px); }
 </style>

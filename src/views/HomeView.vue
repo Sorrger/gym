@@ -2,10 +2,6 @@
   <ion-page>
     <ion-content>
       <div class="home page-top">
-        <header class="page-head">
-          <p class="eyebrow">{{ todayText }}</p>
-          <h1>{{ greeting }}</h1>
-        </header>
 
         <div v-if="state.loadError" class="card warn" @click="reload">
           <ion-icon :icon="alertCircle" />
@@ -16,24 +12,23 @@
           <div><b>Kopia na GitHubie nie działa</b><span>{{ cloud.error || 'Nie wysłano od kilku dni' }}</span></div>
         </div>
 
-        <!-- workout in progress -->
-        <button v-if="active" class="live-card press" :style="{ '--c': COLORS[PLAN[active.day].key] }" @click="open(active.id)">
-          <div class="live-top">
-            <span class="live-dot"><i></i> Trening w toku</span>
-            <span class="num">{{ activeMinutes }}</span>
+        <!-- banner: logo + name, today's training in its own colour (the brand lives in the content) -->
+        <section v-if="bDay != null" class="banner press" role="button" :aria-label="(active ? 'Kontynuuj trening ' : 'Otwórz trening ') + PLAN[bDay].name" :style="{ '--c': COLORS[PLAN[bDay].key] }" @click="active ? open(active.id) : start(bDay)">
+          <div class="b-top">
+            <span class="logo" aria-hidden="true"><ion-icon :icon="barbell" /></span>
+            <span class="b-name">Gym</span>
+            <span class="b-date">{{ todayShort }}</span>
+            <span class="b-pill">{{ active ? 'W toku' : { today: 'Dziś', missed: 'Zaległy', next: 'Następny' }[sug.kind] }}</span>
           </div>
-          <div class="live-mid">
-            <div>
-              <b>{{ PLAN[active.day].name }}</b>
-              <span class="num">{{ activeCounts.n }} z {{ activeCounts.t }} serii</span>
+          <div class="b-mid">
+            <div class="b-text">
+              <h1 class="b-plan">{{ PLAN[bDay].name }}</h1>
+              <p class="b-sub num">{{ active ? activeCounts.n + ' z ' + activeCounts.t + ' serii · ' + activeMinutes : bSub }}</p>
+              <span class="b-cta">{{ active ? 'Kontynuuj trening' : 'Zobacz i zacznij' }} <ion-icon :icon="chevronForward" /></span>
             </div>
-            <svg class="ring" viewBox="0 0 44 44" aria-hidden="true">
-              <circle cx="22" cy="22" r="18" class="r-bg" />
-              <circle cx="22" cy="22" r="18" class="r-fg" :style="{ strokeDashoffset: 113.1 * (1 - activePct) }" />
-            </svg>
+            <div class="b-map"><BodyMap v-bind="dayMuscles(bDay)" /></div>
           </div>
-          <span class="live-go">Kontynuuj <ion-icon :icon="chevronForward" /></span>
-        </button>
+        </section>
 
         <!-- this week -->
         <div class="card week">
@@ -54,9 +49,10 @@
         <!-- quick numbers: streak, body weight, all trainings -->
         <div class="stats home-stats">
           <div><span><Ico name="flame" /> Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
-          <div class="press w-tile" @click="quickWeight" aria-label="Zapisz dzisiejszą wagę"><span><Ico name="scale" /> Waga<i class="w-plus" :class="{ done: weighedToday }">{{ weighedToday ? '✓' : '+' }}</i></span>
+          <div v-if="prefs.weightOn" class="press w-tile" @click="quickWeight" aria-label="Zapisz dzisiejszą wagę"><span><Ico name="scale" /> Waga<i class="w-plus" :class="{ done: weighedToday }">{{ weighedToday ? '✓' : '+' }}</i></span>
             <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>kg</small></b><b v-else class="add">Dodaj</b>
             <em v-if="wTrend != null" class="num" :class="weightTone(wTrend)">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
+          <div v-else class="press" @click="router.push('/tabs/progress')"><span><Ico name="trophy" /> Rekordy</span><b class="num">{{ prTotal }}</b><em class="num">od startu</em></div>
           <div><span><Ico name="dumbbell" /> Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
         </div>
 
@@ -66,27 +62,6 @@
             <span>{{ dl.active ? 'Do ' + dlEnd + ': ' + deloadWords() + ', 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. ' + cap(deloadWords()) + ', potem wracasz do normy.' }}</span></div>
         </div>
         <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Twój trening' }}</h3>
-        <button v-if="!active" class="off-link press" @click="markOff">
-          <ion-icon :icon="addCircle" /><template v-if="sug.kind === 'missed'">Trening {{ PLAN[next].name }} zrobiony bez zapisu? <b>Dodaj</b></template><template v-else><b>Dodaj zrobiony trening</b></template>
-        </button>
-        <!-- only the suggested training here; all of them are in the Trening tab -->
-        <div class="plans solo">
-          <template v-for="(d, i) in PLAN" :key="d.key">
-          <button v-if="!d.hidden && i === next && !active" class="plan press" :class="{ next: i === next && !active }"
-            :style="{ '--c': COLORS[d.key] }" @click="start(i)">
-            <div class="plan-top">
-              <div class="plan-l">
-                <span class="plan-ico">{{ d.abbr }}</span>
-                <span v-if="i === next && !active" class="next-pill">{{ { today: 'Dziś', missed: 'Zaległy', next: 'Następny' }[sug.kind] }}</span>
-              </div>
-              <div class="plan-body"><BodyMap v-bind="dayMuscles(i)" /></div>
-            </div>
-            <b>{{ d.name }}</b>
-            <span class="meta">{{ d.ex.length }} ćwiczeń · {{ lastText(i) }}</span>
-          </button>
-          </template>
-        </div>
-        <button class="all-link press" @click="router.push('/tabs/train')">Wszystkie treningi ({{ nVisible }}) <ion-icon :icon="chevronForward" /></button>
 
       </div>
 
@@ -97,19 +72,19 @@
 
 <script setup>
 import { LOC, t } from '../i18n'
-import { weightTone, deloadWords } from '../prefs'
+import { weightTone, deloadWords, prefs } from '../prefs'
 const cap = t => t.charAt(0).toUpperCase() + t.slice(1)
 import Ico from './Ico.vue'
 import BodyMap from './BodyMap.vue'
-import { dayMuscles } from '../muscles'
+import { dayMuscles, MUSCLE_NAMES } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
-import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, addCircle } from 'ionicons/icons'
-import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
+import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, addCircle, barbell, play } from 'ionicons/icons'
+import { PLAN, COLORS, WEEKDAY_TO_DAY, groupsOf } from '../plan'
 import { cloud } from '../cloud'
 import { weights, smooth, trend } from '../weight'
 import { askWeight } from '../weightQuick'
-import { weekStreak } from '../stats'
+import { weekStreak, overview } from '../stats'
 import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove, addPastSession, dropEmptyManual } from '../store'
 import { ask } from '../dialog'
 
@@ -145,31 +120,6 @@ const greeting = computed(() => {
 // "done without the app": the user picks which plan and on which day of this week (maybe another plan was done that day)
 // "Dodaj zrobiony trening": a training done but not logged (forgot the phone, before the app…).
 // With sets → a finished workout on that day, opened to tick the sets; without → just marked as done.
-async function markOff() {
-  const day = next.value, now = new Date()
-  const WD = ['Nd', 'Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'Sb']
-  const days = Array.from({ length: 7 }, (_, k) => { const d = new Date(now); d.setDate(now.getDate() - 6 + k); return d }).map(d => {
-    const date = iso(d), real = done.value.filter(s => s.date === date), offs = offMarks().filter(s => s.date === date)
-    return { date, d, real, offs, label: date === iso(now) ? 'Dziś' : WD[d.getDay()] }
-  })
-  const js = +Object.keys(WEEKDAY_TO_DAY).find(k => WEEKDAY_TO_DAY[k] === day)
-  const sched = sug.value.kind === 'missed' ? days.filter(x => x.d.getDay() === js).at(-1) : null
-  const def = (sched && !sched.real.length ? sched : days.slice().reverse().find(x => !x.real.length && !x.offs.length) || days[6]).date
-  const { role, picks } = await ask({ icon: addCircle, title: 'Dodaj zrobiony trening',
-    message: 'Zapomniałeś zapisać? Wybierz trening i dzień. Możesz wpisać serie albo tylko zaznaczyć, że trening był.',
-    choices: [
-      { key: 'day', label: 'Trening', value: day, options: PLAN.map((p, i) => ({ value: i, label: p.name, hidden: p.hidden })).filter(o => !o.hidden) },
-      { key: 'date', label: 'Kiedy', value: def, options: days.map(x => ({ value: x.date, label: x.label, sub: x.real.length ? PLAN[x.real[0].day].name : x.d.getDate() + '.' + String(x.d.getMonth() + 1).padStart(2, '0') })) }],
-    buttons: [
-      { text: 'Wpisz serie i ciężary', role: 'sets', kind: 'primary' },
-      { text: 'Bez serii – tylko zaznacz, że był', role: 'mark', kind: 'soft' },
-      { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role === 'sets') { const s = addPastSession(picks.day, picks.date); router.push('/workout/' + s.id); return }
-  if (role !== 'mark') return
-  markDoneOff(picks.day, picks.date)
-  const x = days.find(y => y.date === picks.date)
-  state.flash = `Dodano: ${PLAN[picks.day].name}, ${x.label.toLowerCase()} ${x.d.getDate()}.${picks.date.slice(5, 7)} (bez serii)`
-}
 // tapping a day with "done without the app" marks: remove one
 async function dayTap(d) {
   if (!d.offs.length) return
@@ -178,6 +128,7 @@ async function dayTap(d) {
   if (role !== 'cancel' && state.sessions[role]?.offApp) remove(role)
 }
 const streak = computed(() => { void state.sessions; return weekStreak() })
+const prTotal = computed(() => { void state.sessions; return overview(null).prs })
 const wNow = computed(() => { const l = weights.value; return l.length ? smooth(l).at(-1).avg : null })
 const wTrend = computed(() => trend(weights.value))
 // weight in one tap from Start: dialog right here (details → the Weight page)
@@ -217,6 +168,15 @@ function open(id) { router.push('/workout/' + id) }
 
 // tapping a plan opens its preview (exercises, last results) – the workout starts from there
 function start(day) { router.push('/plan/' + day) }
+const bDay = computed(() => (active.value ? active.value.day : next.value))
+const todayShort = computed(() => new Date().toLocaleDateString(LOC(), { weekday: 'short', day: 'numeric', month: 'short' }))
+const bSub = computed(() => {
+  const d = bDay.value, p = PLAN[d]; if (!p) return ''
+  const sets = p.ex.flatMap(e => groupsOf(e)).reduce((a, g) => a + (g.sets || 0), 0)
+  const mins = Math.round(sets * 2.5 / 5) * 5
+  const mus = (dayMuscles(d).main || []).slice(0, 2).map(m => (MUSCLE_NAMES[m] || '').toLowerCase()).filter(Boolean)
+  return p.ex.length + ' ćwiczeń · ok. ' + mins + ' min' + (mus.length ? ' · ' + mus.join(', ') : '')
+})
 const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 </script>
 
@@ -296,4 +256,20 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .next-pill { background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 8px; }
 
 .foot { margin-top: 16px; }
+.banner { margin: 6px 16px 14px; padding: 14px 16px 16px; border-radius: 22px; color: var(--ion-text-color);
+  background: color-mix(in srgb, var(--c) 14%, var(--app-card)); }
+:global(.ion-palette-dark) .banner { background: color-mix(in srgb, var(--c) 22%, var(--app-card)); }
+.b-top { display: flex; align-items: center; gap: 8px; }
+.logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--c); color: #fff; font-size: 17px; flex: none; }
+.b-name { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
+.b-date { font-size: 14px; color: var(--app-muted); margin-left: 2px; }
+.b-pill { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); padding: 4px 10px; border-radius: 999px; }
+.b-mid { display: flex; align-items: flex-end; gap: 10px; margin: 14px 0 0; }
+.b-text { flex: 1; min-width: 0; }
+.b-plan { margin: 0; font-size: 44px; font-weight: 800; letter-spacing: -1.2px; line-height: 1; color: var(--c); font-family: var(--num-font); overflow-wrap: anywhere; }
+.b-sub { margin: 6px 0 0; font-size: 14px; color: var(--app-muted); font-family: inherit; }
+.b-map { height: 92px; width: 96px; flex: none; pointer-events: none; }
+.b-cta { display: inline-flex; align-items: center; gap: 2px; margin-top: 10px; font-size: 15px; font-weight: 700; color: var(--c); }
+.b-go { width: 100%; height: 50px; border: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  background: var(--c); color: #fff; font: inherit; font-size: 17px; font-weight: 600; }
 </style>

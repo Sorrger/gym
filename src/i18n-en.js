@@ -200,3 +200,10 @@ Object.assign(EN, { 'Ustaw cel wagi': 'Set a target weight', 'np. 80 kg – poka
   'Przy obecnym tempie waga nie idzie w stronę celu.': 'At the current pace your weight is not moving towards the goal.', 'Cel wagi': 'Target weight', 'Ile chcesz ważyć? Zostaw puste, żeby usunąć cel.': 'What do you want to weigh? Leave empty to remove the target.',
   'Wykres i szczegóły': 'Chart and details', 'Waga zapisana': 'Weight saved', 'Dziś już zapisane – możesz poprawić.': 'Already saved today – you can correct it.', 'W kilogramach, rano na czczo, np. 82,4': 'In kilograms, in the morning before eating, e.g. 82.4' })
 PATTERNS.push(['Cel ([\\d,.]+) kg', 'Target $1 kg'], ['zostało (.+) kg', '$1 kg to go'], ['Przy obecnym tempie: ok\\. (\\d+) tyg\\. – około (.+)', 'At the current pace: about $1 wks – around $2'])
+Object.assign(EN, { 'Co Cię interesuje?': 'What are you interested in?', 'Zaznacz, czego chcesz używać. Resztę schowam – zmienisz to później w Ustawieniach.': 'Pick what you want to use. The rest stays hidden – you can change it later in Settings.',
+  'Waga i sylwetka': 'Weight and body', 'Zapisywanie wagi, tempo, cel': 'Log weight, pace, target', 'Podpowiedzi trenera': 'Coach tips', 'Ile dźwignąć dziś, kiedy dodać ciężar': 'What to lift today, when to add weight',
+  'Odlicza przerwę po każdej serii': 'Counts your rest after each set', 'Ile zostało do upadku – dla dokładniejszych podpowiedzi': 'Reps left before failure – for sharper tips',
+  'Co kilka tygodni lżej, żeby odpocząć': 'Every few weeks lighter, to recover', 'Rozgrzewkowa, drop set, do upadku': 'Warm-up, drop set, to failure',
+  'Śledzenie wagi': 'Weight tracking', 'Kafelek na Starcie, ekran Waga, cel sylwetki': 'Home tile, Weight screen, body goal', 'Wyłączone': 'Off', 'od startu': 'since start',
+  'Zobacz i zacznij': 'View and start', 'Dodaj zrobiony trening': 'Add a finished workout', 'zapomniałeś zapisać? wpisz serie albo tylko zaznacz dzień': 'forgot to log? enter sets or just mark the day', 'W toku': 'In progress' })
+PATTERNS.push(['Otwórz trening (.+)', 'Open workout $1'], ['Kontynuuj trening (.+)', 'Continue workout $1'])

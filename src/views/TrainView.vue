@@ -29,6 +29,7 @@
 
         <div class="ios-group edit-g">
           <button class="row press" @click="router.push('/plans')"><ion-icon :icon="createOutline" class="ri" /><div class="grow"><b>Edytuj plan</b><span>zmień treningi i ćwiczenia albo dodaj nowe</span></div><ion-icon :icon="chevronForward" class="chev" /></button>
+          <button class="row press" @click="addDoneDialog(router)"><ion-icon :icon="addCircleOutline" class="ri" /><div class="grow"><b>Dodaj zrobiony trening</b><span>zapomniałeś zapisać? wpisz serie albo tylko zaznacz dzień</span></div><ion-icon :icon="chevronForward" class="chev" /></button>
         </div>
       </div>
     </ion-content>
@@ -36,9 +37,10 @@
 </template>
 
 <script setup>
+import { addDoneDialog } from '../addDone'
 import { computed } from 'vue'
 import { IonPage, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
-import { add, createOutline, refreshOutline, chevronForward } from 'ionicons/icons'
+import { add, createOutline, addCircleOutline, refreshOutline, chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY, DEFAULT_PLAN } from '../plan'
 import { dayMuscles } from '../muscles'
 import { state, activeSession, suggestion } from '../store'

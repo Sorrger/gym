@@ -28,7 +28,7 @@ for (const mode of ['light', 'dark']) {
   await p.locator('#tab-button-history').click(); await p.waitForTimeout(500)
   const row = p.locator('.hrow:visible, .ios-group .row:visible, ion-item:visible').first(); if (await row.count()) { await row.click(); await log('session') ; await p.locator('.rb:visible').first().click(); await log('back') }
   await p.locator('#tab-button-home').click(); await p.waitForTimeout(400)
-  await p.locator('.plan.next:visible').click(); await log('plan preview'); await p.locator('.rb:visible, ion-back-button:visible').first().click(); await log('back')
+  await p.locator('.b-go:visible').click(); await log('plan preview'); await p.locator('.rb:visible, ion-back-button:visible').first().click(); await log('back')
   for (const r of ['/tabs/train', '/plans', '/weight', '/tabs/settings', '/tabs/weight', '/tabs/plans', '/nonsense', '/tabs/xyz', '/plan/1', '/progress/2']) { await p.goto(U + r); await p.reload(); await p.waitForTimeout(800); await log('deep ' + r) }
   console.log(mode, 'errors', errs); await ctx.close()
 }

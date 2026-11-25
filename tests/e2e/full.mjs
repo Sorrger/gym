@@ -18,7 +18,7 @@ const go = async h => { await p.goto('http://localhost:4173/' + h); await p.relo
 const close = async () => { if (await p.locator('.dlg-btn:visible').count()) { await p.locator('.dlg-btn:visible').last().click(); await p.waitForTimeout(400) } }
 await go('#/tabs/home')
 // A. fresh phone: Push suggested? (Sat → week empty → Push missed)
-ok(await p.locator('.next-pill:visible').count() === 1, 'fresh: a plan is suggested')
+ok(await p.locator('.b-pill:visible').count() === 1, 'fresh: a plan is suggested')
 // finishing an empty workout discards it
 await go('#/plan/0'); await p.locator('.go:visible').click(); await p.waitForTimeout(1300); await close()
 await p.locator('.tb-finish').click(); await p.waitForTimeout(900)
