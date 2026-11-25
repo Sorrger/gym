@@ -249,7 +249,8 @@ const LIB = {
     const top = sides ? st({ fx: 10 }) : st({ hold: 'chest', hox: 6, ab: -1, fx: 10 })
     return { frames: [top, { ...top, hx: -40, hy: -66, t: -64 }], gear: sides ? held(sel.eq) : [{ k: sel.eq === 'kb' ? 'kb' : 'db', at: 'hold' }], lab: SQ }
   },
-  'hack-squat': _sel => {
+  'hack-squat': sel => {
+    if (sel.eq === 'bb') return { frames: [{ hx: -26, hy: -86, t: -64, fx: 14, fy: -7, ax: -16, ay: -28, ab: 1 }, st({ ax: -12, ay: -66, ab: 1 })], gear: [{ k: 'bb', z: 'back' }], lab: ['Wstań', 'Opuść'] }
     const mk = (hx, hy) => ({ hx, hy, t: -112, fx: 50, fy: -36, a1: 0, a2: -80, ra1: 190, ra2: 100 })
     return { frames: [mk(-10, -158), mk(-50, -76)], props: [{ k: 'pad', x1: -70, y1: -50, x2: -56, y2: -250, w: 14 }, { k: 'pad', x1: 26, y1: -30, x2: 80, y2: -40, w: 9 }], lab: SQ }
   },
