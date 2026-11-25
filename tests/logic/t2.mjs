@@ -1,5 +1,5 @@
 // Second set: records, weight log, stats helpers, backup merge, auto-close, settings steppers, time texts, English.
-const { store, plan, stats, prefsM, weight, records, rules, now, i18n, en, catalog, muscles } = await import('./b.mjs')
+const { store, plan, stats, prefsM, weight, records, rules, now, i18n, en, catalog, muscles, scenes, rig } = await import('./b.mjs')
 const { state } = store
 const { prefs, DEFAULT_PREFS } = prefsM
 let fails = 0, n = 0
@@ -256,6 +256,32 @@ ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
   ok(['A', 'B'].includes(plan.resolveName('A')), 'rename: a loop in the map never hangs')
   plan.applyPlan(null)
   ok(plan.resolveName(RDL) === RDL && !plan.canon(RDL).includes('RDL'), 'rename: default plan has no own renames')
+}
+
+// ---------- exercise animations: every catalogue combination draws finite shapes in every phase ----------
+{
+  const C = catalog, bad = [], none = [], labels = new Set()
+  const finite = sh => Object.values(sh.a || {}).every(v => typeof v !== 'number' || Number.isFinite(v)) && (!sh.at || (Number.isFinite(sh.at.x) && Number.isFinite(sh.at.y)))
+  for (const b of C.BASES) {
+    const sels = [C.fullSel(b)]
+    for (const ax of Object.keys(b.o)) for (const val of b.o[ax]) { const s = C.fullSel(b, { ...C.fullSel(b), [ax]: val }); if (s[ax] === val) sels.push(s) }
+    for (const val of (b.v || []).map(x => x[0])) { const s = C.fullSel(b, { ...C.fullSel(b), v: val }); if (s.v === val) sels.push(s) }
+    for (const sel of sels) {
+      const c = C.compose(b, sel)
+      const sc = scenes.sceneFor(b.id, sel, { main: c.main, help: c.help })
+      if (!sc) { none.push(c.name); continue }
+      sc.phases.forEach(p => labels.add(p[1]))
+      for (const k of [0, 0.25, 0.5, 0.75, 1]) {
+        const parts = sc.rig ? rig.draw(sc, rig.poseAt(sc.frames, k)) : sc.frame(k)
+        if (!parts.length || !parts.every(finite)) { bad.push(c.name + ' @' + k); break }
+      }
+      if (sc.box && !['x', 'y', 'w', 'h'].every(q => Number.isFinite(sc.box[q]))) bad.push(c.name + ' box')
+    }
+  }
+  ok(!bad.length, 'animations: every combination draws finite shapes', bad.slice(0, 5))
+  ok(!none.length, 'animations: every catalogue exercise has one', none.slice(0, 5))
+  const missing = [...labels].filter(l => l && !en.EN[l])
+  ok(!missing.length, 'animations: every phase label has an English text', missing)
 }
 
 globalThis.T2 = { n, fails }

@@ -41,11 +41,12 @@ watch(() => [props.open, props.name], async ([o]) => {
   const [{ byName, compose }, { sceneFor }] = await Promise.all([import('../catalog'), import('../anim/scenes')])
   const c = byName(props.name)
   if (c) {
-    const sc = sceneFor(c.base.id, c.sel)
+    const comp = compose(c.base, c.sel)
+    const sc = sceneFor(c.base.id, c.sel, { main: comp.main, help: comp.help })
     scene.value = sc
     const en = lang !== 'pl'
     cues.value = sc?.cues ? sc.cues[en ? 'en' : 'pl'] : c.base.how ? [c.base.how[en ? 1 : 0]] : []
-    if (en) title.value = compose(c.base, c.sel).nameEn || props.name
+    if (en) title.value = comp.nameEn || props.name
   }
   loaded.value = true
 }, { immediate: true })

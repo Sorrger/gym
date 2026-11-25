@@ -1,5 +1,5 @@
 // "Jak to zrobić" sheet on the Workout screen: opens from the muscle map, the bench press animation moves,
-// cues + muscles show; an exercise without an animation shows its technique text; dark mode + English.
+// cues + muscles show; the next exercise uses the shared rig and moves too; dark mode + English.
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
 const b = await launch()
@@ -23,10 +23,13 @@ async function run(dark, en) {
   if (en) ok(/Lower|Press|Top|Touch/.test(await sheet.locator('.ph').textContent()), 'en: phase label translated')
   await p.screenshot({ path: 'howto-' + tag.replace(' ', '-') + '.png' })
   await sheet.locator('.ht-x').click(); await p.waitForTimeout(600)
-  // next exercise (incline dumbbell press): no animation yet, technique text instead
+  // next exercise (incline dumbbell press): drawn by the shared rig
   await p.locator('.dots button, .dot').nth(1).click().catch(() => {}); await p.waitForTimeout(700)
   await p.locator('.ex-body:visible').click(); await p.waitForTimeout(1000)
-  ok(await sheet.locator('svg.xa').count() === 0 && await sheet.locator('.ht-cues li').count() === 1, tag + ': exercise without animation shows its technique cue')
+  ok(await sheet.locator('svg.xa').count() === 1 && await sheet.locator('.ht-cues li').count() === 1, tag + ': incline dumbbell press has the rig animation + its cue')
+  const lines = () => sheet.locator('svg.xa line.near').first().getAttribute('x2')
+  const l1 = await lines(); await p.waitForTimeout(600); const l2 = await lines()
+  ok(l1 !== l2, tag + ': the rig animation moves')
   await sheet.locator('.ht-x').click(); await p.waitForTimeout(500)
   ok(!errs.length, tag + ': no page errors ' + errs.join(' | '))
   await ctx.close()
