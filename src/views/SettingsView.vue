@@ -39,7 +39,7 @@ import { ref } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
 import { cloudUploadOutline, chevronForward, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, trendingUpOutline, scaleOutline, heartOutline, warningOutline } from 'ionicons/icons'
-import { t, lang } from '../i18n'
+import { t, lang, LANGS } from '../i18n'
 import { useScrolled } from '../useScrolled'
 import { prefs } from '../prefs'
 import { VERSION, readErrors, clearErrors } from '../errors'
@@ -74,7 +74,7 @@ async function copyErrors() {
 
 const MENU = [
   { k: 'look', t: 'Wygląd', i: colorPaletteOutline, c: '#af52de', sub: () => ({ system: 'Jak telefon', light: 'Jasny', dark: 'Ciemny' })[look.mode] + ' · ' + (ACCENTS.find(a => a.id === look.accent)?.name || '') },
-  { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => (lang === 'en' ? 'English' : 'Polski') },
+  { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => LANGS[lang].name },
   { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => ({ auto: 'Podpowiedzi same', chip: 'Podpowiedzi na dotyk', off: 'Bez podpowiedzi' })[prefs.coach] + (prefs.restTimer ? ' · przerwa ' + REST.fmt(prefs.restSec) : '') + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
   { k: 'progress', t: 'Progresja', i: trendingUpOutline, c: '#34c759', sub: () => 'Zapas ' + prefs.rirUp + '+ · krok ' + String(prefs.stepKg).replace('.', ',') + ' kg' },
   { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => (prefs.weightOn ? ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] : 'Wyłączone') },

@@ -61,8 +61,6 @@
           <div><b>Tydzień lżejszy (deload)</b>
             <span>{{ dl.active ? 'Do ' + dlEnd + ': ' + deloadWords() + ', 3-4 powtórzenia w zapasie.' : 'Od następnego treningu – ' + dl.reason + '. ' + cap(deloadWords()) + ', potem wracasz do normy.' }}</span></div>
         </div>
-        <h3 class="section-title">{{ active ? 'Albo zacznij inny' : 'Twój trening' }}</h3>
-
       </div>
 
       <ion-toast :is-open="!!state.flash" :message="t(state.flash)" :duration="2500" position="top" @didDismiss="state.flash = ''" />

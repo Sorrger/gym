@@ -65,7 +65,7 @@ router.onError(err => {
     let last = 0
     try { last = +sessionStorage.getItem('reloadedAt') || 0 } catch {}
     if (Date.now() - last > 10000) {
-      try { sessionStorage.setItem('reloadedAt', Date.now()) } catch {}
+      try { sessionStorage.setItem('reloadedAt', String(Date.now())) } catch {}
       location.reload()
     }
   }
@@ -96,7 +96,7 @@ initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => {
     app.mount('#app')
     initI18n()
     // warm up every screen in the background, so the first visit of a tab or page doesn't wait for its code
-    const warm = () => router.getRoutes().forEach(r => { const c = r.components?.default; if (typeof c === 'function') c().catch(() => {}) })
+    const warm = () => router.getRoutes().forEach(r => { const c = r.components?.default; if (typeof c === 'function') /** @type {any} */ (c)().catch(() => {}) })
     ;(window.requestIdleCallback || (f => setTimeout(f, 1200)))(warm, { timeout: 2500 })
   })
 })

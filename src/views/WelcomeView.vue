@@ -9,8 +9,7 @@
           <img class="logo" src="/icon-192.png" alt="" />
           <h1>Gym</h1>
           <p class="lead">Wybierz język · Choose your language</p>
-          <button class="big press" :class="{ on: cur === 'pl' }" @click="pick('pl')"><span class="flag">PL</span><b>Polski</b></button>
-          <button class="big press" :class="{ on: cur === 'en' }" @click="pick('en')"><span class="flag">EN</span><b>English</b></button>
+          <button v-for="(l, k) in LANGS" :key="k" class="big press" :class="{ on: cur === k }" @click="pick(k)"><span class="flag">{{ k.toUpperCase() }}</span><b>{{ l.name }}</b></button>
         </section>
 
         <!-- 2: what interests you (features you don't want stay off) -->
@@ -64,7 +63,7 @@
 <script setup>
 import { ref, computed, reactive } from 'vue'
 import { IonPage, IonContent, useIonRouter } from '@ionic/vue'
-import { lang, setLang } from '../i18n'
+import { lang, setLang, LANGS } from '../i18n'
 import { setNick, setPref } from '../account'
 import { setWeight } from '../weight'
 import { iso } from '../store'

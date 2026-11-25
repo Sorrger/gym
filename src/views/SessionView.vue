@@ -180,7 +180,7 @@ function draw() {
       responsive: true, maintainAspectRatio: false, animation: { duration: 400 }, interaction: { mode: 'nearest', axis: 'x', intersect: false },
       plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: x => Math.round(x[0].parsed.x) + ' min', label: x => x.parsed.y + ' bpm' } } },
       scales: {
-        x: { type: 'linear', min: 0, max: pts[pts.length - 1][0] / 60, grid: { display: false }, ticks: { color: muted, maxTicksLimit: 6, callback: v => Math.round(v) + "'" } },
+        x: { type: 'linear', min: 0, max: pts[pts.length - 1][0] / 60, grid: { display: false }, ticks: { color: muted, maxTicksLimit: 6, callback: v => Math.round(+v) + "'" } },
         y: { grid: { color: line }, border: { display: false }, ticks: { color: muted, maxTicksLimit: 5 }, grace: '5%' }
       }
     }

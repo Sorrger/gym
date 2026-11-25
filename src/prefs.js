@@ -35,6 +35,7 @@ export const rirLabel = q => (q >= rirTop() ? rirTop() + '+' : String(q))
 // how the light week works, in words (cards, dialogs, coach)
 export const deloadWords = () => [prefs.deloadHalf ? 'połowa serii' : 'te same serie', `ok. ${prefs.deloadPct}% lżej`].join(', ')
 // set types (x.t): undefined = working set, 'w' warm-up (not counted anywhere), 'd' drop set, 'f' to failure
+/** @type {(undefined | 'w' | 'd' | 'f')[]} */
 export const SET_TYPES = [undefined, 'w', 'd', 'f']
 export const SET_TYPE_LABEL = { w: 'R', d: 'D', f: 'U' }
 export const isWork = x => x.t !== 'w'

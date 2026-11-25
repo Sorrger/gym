@@ -1,3 +1,4 @@
+/** @type {Training[]} */
 export const PLAN = [
   { key: 'push', abbr: 'Pu', short: 'Pn', name: 'Push', note: 'Najpierw najcięższe wyciskanie. Rozpiętki z dołu do góry: wyciągi nisko, ręce łukiem do wysokości brody – góra klatki.', ex: [
     ['Wyciskanie sztangi na ławce płaskiej', '3 × 6-8'], ['Wyciskanie hantli na ławce skośnej', '4 × 8-10'], ['Rozpiętki na bramie z dołu do góry', '3 × 10-15'],
@@ -40,7 +41,7 @@ export function applyPlan(c) {
   const n = Math.max(DEFAULT_PLAN.length, c?.days?.length || 0, PLAN.length)
   for (let i = 0; i < n; i++) {
     const d = c?.days?.[i], def = DEFAULT_PLAN[i] || blank(i)
-    const p = PLAN[i] || (PLAN[i] = {})
+    const p = PLAN[i] || (PLAN[i] = /** @type {Training} */ ({}))
     p.key = def.key
     p.ex = JSON.parse(JSON.stringify(d?.ex?.length ? d.ex : def.ex))
     p.name = d?.name || def.name

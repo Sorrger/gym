@@ -84,7 +84,7 @@ const count = computed(() => { void state.sessions; return doneSessions().length
 const firstDate = computed(() => { const l = doneSessions(); return l.length ? fmtDate(l[l.length - 1].date).slice(0, 5) : '–' })
 const lastBackup = ref((() => { try { return localStorage.getItem('lastBackup') } catch { return null } })())
 const backupText = computed(() => (lastBackup.value ? ago(lastBackup.value) : 'nigdy'))
-const backupOld = computed(() => !lastBackup.value || (Date.now() - new Date(lastBackup.value + 'T12:00:00')) > 14 * 864e5)
+const backupOld = computed(() => !lastBackup.value || (Date.now() - new Date(lastBackup.value + 'T12:00:00').getTime()) > 14 * 864e5)
 const syncText = computed(() => (cloud.lastSync ? agoMin(cloud.lastSync, now.value) : '–'))
 function markBackup() { lastBackup.value = iso(new Date()); try { localStorage.setItem('lastBackup', lastBackup.value) } catch {} }
 
@@ -107,7 +107,7 @@ function importData(e) {
   const r = new FileReader()
   r.onload = async () => {
     try {
-      const d = JSON.parse(r.result)
+      const d = JSON.parse(String(r.result))
       if (!d?.sessions) throw 0
       const n = mergeSessions(d.sessions)
       const w = d.weights ? importWeights(d.weights) : 0

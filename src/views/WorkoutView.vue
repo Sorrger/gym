@@ -208,6 +208,7 @@ const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value],
 const exTag = computed(() => plan.value?.ex[idx.value][2])
 const exMuscles = computed(() => musclesOf(exName.value))
 const groups = computed(() => (plan.value ? groupsOf(plan.value.ex[idx.value], s.value) : []))
+/** @returns {SetRow[]} */
 function sets(key) {
   if (!s.value.ex[key]) s.value.ex[key] = [{ w: null, d: false }]
   return s.value.ex[key]
@@ -312,7 +313,7 @@ const typeName = t => TYPE_NAMES[t] || 'robocza'
 function cycleType(g, si) {
   const x = sets(g.key)[si], i = SET_TYPES.indexOf(x.t)
   const nt = SET_TYPES[(i + 1) % SET_TYPES.length]
-  if (nt) x.t = nt; else delete x.t
+  if (nt) x.t = /** @type {'w' | 'd' | 'f'} */ (nt); else delete x.t
   touch()
 }
 const rest = useRest()

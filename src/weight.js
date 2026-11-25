@@ -28,7 +28,7 @@ export function parseList(text) {
     let d = new Date(y, +m[2] - 1, +m[1])
     if (!m[3] && d > now) d = new Date(y - 1, +m[2] - 1, +m[1])
     const kg = +m[4].replace(',', '.')
-    if (kg >= 30 && kg <= 300 && !isNaN(d)) out.push({ date: iso(d), kg })
+    if (kg >= 30 && kg <= 300 && !isNaN(d.getTime())) out.push({ date: iso(d), kg })
   }
   return out
 }

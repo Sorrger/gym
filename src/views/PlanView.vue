@@ -86,7 +86,7 @@ function lastOf(g) {
   const ws = new Set(done.map(x => x.w))
   return ws.size === 1 ? `${fmtNum(done[0].w)} kg × ${done.map(x => x.r ?? '–').join(', ')}` : done.map(x => `${fmtNum(x.w)}×${x.r ?? '–'}`).join(' · ')
 }
-const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], alt: altOf(e[0]), stage: e[3] === 'stages' ? stageText() : '', groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
+const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], alt: altOf(e[0]), stage: e[3] === 'stages' ? stageText() : null, groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
 
 function stageText() { const st = PULLUP_STAGES[stageOf() - 1]; return { t: targetOf(['', '', '', 'stages']), goal: st.goal } }
 function goBack() { if (router.canGoBack()) router.back(); else router.navigate('/tabs/home', 'back', 'replace') }

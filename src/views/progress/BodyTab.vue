@@ -98,6 +98,7 @@ const mapHelp = computed(() => Object.keys(mw.value).filter(k => mw.value[k] >= 
 // radar: 6 body groups scaled to the most trained one (= outer ring); the dashed shape is the plan's own distribution,
 // and the score compares actual/plan per group, so groups that are small on purpose (legs) are not flagged
 const CX = 160, CY = 145, R = 100
+/** @type {[string, string[]][]} */
 const GROUPS = [
   ['Klatka', ['chest']], ['Plecy', ['lats', 'upperback']], ['Barki', ['shoulders', 'reardelts']],
   ['Ręce', ['biceps', 'triceps']], ['Nogi', ['quads', 'hamstrings', 'glutes']], ['Brzuch', ['abs']]
@@ -114,7 +115,7 @@ const radar = computed(() => {
     const v = raw[i], rel = max ? v / max : 0
     const [px, py] = pt(i, R * Math.max(rel, 0.04)), [ex, ey] = pt(i, R), [lx, ly] = pt(i, R + 22)
     const anchor = Math.abs(lx - CX) < 8 ? 'middle' : lx > CX ? 'start' : 'end'
-    return { name, v, rel, px, py, ex, ey, lx, ly: ly < CY - 40 ? ly - 8 : ly > CY + 40 ? ly + 4 : ly - 4, anchor }
+    return { name, v, rel, px, py, ex, ey, lx, ly: ly < CY - 40 ? ly - 8 : ly > CY + 40 ? ly + 4 : ly - 4, anchor, fit: 0, level: 'ok' }
   })
   const shape = path(axes.map(a => [a.px, a.py]))
   const plan = GROUPS.map(([, ids]) => ids.reduce((a, id) => a + (planSets[id] || 0), 0) / ids.length)

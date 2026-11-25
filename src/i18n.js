@@ -3,29 +3,39 @@
 // Vue writes text nodes without reading them back, so changing them is safe. Switching language reloads the app.
 // Code that puts text where the page can't see it (toasts, back-button labels, canvas) calls t() itself.
 // Data never changes: exercise and plan names stay Polish in storage (they are history keys) – only their display.
-import { EN, PATTERNS } from './i18n-en'
+// Another language = one more dictionary file like i18n-en.js, added to LANGS below.
+import * as en from './i18n-en'
 
+/** code → name shown in the picker, date/number locale, dictionary (null = Polish source) */
+export const LANGS = {
+  pl: { name: 'Polski', locale: 'pl-PL', dict: null },
+  en: { name: 'English', locale: 'en-GB', dict: en },
+}
 const read = () => { try { return localStorage.getItem('lang') } catch { return null } }
-export let lang = read() === 'en' ? 'en' : 'pl'
+export let lang = LANGS[read()] ? read() : 'pl'
 export const hasChosenLang = () => !!read()
-export const LOC = () => (lang === 'en' ? 'en-GB' : 'pl-PL')
+export const LOC = () => LANGS[lang].locale
+let DICT = LANGS[lang].dict
 export function setLang(l, reload = true) {
   try { localStorage.setItem('lang', l) } catch {}
   if (l !== lang && reload) location.reload()
   lang = l
+  DICT = LANGS[l]?.dict || null; RX = build(); cache.clear()
 }
 
-const RX = PATTERNS.map(([src, out]) => [new RegExp('^' + src + '$'), out])
+const build = () => (DICT?.PATTERNS || []).map(([src, out]) => [new RegExp('^' + src + '$'), out])
+/** @type {[RegExp, any][]} */
+let RX = build()
 const cache = new Map()
 // translate one piece of text (keeps surrounding spaces); unknown text stays as it is
 export function tr(s) {
-  if (lang !== 'en' || s == null) return s
+  if (!DICT || s == null) return s
   const m = /^(\s*)([\s\S]*?)(\s*)$/.exec(String(s))
   const core = m[2]
   if (!core || !/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(core)) return fixNum(String(s))
   let out = cache.get(core)
   if (out === undefined) {
-    out = EN[core]
+    out = DICT.EN[core]
     if (out === undefined) {
       for (const [re, rep] of RX) {
         const g = re.exec(core)
@@ -58,7 +68,7 @@ function walk(root) {
   if (root.nodeType !== 1 || /^(SCRIPT|STYLE|TEXTAREA|INPUT)$/.test(root.nodeName) || root.closest?.('[data-no-tr]')) return
   fixEl(root)
   const it = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT)
-  let n
+  /** @type {any} */ let n
   while ((n = it.nextNode())) {
     if (n.nodeType === 1) { if (n.closest('[data-no-tr]')) continue; fixEl(n) } else if (!/^(SCRIPT|STYLE|TEXTAREA)$/.test(n.parentNode.nodeName) && !n.parentNode.closest('[data-no-tr]')) fixText(n)
   }
@@ -66,12 +76,12 @@ function walk(root) {
 let started = false
 export function initI18n() {
   document.documentElement.lang = lang
-  if (lang !== 'en' || started) return
+  if (!DICT || started) return
   started = true
   walk(document.body)
   new MutationObserver(list => {
     for (const m of list) {
-      if (m.type === 'characterData') { if (!m.target.parentNode?.closest?.('[data-no-tr]')) fixText(m.target) }
+      if (m.type === 'characterData') { if (!/** @type {any} */ (m.target).parentNode?.closest?.('[data-no-tr]')) fixText(m.target) }
       else if (m.type === 'attributes') fixEl(m.target)
       else m.addedNodes.forEach(walk)
     }

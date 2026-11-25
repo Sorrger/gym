@@ -123,6 +123,7 @@ function toRow(ex) {
   return { id: ++uid, alts: [...altOf(nm)], altNew: '', name: nm, orig: nm, tag, sets: nSets(target || '3'), lo: r.lo, hi: r.hi, unit: typeof parts === 'string' ? parts : 'kg', rest, m: musOf(nm), mTouched: false, open: !MUSCLES[nm] }
 }
 const name = ref(plan?.name || ''), note = ref(plan?.note || '')
+/** @type {import('vue').Ref<any[]>} */
 const list = ref(plan ? plan.ex.map(toRow) : [])
 if (!list.value.length) addEx()
 

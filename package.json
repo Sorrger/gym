@@ -11,7 +11,8 @@
     "test": "node tests/logic/run.mjs",
     "lint": "eslint .",
     "e2e": "node tests/e2e/run.mjs",
-    "check": "npm run lint && npm test && npm run build && npm run e2e"
+    "check": "npm run lint && npm run typecheck && npm test && npm run build && npm run e2e",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@ionic/vue": "^9.0.12",
@@ -29,8 +30,10 @@
     "eslint-plugin-vue": "^10.12.1",
     "globals": "^17.14.0",
     "playwright-core": "^1.65.1",
+    "typescript": "^6.0.3",
     "vite": "^8.3.8",
     "vite-plugin-pwa": "^2.0.0",
+    "vue-tsc": "^3.3.14",
     "workbox-core": "^7.4.1",
     "workbox-precaching": "^7.4.1",
     "workbox-routing": "^7.4.1"

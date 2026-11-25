@@ -124,7 +124,8 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - English: `src/i18n-en.js` is ONE alphabetical `EN` dictionary + `PATTERNS` ordered most specific first (generic ones like `(.+), (.+)` last – they would split sentences). Use `[^)]+` / `[^.]+` instead of greedy `(.+)` before fixed text. Every new Polish UI text needs an entry; logic tests check plan exercise names + key sentences; `tests/e2e/crawl.mjs` finds leftovers.
 - Code comments: English, only what the code doesn't say itself; no dates / "user asked" / history (that lives here).
 - Tooling: ESLint (`eslint.config.js`, `npm run lint`), logic tests `npm test` (212), e2e `npm run e2e` (see tests/README.md), CI runs all of it. Screenshots never go into the repo (`/*.png` ignored).
-- Still open: vue-i18n keys instead of DOM translation (big change – only before the stores), TypeScript.
+- Type checking: `npm run typecheck` (vue-tsc over the JS + Vue files, `checkJs`, not strict; data shapes in `src/types.d.ts` – Training, Session, SetRow). Code stays JS; add JSDoc types where the checker can't guess. CI runs it.
+- Languages: `LANGS` in src/i18n.js (code → name, locale, dictionary). A new language = one file like i18n-en.js + one line there; the pickers (Settings, first start) list LANGS. The DOM translation stays (Polish text = key); switching to vue-i18n keys was judged not worth the risk while it works.
 
 ## TODO (user, Nov 25 2026 – next sessions, in this spirit)
 - Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).

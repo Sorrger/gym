@@ -8,7 +8,7 @@ export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.
 export const fmtShort = s => { const [, m, d] = s.split('-'); return `${d}.${m}` }
 export const fmtKg = w => (w == null ? '–' : String(+(+w).toFixed(2)).replace('.', ','))
 export function ago(date) {
-  const days = Math.round((new Date(iso(new Date()) + 'T12:00:00') - new Date(date + 'T12:00:00')) / 864e5)
+  const days = Math.round((new Date(iso(new Date()) + 'T12:00:00').getTime() - new Date(date + 'T12:00:00').getTime()) / 864e5)
   if (days <= 0) return 'dzisiaj'
   if (days === 1) return 'wczoraj'
   return days + ' dni temu'
