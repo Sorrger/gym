@@ -66,7 +66,7 @@
             <ion-icon :icon="chevronForward" class="chev" />
           </button>
         </div>
-        <p class="section-foot">Gym · Twoje dane zostają u Ciebie</p>
+        <p class="section-foot">Inch Up · Twoje dane zostają u Ciebie</p>
       </div>
       <ion-toast :is-open="!!toast" :message="t(toast)" :duration="3500" position="top" @didDismiss="toast = ''" />
     </ion-content>

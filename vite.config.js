@@ -18,7 +18,7 @@ export default defineConfig({
       includeAssets: ['icon-180.png'],
       injectManifest: { globPatterns: ['**/*.{js,css,html,png,svg,woff2}'], maximumFileSizeToCacheInBytes: 5 * 1024 * 1024 },
       manifest: {
-        name: 'Gym', short_name: 'Gym', lang: 'pl',
+        name: 'Inch Up', short_name: 'Inch Up', lang: 'pl',
         display: 'standalone', start_url: './', scope: './',
         background_color: '#f2f2f7', theme_color: '#7346f5',
         icons: [

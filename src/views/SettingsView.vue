@@ -17,7 +17,7 @@
           </button>
         </div>
         <template v-if="!sec">
-          <p class="section-foot ver">Gym · wersja {{ VERSION }}</p>
+          <p class="section-foot ver">Inch Up · wersja {{ VERSION }}</p>
           <div v-if="errs.length" class="ios-group">
             <button class="row press" @click="copyErrors">
               <span class="sq" style="--c: #ff3b30"><ion-icon :icon="warningOutline" /></span>
@@ -66,7 +66,7 @@ const msg = ref('')
 
 const errs = ref(readErrors())
 async function copyErrors() {
-  const txt = 'Gym ' + VERSION + '\n' + errs.value.map(e => new Date(e.t).toISOString() + ' ' + e.at + ' ' + e.msg).join('\n')
+  const txt = 'Inch Up ' + VERSION + '\n' + errs.value.map(e => new Date(e.t).toISOString() + ' ' + e.at + ' ' + e.msg).join('\n')
   try { await navigator.clipboard.writeText(txt); msg.value = 'Skopiowano – wklej w zgłoszeniu' } catch { msg.value = 'Nie udało się skopiować' }
   const { role } = await ask({ title: 'Wyczyścić listę błędów?', message: 'Lista jest tylko na tym telefonie.', buttons: [{ text: 'Wyczyść', role: 'ok', kind: 'primary' }, { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
   if (role === 'ok') { clearErrors(); errs.value = [] }

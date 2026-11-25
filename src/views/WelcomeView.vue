@@ -7,7 +7,7 @@
         <!-- 1: language -->
         <section v-if="step === 0" class="st" data-no-tr>
           <img class="logo" src="/icon-192.png" alt="" />
-          <h1>Gym</h1>
+          <h1>Inch Up</h1>
           <p class="lead">Wybierz język · Choose your language</p>
           <button v-for="(l, k) in LANGS" :key="k" class="big press" :class="{ on: cur === k }" @click="pick(k)"><span class="flag">{{ k.toUpperCase() }}</span><b>{{ l.name }}</b></button>
         </section>

@@ -15,8 +15,8 @@
         <!-- banner: logo + name, today's training in its own colour; the whole card opens it -->
         <section v-if="bDay != null" class="banner press" role="button" :aria-label="(active ? 'Kontynuuj trening ' : 'Otwórz trening ') + PLAN[bDay].name" :style="{ '--c': COLORS[PLAN[bDay].key] }" @click="active ? open(active.id) : start(bDay)">
           <div class="b-top">
-            <span class="logo" aria-hidden="true"><ion-icon :icon="barbell" /></span>
-            <span class="b-name">Gym</span>
+            <span class="logo" aria-hidden="true"><LogoMark /></span>
+            <span class="b-name">Inch Up</span>
             <span class="b-date">{{ todayShort }}</span>
             <span class="b-pill">{{ active ? 'W toku' : { today: 'Dziś', missed: 'Zaległy', next: 'Następny' }[sug.kind] }}</span>
           </div>
@@ -83,11 +83,12 @@ import { LOC, t } from '../i18n'
 import { weightTone, deloadWords, prefs } from '../prefs'
 const cap = t => t.charAt(0).toUpperCase() + t.slice(1)
 import Ico from './Ico.vue'
+import LogoMark from './LogoMark.vue'
 import BodyMap from './BodyMap.vue'
 import { dayMuscles, MUSCLE_NAMES } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
-import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, barbell } from 'ionicons/icons'
+import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown } from 'ionicons/icons'
 import { PLAN, COLORS, groupsOf, entriesOf } from '../plan'
 import { cloud } from '../cloud'
 import { weights, smooth, trend } from '../weight'
@@ -256,7 +257,7 @@ const bSub = computed(() => {
   background: color-mix(in srgb, var(--c) 14%, var(--app-card)); }
 :global(.ion-palette-dark) .banner { background: color-mix(in srgb, var(--c) 22%, var(--app-card)); }
 .b-top { display: flex; align-items: center; gap: 8px; }
-.logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--c); color: #fff; font-size: 17px; flex: none; }
+.logo { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--c); color: #fff; padding: 5px; box-sizing: border-box; flex: none; }
 .b-name { font-size: 17px; font-weight: 700; letter-spacing: -.3px; }
 .b-date { font-size: 14px; color: var(--app-muted); margin-left: 2px; }
 .b-pill { margin-left: auto; font-size: 13px; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 16%, transparent); padding: 4px 10px; border-radius: 999px; }
