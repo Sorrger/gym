@@ -88,7 +88,7 @@ const mw = computed(() => { void state.sessions; return muscleWeek(props.period)
 const SHORT = { lats: 'Najszersze', upperback: 'Górne plecy', quads: 'Czworogłowe', hamstrings: 'Dwugłowe ud', reardelts: 'Tył barków', obliques: 'Skośne brzucha' }
 const ORDER = ['chest', 'shoulders', 'reardelts', 'triceps', 'biceps', 'lats', 'upperback', 'quads', 'hamstrings', 'glutes', 'calves', 'abs', 'obliques']
 const SCALE = 24 // bar = 0..24 sets/week; the 10–20 zone is drawn behind
-const muscleRows = computed(() => ORDER.map(id => {
+const muscleRows = computed(() => ORDER.concat(mw.value.adductors ? ['adductors'] : []).map(id => {
   const v = mw.value[id] || 0
   return { id, name: MUSCLE_NAMES[id], v, pct: Math.min(100, v / SCALE * 100), level: v >= 10 ? 'main' : v >= 4 ? 'help' : 'low' }
 }))

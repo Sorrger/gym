@@ -35,7 +35,7 @@ export function tr(s) {
   if (!core || !/[A-Za-zĄĆĘŁŃÓŚŹŻąćęłńóśźż]/.test(core)) return fixNum(String(s))
   let out = cache.get(core)
   if (out === undefined) {
-    out = DICT.EN[core]
+    out = DICT.EN[core] ?? extra?.(core)
     if (out === undefined) {
       for (const [re, rep] of RX) {
         const g = re.exec(core)
@@ -49,11 +49,21 @@ export function tr(s) {
   return m[1] + out + m[3]
 }
 export const t = tr
+/** @type {((s: string) => string | undefined) | null} */
+let extra = null
+/** more phrases (+ a lookup for generated names) loaded later, e.g. the exercise catalogue; re-translates the page */
+export function addPhrases(obj, fn = null) {
+  if (!DICT) return
+  DICT = { ...DICT, EN: { ...obj, ...DICT.EN } }
+  if (fn) extra = fn
+  cache.clear(); mine = new WeakMap()
+  if (started && typeof document !== 'undefined' && document.body) walk(document.body)
+}
 // 102,8 → 102.8 (but "8, 8, 7" stays)
 const fixNum = s => s.replace(/(\d),(\d)/g, '$1.$2')
 
 const ATTRS = ['placeholder', 'aria-label', 'title']
-const mine = new WeakMap() // node → text we wrote (skip our own changes)
+let mine = new WeakMap() // node → text we wrote (skip our own changes)
 function fixText(n) {
   const v = n.nodeValue
   if (mine.get(n) === v) return

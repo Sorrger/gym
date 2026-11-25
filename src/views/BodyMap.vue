@@ -40,6 +40,7 @@ const FRONT = [
   { m: 'abs', d: rect(43, 63, 14, 37, 4) },
   ...pair('obliques', f => `M${X(41, f)} 64Q${X(34, f)} 66 ${X(32, f)} 77Q${X(34, f)} 92 ${X(41, f)} 100Z`),
   ...pair('quads', f => ell(X(40.5, f), 141, 8, 23)),
+  ...pair('adductors', f => ell(X(46, f), 132, 2.6, 12)),
   ...pair('calves', f => ell(X(41, f), 184, 5, 15))
 ]
 const BACK = [

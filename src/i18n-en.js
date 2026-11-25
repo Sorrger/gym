@@ -6,6 +6,14 @@ const pl = (n, one, many) => (+n === 1 ? one : many)
 
 export const EN = {
   "plecy": "back", "ręce": "arms", "nogi": "legs",
+  "Katalog ćwiczeń": "Exercise catalogue",
+  "Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.": "Nothing found. Type your own name in the exercise field.",
+  "Szukaj, np. wyciskanie, przysiad…": "Search, e.g. bench, squat…",
+  "Wariant": "Variant",
+  "Wpisujesz ciężar wspomagania – mniej kg = trudniej.": "You log the assistance weight – less kg = harder.",
+  "Wszystkie": "All",
+  "Wybierz": "Choose",
+  "Wybierz z katalogu": "Choose from catalogue",
   "– apka sama mówi, kiedy dodać ciężar.": "– the app tells you when to add weight.",
   "– Profil → Ustawienia: zasady progresji, lżejszy tydzień, motyw, język.": "– Profile → Settings: progression rules, light week, theme, language.",
   "– wszystko działa na siłowni bez zasięgu.": "– everything works in the gym without signal.",
@@ -375,6 +383,7 @@ export const EN = {
   "Postępy planu": "Plan progress",
   "pośladki": "glutes",
   "Pośladki": "Glutes",
+  "Przywodziciele": "Adductors",
   "Potrwa do ~10 minut. Możesz zamknąć apkę.": "Takes up to ~10 minutes. You can close the app.",
   "Powoli w dół – tłuszcz schodzi, a mięśnie dalej mogą rosnąć. Trzymaj kalorie, białko i progres na treningu.": "Slowly down – fat goes, muscle can still grow. Keep calories, protein and progress in the gym.",
   "Powoli w dół: 0,2–0,7 % wagi na tydzień, mięśnie zostają.": "Slowly down: 0.2–0.7% of body weight per week, keep the muscle.",

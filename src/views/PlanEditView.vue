@@ -40,6 +40,7 @@
             </div>
           </div>
           <input v-if="!e.special" v-model="e.name" class="name" :list="'known'" placeholder="Nazwa ćwiczenia (wpisz albo wybierz)" @change="nameChanged(e)" />
+          <button v-if="!e.special" class="cat press" @click="pickFor = e"><ion-icon :icon="libraryOutline" /> Wybierz z katalogu</button>
           <p v-if="e.special" class="spec">{{ e.specialText }} – można tylko przesunąć albo usunąć.</p>
           <template v-else>
             <div class="row3">
@@ -73,9 +74,10 @@
           </template>
         </div>
 
-        <button class="add press" @click="addEx"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
+        <button class="add press" @click="addEx(); pickFor = list[list.length - 1]"><ion-icon :icon="add" /> Dodaj ćwiczenie</button>
         <button v-if="isCustom && DEFAULT_PLAN[day]" class="reset press" @click="reset">Przywróć wersję podstawową „{{ DEFAULT_PLAN[day].name }}”</button>
         <button v-if="!isNew" class="reset press" @click="removePlan">Usuń ten trening</button>
+        <ExercisePicker :open="!!pickFor" :color="color" @close="pickFor = null" @pick="picked" />
         <datalist id="known"><option v-for="k in known" :key="k" :value="k" /></datalist>
       </div>
     </ion-content>
@@ -86,7 +88,8 @@
 import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
-import { close, chevronUp, chevronDown, trashOutline, add } from 'ionicons/icons'
+import { close, chevronUp, chevronDown, trashOutline, add, libraryOutline } from 'ionicons/icons'
+import ExercisePicker from './ExercisePicker.vue'
 import { PLAN, COLORS, PALETTE, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { MUSCLES, MUSCLE_NAMES } from '../muscles'
 import { custom, savePlan } from '../customPlan'
@@ -127,6 +130,14 @@ const name = ref(plan?.name || ''), note = ref(plan?.note || '')
 const list = ref(plan ? plan.ex.map(toRow) : [])
 if (!list.value.length) addEx()
 
+/** @type {import('vue').Ref<any>} */
+const pickFor = ref(null)
+function picked(r) {
+  const e = pickFor.value
+  if (!e) return
+  const o = {}; r.help.forEach(x => (o[x] = 2)); r.main.forEach(x => (o[x] = 1))
+  Object.assign(e, { name: r.name, unit: r.unit, lo: r.range[0], hi: r.range[1], m: MUSCLES[r.name] ? musOf(r.name) : o, mTouched: !MUSCLES[r.name], open: false })
+}
 function nameChanged(e) { if (!e.mTouched) { e.m = musOf(e.name.trim()); if (!MUSCLES[e.name.trim()]) e.open = true } }
 function cycle(e, id) { e.mTouched = true; e.m = { ...e.m, [id]: ((e.m[id] || 0) + 1) % 3 }; if (!e.m[id]) delete e.m[id] }
 const musText = e => { const m = Object.keys(e.m).filter(k => e.m[k] === 1).map(k => MUSCLE_NAMES[k]); return m.length ? m.join(', ') : 'wybierz' }
@@ -214,6 +225,8 @@ function cancel() { if (router.canGoBack()) router.back(); else router.navigate(
 .ex-top { display: flex; align-items: center; gap: 8px; }
 .n { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 700; color: var(--c); background: color-mix(in srgb, var(--c) 15%, transparent); }
 .name { margin-top: 10px; font-weight: 600; }
+.cat { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; border: 0; border-radius: 999px; padding: 7px 12px; font-size: 14px; font-weight: 600;
+  color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
 .fixed { flex: 1; min-width: 0; font-size: 16px; }
 .ord { display: flex; gap: 4px; flex: none; margin-left: auto; }
 .ib { width: 34px; height: 34px; border: 0; border-radius: 10px; display: grid; place-items: center; background: var(--app-field); color: var(--ion-text-color); font-size: 17px; padding: 0; }

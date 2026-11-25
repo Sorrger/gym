@@ -47,7 +47,7 @@ export const MUSCLES = {
 
 export const MUSCLE_NAMES = { chest: 'Klatka', shoulders: 'Barki', reardelts: 'Tył barków', biceps: 'Biceps', triceps: 'Triceps', forearms: 'Przedramiona',
   lats: 'Najszersze grzbietu', upperback: 'Górne plecy', traps: 'Kaptury', lowerback: 'Dolne plecy', abs: 'Brzuch', obliques: 'Skośne brzucha',
-  quads: 'Czworogłowe uda', hamstrings: 'Dwugłowe uda', glutes: 'Pośladki', calves: 'Łydki' }
+  quads: 'Czworogłowe uda', hamstrings: 'Dwugłowe uda', glutes: 'Pośladki', adductors: 'Przywodziciele', calves: 'Łydki' }
 
 export function musclesOf(name) {
   const [main = [], help = []] = MUSCLES[name] || []

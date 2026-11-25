@@ -10,7 +10,7 @@ import { initCloud } from './cloud'
 import { initStrava } from './strava'
 import { initWeights } from './weight'
 import { initAccount, account } from './account'
-import { initI18n } from './i18n'
+import { initI18n, addPhrases, lang } from './i18n'
 import { initErrors } from './errors'
 initErrors()
 import { initUpdater } from './updater'
@@ -95,6 +95,8 @@ initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => {
   router.isReady().then(() => {
     app.mount('#app')
     initI18n()
+    // exercise catalogue names in English (only needed when the app is not in Polish)
+    if (lang !== 'pl') import('./catalog').then(c => addPhrases(c.catalogEN(), n => { const r = c.byName(n); return r ? c.compose(r.base, r.sel).nameEn : undefined })).catch(() => {})
     // warm up every screen in the background, so the first visit of a tab or page doesn't wait for its code
     const warm = () => router.getRoutes().forEach(r => { const c = r.components?.default; if (typeof c === 'function') /** @type {any} */ (c)().catch(() => {}) })
     ;(window.requestIdleCallback || (f => setTimeout(f, 1200)))(warm, { timeout: 2500 })

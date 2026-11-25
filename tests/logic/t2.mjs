@@ -1,5 +1,5 @@
 // Second set: records, weight log, stats helpers, backup merge, auto-close, settings steppers, time texts, English.
-const { store, plan, stats, prefsM, weight, records, rules, now, i18n, en } = await import('./b.mjs')
+const { store, plan, stats, prefsM, weight, records, rules, now, i18n, en, catalog, muscles } = await import('./b.mjs')
 const { state } = store
 const { prefs, DEFAULT_PREFS } = prefsM
 let fails = 0, n = 0
@@ -171,5 +171,42 @@ ok(plan.PLAN.flatMap(p => p.ex.map(e => e[0])).filter(x => x !== plan.PULLUP).ev
   plan.PLAN.flatMap(p => p.ex.map(e => e[0])).filter(x => PL.test(E(x))))
 i18n.setLang('pl', false)
 ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
+
+// ---------- exercise catalogue ----------
+{
+  const C = catalog
+  function* combos(b) {
+    const axes = Object.keys(b.o), vs = b.v ? b.v.map(v => v[0]) : [undefined]
+    const rec = function* (i, s) { if (i === axes.length) { for (const v of vs) yield { ...s, v }; return } for (const k of b.o[axes[i]]) yield* rec(i + 1, { ...s, [axes[i]]: k }) }
+    yield* rec(0, {})
+  }
+  const all = C.BASES.flatMap(b => [...combos(b)].map(s => C.compose(b, s)))
+  const byNm = new Map(); let dup = null
+  for (const r of all) { if (byNm.has(r.name) && byNm.get(r.name) !== r.id) dup = r.name; byNm.set(r.name, r.id) }
+  ok(C.BASES.length >= 60 && byNm.size > 800, 'catalogue: many bases and combinations', [C.BASES.length, byNm.size])
+  ok(new Set(C.BASES.map(b => b.id)).size === C.BASES.length && new Set(C.BASES.map(b => b.pl)).size === C.BASES.length, 'catalogue: unique ids and names')
+  ok(C.BASES.every(b => C.GROUPS.some(g => g.k === b.g) && Object.entries(b.o).every(([ax, ks]) => ks.every(k => C.AXES[ax]?.v[k]))), 'catalogue: groups and options exist')
+  ok(C.BASES.every(b => Object.keys(b.x || {}).every(k => { const [ax, v] = k.split(':'); return b.o[ax]?.includes(v) })), 'catalogue: every option effect belongs to an option of that exercise')
+  ok(all.every(r => [...r.main, ...r.help].every(m => muscles.MUSCLE_NAMES[m]) && r.main.length && !r.main.some(m => r.help.includes(m))), 'catalogue: known muscles, at least one main, main ≠ helping')
+  ok(!dup, 'catalogue: one name = one combination', dup)
+  ok(all.every(r => !r.name.includes('·') && r.name.length < 90), 'catalogue: names without "·" (part separator) and not too long')
+  ok(all.every(r => { const b = C.byName(r.name); return b && C.compose(b.base, b.sel).id === r.id }), 'catalogue: every name leads back to its choice')
+  ok(Object.entries(C.ALIASES).every(([nm, [id, sel]]) => C.compose(C.byId[id], sel).name === nm), 'catalogue: plan exercises keep their own names (history continues)')
+  ok(plan.PLAN.flatMap(p => p.ex.map(e => e[0])).filter(x => x !== plan.PULLUP).every(x => C.ALIASES[x]), 'catalogue: every basic-plan exercise is in the catalogue')
+  const r1 = C.compose(C.byId['bench-press'], { eq: 'db', angle: 'incline' }), r2 = C.compose(C.byId['bench-press'], { width: 'close' })
+  ok(r1.name === 'Wyciskanie hantli na ławce skośnej' && r1.main.includes('shoulders'), 'incline bench: plan name, front delts main')
+  ok(r2.name === 'Wyciskanie na ławce – sztanga, wąsko' && r2.main.includes('triceps'), 'close-grip bench: own name, triceps main')
+  const cs = C.compose(C.byId['calf-raise'], { pos: 'seat', eq: 'bw' }), pu = C.compose(C.byId['pull-up'], { eq: 'as' })
+  ok(cs.unit === 'reps' && pu.unit === 'kg' && pu.assisted && plan.isAssisted({ key: pu.name }), 'unit follows equipment; assisted machine = less is harder')
+  ok(C.compose(C.byId['fly'], { eq: 'db', v: 'lowhigh' }).name === 'Rozpiętki – hantle' && C.axesOf(C.byId['fly'], { eq: 'db' }).axes.includes('angle'), 'options shown only where they make sense')
+  const ce = C.catalogEN()
+  ok(Object.values(ce).every(v => v && !/[ąćęłńóśźż]/i.test(v)), 'catalogue: English for every phrase')
+  const seen = new Map(); let clash = null
+  const add = (pl, en) => { if (seen.has(pl) && seen.get(pl) !== en) clash = pl; seen.set(pl, en) }
+  C.GROUPS.forEach(g => add(g.pl, g.en)); Object.values(C.AXES).forEach(ax => { add(ax.pl, ax.en); Object.values(ax.v).forEach(([a, b]) => add(a, b)) })
+  C.BASES.forEach(b => { add(b.pl, b.en); (b.v || []).forEach(v => add(v[1], v[2])) })
+  ok(!clash, 'catalogue: one Polish phrase = one English phrase', clash)
+  ok(C.BASES.every(b => b.how && b.how.length === 2), 'catalogue: technique cue in both languages')
+}
 
 globalThis.T2 = { n, fails }
