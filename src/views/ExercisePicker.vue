@@ -82,7 +82,7 @@ watch(() => props.open, o => { if (o) { base.value = null; q.value = '' } })
 const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l')
 const shown = computed(() => {
   const words = fold(q.value.trim()).split(/\s+/).filter(Boolean)
-  const hit = b => words.every(w => fold(b.pl + ' ' + b.en).includes(w))
+  const hit = b => words.every(w => fold(b.pl + ' ' + b.en + ' ' + (b.k || '')).includes(w))
   return GROUPS.filter(g => !grp.value || g.k === grp.value)
     .map(g => ({ ...g, items: BASES.filter(b => b.g === g.k && hit(b)) }))
     .filter(g => g.items.length)
