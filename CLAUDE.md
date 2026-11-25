@@ -106,9 +106,11 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).
 - Pick a colour (and maybe icon) per training in the plan editor.
 - Exercise library: catalogue of all exercises with own custom icons, "how to do it" (short description, maybe GIF/animation – optional), muscles; choose from it in the editor.
-- Badges / achievements (streaks, records, workout counts…).
+- NO badges (user changed mind): only records, shown like now but nicer (better record cards/moments).
 - Database + sign-in (Google / Apple), everything per account (see "Accounts + own database").
 - Review the overall project structure (code organisation, tests in the repo/CI, how commercial-ready it is).
+- Research: better watch data – Garmin (Connect IQ / Health API, official partner access), Apple Health / Google Health Connect (via Capacitor) for HR, calories, sleep, body weight.
+- Research: Strava for other users – is it legal/allowed by the Strava API agreement (rate limits, brand rules, writing custom descriptions to other people's activities, per-user OAuth on our own backend instead of the owner's GitHub Action).
 - Finish English translations (remaining dialogs/coach texts; crawler /tmp/pw/crawl.mjs approach).
 
 ## Ideas the user floated (not done)
