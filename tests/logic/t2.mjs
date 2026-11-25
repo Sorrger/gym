@@ -209,6 +209,16 @@ ok(i18n.tr('Postępy') === 'Postępy', 'Polish: text untouched')
   ok(C.GROUPS.every(g => C.BASES.some(b => b.g === g.k)), 'catalogue: every group has exercises')
   const dl = C.compose(C.byId['deadlift'], { v: 'rack' }), sq = C.compose(C.byId['squat'], { eq: 'db' })
   ok(dl.main.includes('upperback') && dl.help.includes('hamstrings') && !sq.name.includes('Zerchera') && !C.axesOf(C.byId['squat'], { eq: 'db' }).variants, 'variants only where they fit (rack pull, no Zercher with dumbbells)')
+  // naming: capital first letter, the rest lowercase except names of people, brands and letters
+  const PROPER = /^(T-gryf\w*|Arnolda|JM|Pallof\w*|Svend|Meadows\w*|Z-press|Y|Zottmana|Tate|GHD|V-up|V-uchwyt|Turkish|Smith|Zerchera|Pendlay|Yates|Nordic|OHP|MC|RDL|GHR|TGU|Pec)$/
+  const words = t => t.replace(/[(),–:]/g, ' ').split(/\s+/).filter(Boolean)
+  const badCase = C.BASES.flatMap(b => [
+    ...(b.pl[0] === b.pl[0].toUpperCase() && b.en[0] === b.en[0].toUpperCase() ? [] : [b.pl]),
+    ...words(b.pl).slice(1).filter(w => /^[A-ZĄĆĘŁŃÓŚŹŻ]/.test(w) && !PROPER.test(w)),
+    ...(b.v || []).flatMap(v => words(v[1]).filter(w => /^[A-ZĄĆĘŁŃÓŚŹŻ]/.test(w) && !PROPER.test(w))),
+  ]).concat(Object.values(C.AXES).flatMap(ax => Object.values(ax.v).map(x => x[0]).filter(w => /^[A-ZĄĆĘŁŃÓŚŹŻ]/.test(w) && !PROPER.test(w))))
+  ok(!badCase.length, 'catalogue names: capital only at the start and for proper names', badCase)
+  ok(C.BASES.filter(b => b.aka).length >= 90, 'catalogue: colloquial names for most exercises')
   ok(C.BASES.every(b => b.how && b.how.length === 2), 'catalogue: technique cue in both languages')
 }
 
