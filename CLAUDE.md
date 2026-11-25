@@ -105,7 +105,7 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).
 - Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).
 - Pick a colour (and maybe icon) per training in the plan editor.
-- Exercise library: catalogue of all exercises with own custom icons, "how to do it" (short description, maybe GIF/animation – optional), muscles; choose from it in the editor.
+- Exercise library (user, Nov 25): full catalogue of (practically) all existing gym exercises, with properly researched muscles (main / helping, from EMG / training literature), equipment, category; users can add their own custom exercises (name, muscles, unit) next to the catalogue. Own custom icons, "how to do it" (short description, maybe GIF/animation – optional), muscles; choose from it in the editor.
 - NO badges (user changed mind): only records, shown like now but nicer (better record cards/moments).
 - Database + sign-in (Google / Apple), everything per account (see "Accounts + own database").
 - Review the overall project structure (code organisation, tests in the repo/CI, how commercial-ready it is).
