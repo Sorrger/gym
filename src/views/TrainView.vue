@@ -8,7 +8,7 @@
       </header>
       <div class="page">
         <div class="tab-banner wk">
-          <span class="tb-label">Ten tydzień</span>
+          <div class="tb-head"><span class="tb-ico"><ion-icon :icon="calendarOutline" /></span><span class="tb-title">Ten tydzień</span><span class="tb-meta">{{ weekRange }}</span></div>
           <span class="tb-big num">{{ doneWeek.size }}<small>z {{ vis.length }} {{ vis.length === 1 ? 'treningu' : 'treningów' }}</small></span>
           <div class="wk-chips">
             <span v-for="i in vis" :key="i" class="wk-chip" :class="{ done: doneWeek.has(i) }" :style="{ '--p': COLORS[PLAN[i].key] }">
@@ -47,9 +47,10 @@
 
 <script setup>
 import { addDoneDialog } from '../addDone'
+import { LOC } from '../i18n'
 import { computed } from 'vue'
 import { IonPage, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
-import { createOutline, addCircleOutline, chevronForward, checkmark } from 'ionicons/icons'
+import { createOutline, addCircleOutline, chevronForward, checkmark, calendarOutline } from 'ionicons/icons'
 import { PLAN, COLORS, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { dayMuscles } from '../muscles'
 import { state, activeSession, suggestion, counts, iso } from '../store'
@@ -64,6 +65,12 @@ const days = i => [1, 2, 3, 4, 5, 6, 0].filter(js => WEEKDAY_TO_DAY[js] === i).m
 const active = computed(() => { void state.sessions; return activeSession() })
 const sug = computed(() => { void state.sessions; return suggestion() })
 const next = computed(() => sug.value.day)
+// "24–30 lis" (same month) or "29 lis – 5 gru"
+const weekRange = computed(() => {
+  const now = new Date(), mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() + 6) % 7), sun = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate() + 6)
+  const f = d => d.toLocaleDateString(LOC(), { day: 'numeric', month: 'short' }).replace('.', '')
+  return mon.getMonth() === sun.getMonth() ? mon.getDate() + '–' + f(sun) : f(mon) + ' – ' + f(sun)
+})
 const vis = computed(() => { void state.sessions; return visiblePlans() })
 // trainings done this week (Mon–Sun), incl. ones marked as done outside the app
 const doneWeek = computed(() => {

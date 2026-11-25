@@ -194,6 +194,14 @@ ion-alert { --background: color-mix(in srgb, var(--app-card) 88%, transparent); 
   color: var(--ion-text-color); background: color-mix(in srgb, var(--c) 14%, var(--app-card)); }
 :root.ion-palette-dark .tab-banner { background: color-mix(in srgb, var(--c) 22%, var(--app-card)); }
 .tab-banner .tb-label { display: block; font-size: 14px; font-weight: 600; color: var(--app-muted); }
+/* banner title row: tinted icon tile, title in the banner colour, context on the right */
+.tb-head { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.tb-ico { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; font-size: 16px; color: var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 22%, transparent); }
+.tb-title { font-size: 16px; font-weight: 700; letter-spacing: -.2px; color: var(--ion-text-color); white-space: nowrap; }
+.tb-meta { margin-left: auto; font-size: 13px; font-weight: 600; font-family: var(--num-font); color: var(--c, var(--accent)); white-space: nowrap;
+  padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--c, var(--accent)) 14%, transparent); }
+.tab-banner .tb-head + .tb-big { margin-top: 10px; }
 .tab-banner .tb-big { display: block; font-family: var(--num-font); font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1.05; color: var(--c); margin-top: 4px; }
 .tab-banner .tb-big small { font-size: 17px; font-weight: 700; color: var(--app-muted); letter-spacing: 0; margin-left: 6px; }
 .tab-banner .tb-nums { display: flex; gap: 20px; margin-top: 12px; }

@@ -2,9 +2,9 @@
   <div>
     <!-- hero: strength since start + trend line, then the period numbers -->
     <div class="hero">
+      <div class="tb-head"><span class="tb-ico"><ion-icon :icon="trendingUp" /></span><span class="tb-title">Siła od startu</span></div>
       <div class="h-top">
         <div>
-          <small>Siła od startu</small>
           <b class="num">{{ signed(avgGain) }}</b>
           <span class="h-sub">{{ avgGain == null ? 'pojawi się po 2 treningach' : 'średnio ze wszystkich ćwiczeń' }}</span>
         </div>
@@ -59,7 +59,8 @@
 <script setup>
 // Postępy → Przegląd: strength since start + trend, workouts per week, newest records
 import { computed } from 'vue'
-import { useIonRouter } from '@ionic/vue'
+import { useIonRouter, IonIcon } from '@ionic/vue'
+import { trendingUp } from 'ionicons/icons'
 import Ico from '../Ico.vue'
 import { LOC } from '../../i18n'
 import { PLAN, COLORS, fmtVal } from '../../plan'
@@ -96,7 +97,7 @@ const trend = computed(() => {
 <style scoped>
 .hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: var(--ion-text-color); background: color-mix(in srgb, var(--accent) 14%, var(--app-card)); }
 :global(.ion-palette-dark) .hero { background: color-mix(in srgb, var(--accent) 22%, var(--app-card)); }
-.h-top { display: flex; align-items: flex-end; gap: 12px; }
+.h-top { display: flex; align-items: flex-end; gap: 12px; margin-top: 8px; }
 .h-top > div { flex: none; display: flex; flex-direction: column; }
 .h-top small { font-size: 13px; color: var(--app-muted); }
 .h-top b { font-size: 44px; font-weight: 800; letter-spacing: -1px; line-height: 1.05; color: var(--accent); font-family: var(--num-font); }

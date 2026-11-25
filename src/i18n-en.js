@@ -17,6 +17,7 @@ export const EN = {
   "Kolorowy": "Colourful",
   "Kontrast": "Contrast",
   "miękki, szary": "soft grey",
+  "Miesiąc": "Month",
   "Miętowy": "Mint",
   "Morski": "Teal",
   "Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.": "Nothing found. Type your own name in the exercise field.",

@@ -9,7 +9,7 @@
       <div class="page">
 
         <div class="tab-banner">
-          <span class="tb-label">{{ isCurrentMonth ? 'W tym miesiącu' : monthLabel }}</span>
+          <div class="tb-head"><span class="tb-ico"><ion-icon :icon="calendarOutline" /></span><span class="tb-title">{{ isCurrentMonth ? 'W tym miesiącu' : 'Miesiąc' }}</span><span class="tb-meta">{{ monthLabel }}</span></div>
           <span class="tb-big num">{{ monthList.length }}<small>{{ monthList.length === 1 ? 'trening' : monthList.length >= 2 && monthList.length <= 4 ? 'treningi' : 'treningów' }}</small></span>
           <div class="tb-nums">
             <div><b class="num">{{ monthSets }}</b><span>serie</span></div>
@@ -76,7 +76,7 @@ import { ask as askDialog } from '../dialog'
 import { computed, ref } from 'vue'
 import { IonPage, IonContent, IonList, IonItem, IonItemSliding,
   IonItemOptions, IonItemOption, IonLabel, IonNote, IonIcon, useIonRouter  } from '@ionic/vue'
-import { chevronBack, chevronForward, trashOutline, heart } from 'ionicons/icons'
+import { chevronBack, chevronForward, trashOutline, heart, calendarOutline } from 'ionicons/icons'
 import { stravaFor, svText } from '../strava'
 import { PLAN, COLORS } from '../plan'
 import { state, doneSessions, counts, fmtDate, remove, iso } from '../store'
