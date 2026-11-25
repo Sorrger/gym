@@ -2,7 +2,7 @@
      A still frame when the phone asks for less motion. -->
 <template>
   <svg class="xa" :viewBox="vb" role="img" :aria-label="label">
-    <template v-if="scene.rig">
+    <template v-if="scene.rig && !scene.top">
       <ellipse class="shadow" :cx="box.x + box.w / 2" :cy="2" :rx="box.w * 0.36" ry="5" />
       <line class="ground" :x1="box.x" y1="0" :x2="box.x + box.w" y2="0" stroke-width="2" />
     </template>
@@ -76,6 +76,10 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .xa circle.far { fill: color-mix(in srgb, var(--ion-text-color) 32%, var(--box)); stroke: none; }
 .xa .gear.far, .xa .rim.far, .xa .hub.far, .xa .plate.far { opacity: .55; }
 .xa .outline { stroke: var(--box); }
+.xa .bodyf { fill: var(--fig); }
+.xa .farf { fill: color-mix(in srgb, var(--ion-text-color) 32%, var(--box)); }
+.xa .nearf { fill: color-mix(in srgb, var(--ion-text-color) 72%, var(--box)); }
+.xa .outf { fill: var(--box); }
 .xa .near { stroke: color-mix(in srgb, var(--ion-text-color) 72%, var(--box)); }
 .xa .hand { fill: color-mix(in srgb, var(--ion-text-color) 80%, var(--box)); stroke: var(--box); stroke-width: 2; }
 .xa .accent { stroke: var(--c, var(--accent)); }

@@ -1,7 +1,7 @@
 // One figure for every exercise animation. Change a proportion here and every animation follows.
 // Units = SVG px in a 380 × 250 scene. Real-body ratios: thigh ≈ shin ≈ 0.85 torso, arm a bit longer than the torso.
 export const FIG = {
-  head: 12, neck: 14, torso: 82, torsoW: 24,
+  head: 13.5, neck: 11, torso: 82, torsoW: 24,
   upperArm: 46, foreArm: 42, armW: 12, foreW: 10, hand: 6.5,
   thigh: 70, shin: 68, legW: 16, foot: 24,
 }

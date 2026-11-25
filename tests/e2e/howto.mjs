@@ -27,7 +27,7 @@ async function run(dark, en) {
   await p.locator('.dots button, .dot').nth(1).click().catch(() => {}); await p.waitForTimeout(700)
   await p.locator('.ex-body:visible').click(); await p.waitForTimeout(1000)
   ok(await sheet.locator('svg.xa').count() === 1 && await sheet.locator('.ht-cues li').count() === 1, tag + ': incline dumbbell press has the rig animation + its cue')
-  const lines = () => sheet.locator('svg.xa line.near').first().getAttribute('x2')
+  const lines = () => sheet.locator('svg.xa path.nearf').first().getAttribute('d')
   const l1 = await lines(); await p.waitForTimeout(600); const l2 = await lines()
   ok(l1 !== l2, tag + ': the rig animation moves')
   await sheet.locator('.ht-x').click(); await p.waitForTimeout(500)
