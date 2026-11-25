@@ -1,6 +1,6 @@
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
-const { plan } = await import('/tmp/t2/b.mjs')
+const plan = await import('../../src/plan.js')
 const S = {}
 const isoD = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 const P = 'Nauka podciągania · '
@@ -31,7 +31,7 @@ await p.locator('.banner:visible').first().click(); await p.waitForTimeout(900)
 console.log('plan tip:', await txt('.dl-box:visible'))
 console.log('stage:', await p.locator('.stage:visible').count())
 console.log('rows:', (await p.locator('.ex:visible .tgt').allTextContents()).slice(0, 3))
-await p.screenshot({ path: 'z-plan.png' })
+// (screenshot removed)
 await p.locator('.go:visible').click(); await p.waitForTimeout(1500)
 console.log('dialog:', (await p.locator('.dlg, [class*=dlg]').first().textContent().catch(() => ''))?.slice(0, 300))
 await p.screenshot({ path: 'z-dialog.png' })
