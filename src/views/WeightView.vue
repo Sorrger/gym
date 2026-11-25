@@ -194,7 +194,6 @@ const verdict = computed(() => {
   return { ico: 'up', cls: 'warn', title: 'Waga rośnie', text: 'Średnia idzie w górę. Sprawdź, czy kalorie się zgadzają.' }
 })
 
-const parseKg0 = v => { const n = +String(v || '').replace(',', '.').replace(/[^\d.]/g, ''); return n >= 30 && n <= 300 ? Math.round(n * 10) / 10 : null }
 
 async function add() { await askWeight() }
 async function edit(p) {

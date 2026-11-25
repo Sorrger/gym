@@ -108,18 +108,7 @@ const dl = computed(() => { void state.sessions; void nowTick.value; return delo
 const done = computed(() => { void state.sessions; return doneSessions() })
 const totalSets = computed(() => done.value.reduce((a, s) => a + counts(s).n, 0))
 
-const todayText = computed(() => {
-  const s = new Date().toLocaleDateString(LOC(), { weekday: 'long', day: 'numeric', month: 'long' })
-  return s.charAt(0).toUpperCase() + s.slice(1)
-})
-const greeting = computed(() => {
-  const h = new Date().getHours()
-  return h < 5 ? 'Dobranoc' : h < 12 ? 'Dzień dobry' : h < 18 ? 'Cześć' : 'Dobry wieczór'
-})
 
-// "done without the app": the user picks which plan and on which day of this week (maybe another plan was done that day)
-// "Dodaj zrobiony trening": a training done but not logged (forgot the phone, before the app…).
-// With sets → a finished workout on that day, opened to tick the sets; without → just marked as done.
 // tapping a day with "done without the app" marks: remove one
 async function dayTap(d) {
   if (!d.offs.length) return
@@ -177,7 +166,6 @@ const bSub = computed(() => {
   const mus = (dayMuscles(d).main || []).slice(0, 2).map(m => (MUSCLE_NAMES[m] || '').toLowerCase()).filter(Boolean)
   return p.ex.length + ' ćwiczeń · ok. ' + mins + ' min' + (mus.length ? ' · ' + mus.join(', ') : '')
 })
-const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 </script>
 
 <style scoped>
@@ -213,9 +201,6 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .week { padding: 14px 12px; }
 .day.off .dot { opacity: .5; }
 .day.both .dot { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 3.5px color-mix(in srgb, var(--c) 45%, transparent); }
-.off-link { display: flex; align-items: center; gap: 6px; width: calc(100% - 40px); margin: 0 20px 12px; padding: 0; border: 0; background: none; text-align: left; font: inherit; font-size: 13.5px; color: var(--app-muted); }
-.off-link b { color: var(--accent); font-weight: 600; }
-.off-link ion-icon { font-size: 19px; color: var(--accent); flex: none; }
 .week-head { display: flex; justify-content: space-between; align-items: baseline; padding: 0 4px 12px; }
 .days { display: grid; grid-template-columns: repeat(7, 1fr); }
 .day { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -243,7 +228,6 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .w-tile span { display: flex; align-items: center; gap: 4px; }
 .home-stats em.dn { color: var(--app-ok); }
 .home-stats em.upw { color: var(--app-bad); }
-.all-link { display: flex; align-items: center; justify-content: center; gap: 4px; width: calc(100% - 32px); margin: 12px 16px 4px; padding: 13px; border: 0; border-radius: var(--r-md); font: inherit; font-size: 15.5px; font-weight: 600; color: var(--accent); background: var(--app-card); }
 .plan { text-align: left; border: 0; color: var(--ion-text-color); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column;
   gap: 2px; font: inherit; min-height: 128px; background: var(--app-card); box-shadow: var(--app-shadow); }
 .plan.next { box-shadow: none; }
@@ -270,6 +254,4 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .b-sub { margin: 6px 0 0; font-size: 14px; color: var(--app-muted); font-family: inherit; }
 .b-map { height: 92px; width: 96px; flex: none; pointer-events: none; }
 .b-cta { display: inline-flex; align-items: center; gap: 2px; margin-top: 10px; font-size: 15px; font-weight: 700; color: var(--c); }
-.b-go { width: 100%; height: 50px; border: 0; border-radius: 14px; display: flex; align-items: center; justify-content: center; gap: 6px;
-  background: var(--c); color: #fff; font: inherit; font-size: 17px; font-weight: 600; }
 </style>
