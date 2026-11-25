@@ -43,27 +43,28 @@ export function joints(p, view) {
   const SR = front ? add(S, Rt, 19) : S, SL = front ? add(S, Rt, -19) : S, HR = front ? add(H, Rt, 11) : H, HL = front ? add(H, Rt, -11) : H
   const a1 = p.ra1 != null ? t + p.ra1 : p.a1, a2 = p.ra2 != null ? t + p.ra2 : p.a2
   const tgt = P || (p.ax != null ? { x: p.ax, y: p.ay } : null)
-  const UA = FIG.upperArm * (p.af ?? 1), FA = FIG.foreArm * (p.ff ?? p.af ?? 1), TH = FIG.thigh * (p.tf ?? 1)
+  const UA = FIG.upperArm * (p.af ?? 1), FA = FIG.foreArm * (p.ff ?? p.af ?? 1), TH = FIG.thigh * (p.tf ?? 1), SH = FIG.shin * (p.sf ?? 1)
   const arm = chain(SR, UA, FA, a1, a2, tgt?.x, tgt?.y, p.ab ?? 1)
   let far
   if (p.b1 != null || p.rb1 != null || p.bx != null) far = chain(SL, UA, FA, p.rb1 != null ? t + p.rb1 : p.b1, p.rb2 != null ? t + p.rb2 : p.b2, p.bx, p.by, p.bb ?? p.ab ?? 1)
   else if (front) { const m = tgt && !P ? mirrorPt(tgt, H, t) : P; far = chain(SL, UA, FA, mirrorAng(a1, t), mirrorAng(a2, t), m?.x, m?.y, -(p.ab ?? 1)) }
   else far = arm
-  const leg = chain(HR, TH, FIG.shin, p.l1, p.l2, p.fx, p.fy, p.lb ?? -1)
+  const leg = chain(HR, TH, SH, p.l1, p.l2, p.fx, p.fy, p.lb ?? -1)
   let leg2
-  if (p.m1 != null || p.gx != null) leg2 = chain(HL, TH, FIG.shin, p.m1, p.m2, p.gx, p.gy, p.gb ?? p.lb ?? -1)
-  else if (front) { const m = p.fx != null ? mirrorPt({ x: p.fx, y: p.fy }, H, t) : null; leg2 = chain(HL, TH, FIG.shin, mirrorAng(p.l1, t), mirrorAng(p.l2, t), m?.x, m?.y, -(p.lb ?? -1)) }
+  if (p.m1 != null || p.gx != null) leg2 = chain(HL, TH, SH, p.m1, p.m2, p.gx, p.gy, p.gb ?? p.lb ?? -1)
+  else if (front) { const m = p.fx != null ? mirrorPt({ x: p.fx, y: p.fy }, H, t) : null; leg2 = chain(HL, TH, SH, mirrorAng(p.l1, t), mirrorAng(p.l2, t), m?.x, m?.y, -(p.lb ?? -1)) }
   else leg2 = leg
   return { cu: p.cu || 0, H, S, C, P, SR, SL, HR, HL, E: arm.mid, W: arm.end, E2: far.mid, W2: far.end, K: leg.mid, A: leg.end, K2: leg2.mid, A2: leg2.end, d, L }
 }
 
 // blend poses; angles take the short way round; many frames = k runs through them in order
 const ANG = new Set(['t', 'hd', 'a1', 'a2', 'b1', 'b2', 'ra1', 'ra2', 'rb1', 'rb2', 'l1', 'l2', 'm1', 'm2', 'fo', 'rot'])
+const BEND = new Set(['ab', 'bb', 'lb', 'gb']) // bend sides switch, they don't blend
 function mix2(a, b, k) {
   const o = {}
   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
     const x = a[key] ?? b[key], y = b[key] ?? a[key]
-    if (typeof x !== 'number' || typeof y !== 'number') { o[key] = k < 0.5 ? x : y; continue }
+    if (typeof x !== 'number' || typeof y !== 'number' || BEND.has(key)) { o[key] = k < 0.5 ? x : y; continue }
     let dd = y - x
     if (ANG.has(key)) dd = ((dd % 360) + 540) % 360 - 180
     o[key] = x + dd * k
@@ -153,7 +154,7 @@ function foot(K, A, fo, cls = 'body') {
 }
 
 function gear(g, J, pose, near) {
-  const W = g.at === 'hold' && J.P ? J.P : g.at === 'elbow' ? J.E : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
+  const W = g.at === 'hold' && J.P ? J.P : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
   switch (g.k) {
     case 'bb': return [{ t: 'plate', at: W, r: g.r || 22, far: !near }]
     case 'pl': return [{ t: 'plate', at: W, r: g.r || 15, far: !near }]
@@ -167,6 +168,9 @@ function gear(g, J, pose, near) {
     case 'wheel': return [circle(at(W, 90, 6), 11, 'gear'), circle(at(W, 90, 6), 11, 'rim'), circle(at(W, 90, 6), 3, 'hub')]
     case 'roller': { const end = { x: W.x, y: W.y + (pose.rl ?? 60) }; return [line(W, end, 1.5, 'cable'), { t: 'plate', at: { x: end.x, y: end.y + 10 }, r: 11 }] }
     case 'belt': { const end = { x: J.H.x, y: J.H.y + 40 }; return [line(J.H, end, 1.5, 'cable'), { t: 'plate', at: { x: end.x, y: end.y + 12 }, r: 13 }] }
+    case 'footpad': { const y = Math.max(J.A.y, J.A2.y) + 7; return [line({ x: Math.min(J.A.x, J.A2.x) - 16, y }, { x: Math.max(J.A.x, J.A2.x) + 16, y }, 9, 'pad')] } // assisted machine platform under the feet
+    case 'footband': { const y = Math.max(J.A.y, J.A2.y) + 4, l = Math.min(J.A.x, J.A2.x) - 6, r = Math.max(J.A.x, J.A2.x) + 6; return [line({ x: l, y: g.top }, { x: l, y }, 2.5, 'band'), line({ x: l, y }, { x: r, y }, 2.5, 'band'), line({ x: r, y }, { x: r, y: g.top }, 2.5, 'band')] } // band from the bar under the feet
+    case 'backpad': { const a = add(add(J.H, J.L, 17), J.d, -14), b = add(add(J.S, J.L, 17), J.d, 16); return [line(a, b, 13, 'pad')] } // machine back pad moving with the body
     case 'kneepad': { const d = ang(J.H, J.K), c = at(lerpPt(J.H, J.K, 0.85), d - 90, 14); return [line(at(c, d, -16), at(c, d, 16), 10, 'pad')] } // machine pad on top of the thighs
     case 'bar2': { const d = ang(J.W2, J.W), m = lerpPt(J.W, J.W2, 0.5); return [line({ x: m.x, y: m.y }, { x: m.x, y: g.top ?? -330 }, 1.5, 'cable'), line(at(J.W2, d, -14), at(J.W, d, 14), 5, 'gear frame')] } // straight bar between both hands (front view)
     case 'shin': { const c = at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13); return [circle(c, 9, 'pad'), circle(c, 3, 'gear')] } // roller on the front (-1) or back (+1) of the shin
