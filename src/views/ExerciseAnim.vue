@@ -84,6 +84,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .xa .hand { fill: color-mix(in srgb, var(--ion-text-color) 80%, var(--box)); stroke: var(--box); stroke-width: 2; }
 .xa .accent { stroke: var(--c, var(--accent)); }
 .xa circle.accent { fill: var(--c, var(--accent)); stroke: none; }
+.xa path.accent { fill: var(--c, var(--accent)); stroke: none; }
 .xa .accent.soft { opacity: .45; }
 .xa .hair { stroke: color-mix(in srgb, var(--ion-text-color) 35%, var(--box)); }
 .xa .path { stroke: var(--c, var(--accent)); stroke-width: 1.5; stroke-dasharray: 4 4; opacity: .6; }

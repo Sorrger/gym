@@ -23,6 +23,7 @@ export const EN = {
   "Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.": "Nothing found. Type your own name in the exercise field.",
   "Rozciągnij": "Stretch",
   "Złącz": "Bring together",
+  "Rozsuń": "Push apart",
   "Przenieś": "Move over",
   "Podciągnij": "Pull up",
   "Przyciągnij": "Pull",

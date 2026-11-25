@@ -94,20 +94,28 @@ function paint(J, list, cls, front, only) {
     if (only && !only.includes(m)) continue
     if (m === 'shoulders') { out.push(circle(front ? J.SR : at(J.S, ang(J.S, J.C), 1), 7.5, cls)); if (front) out.push(circle(J.SL, 7.5, cls)); continue }
     if (m === 'reardelts') { out.push(circle(add(J.S, J.L, front ? 0 : 6), 6, cls)); continue }
-    if (m === 'glutes') { out.push(circle(add(J.H, J.L, front ? 0 : 8), 8, cls)); continue }
+    if (m === 'glutes') { if (front) out.push(circle(at(J.HR, ang(J.HL, J.HR), 8), 6, cls), circle(at(J.HL, ang(J.HR, J.HL), 8), 6, cls)); else out.push(circle(add(J.H, J.L, 8), 8, cls)); continue }
     const p = PAINT[m]; if (!p) continue
     const [seg, f0, f1, side0] = p, side = front ? 0 : side0
     const segs = { torso: [[J.H, J.S, FIG.torsoW]], neck: [[J.S, J.C, 9]], ua: [[J.SR, J.E, FIG.armW]], fa: [[J.E, J.W, FIG.foreW]], th: [[J.HR, J.K, FIG.legW]], sh: [[J.K, J.A, FIG.legW - 2]] }[seg]
     if (front && seg !== 'torso' && seg !== 'neck') segs.push({ ua: [J.SL, J.E2, FIG.armW], fa: [J.E2, J.W2, FIG.foreW], th: [J.HL, J.K2, FIG.legW], sh: [J.K2, J.A2, FIG.legW - 2] }[seg])
-    if (front && m === 'chest') { const c = lerpPt(J.H, J.S, 0.78); out.push(line(add(c, at({ x: 0, y: 0 }, ang(J.H, J.S) + 90, 10), 1), add(c, at({ x: 0, y: 0 }, ang(J.H, J.S) - 90, 10), 1), 7, cls)); continue }
+    if (front && m === 'chest') { const c = lerpPt(J.H, J.S, 0.8), d = ang(J.H, J.S); for (const k of [-1, 1]) { const o = at(c, d + 90 * k, 2); out.push(lens(o, at(o, d + 90 * k, 15), 6, cls)) } continue }
+    if (front && m === 'abs') { const a0 = lerpPt(J.H, J.S, 0.15), a1 = lerpPt(J.H, J.S, 0.6); out.push(lens(a0, a1, 7, cls)); continue }
     for (const [A, B, w] of segs) {
-      const n = at({ x: 0, y: 0 }, ang(A, B) - 90, side * (w / 2 - 3))
-      out.push(line(add(lerpPt(A, B, f0), n), add(lerpPt(A, B, f1), n), side ? 5 : 4, cls))
+      // muscle belly as a filled lens just inside the drawn outline, on the side where the muscle sits
+      const wid = seg === 'torso' ? (front ? 22 : 11) : seg === 'neck' ? 8 : w * 0.62
+      const n = at({ x: 0, y: 0 }, ang(A, B) - 90, side * (seg === 'torso' ? 9 : w / 2 - wid / 2 + 1))
+      out.push(lens(add(lerpPt(A, B, f0), n), add(lerpPt(A, B, f1), n), wid, cls))
     }
   }
   return out
 }
 
+// pointed-ended muscle shape
+function lens(A, B, w, cls) {
+  const d = ang(A, B), M = lerpPt(A, B, 0.5), c1 = add(M, at({ x: 0, y: 0 }, d - 90, w)), c2 = add(M, at({ x: 0, y: 0 }, d + 90, w))
+  return { t: 'path', a: { d: `M${A.x} ${A.y}Q${c1.x} ${c1.y} ${B.x} ${B.y}Q${c2.x} ${c2.y} ${A.x} ${A.y}Z` }, c: cls }
+}
 // muscular limb: widths at the start, at the belly of the muscle (pos 0..1) and at the end; round ends, filled
 function seg(A, B, w0, wm, w1, pos, cls) {
   const d = ang(A, B), N = w => at({ x: 0, y: 0 }, d - 90, w / 2), M = { x: A.x + (B.x - A.x) * pos, y: A.y + (B.y - A.y) * pos }
@@ -117,7 +125,7 @@ function seg(A, B, w0, wm, w1, pos, cls) {
 }
 const smooth = pts => pts.reduce((s, p, i) => (i === 0 ? `M${p.x} ${p.y}` : i === pts.length - 1 ? s + `L${p.x} ${p.y}` : s + `Q${p.x} ${p.y} ${(p.x + pts[i + 1].x) / 2} ${(p.y + pts[i + 1].y) / 2}`), '')
 // side view torso: back (L side) and front profile along hip → shoulder (glutes, lower back, lats, upper back / belly, chest)
-const PF = [0, 0.1, 0.3, 0.5, 0.72, 0.9, 1], BACK = [13, 15.5, 10.5, 11.5, 14, 14.5, 10], FRONT = [11.5, 12, 12, 11.5, 15.5, 14, 10]
+const PF = [0, 0.1, 0.3, 0.5, 0.72, 0.9, 1], BACK = [15, 17.5, 12.5, 13.5, 16.5, 17, 11], FRONT = [13, 14, 14, 13.5, 18, 16.5, 11]
 function torsoSide(J, cls) {
   const P = (f, k, side) => add(add(J.H, { x: (J.S.x - J.H.x) * f, y: (J.S.y - J.H.y) * f }), J.L, side * k)
   const back = PF.map((f, i) => P(f, BACK[i], 1)), front = PF.map((f, i) => P(f, FRONT[i], -1)).reverse()
