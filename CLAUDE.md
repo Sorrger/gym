@@ -100,6 +100,17 @@ Vite + Vue 3 + Ionic Vue 9 (mode `ios`), vue-router hash history, idb-keyval (In
 - **User said: do not change the training plan anymore unless asked.**
 - Training priorities (from the user): chest + back first; upper chest emphasis (Nov 21 2026, user asked): incline DB (Push) and Smith incline (Upper) 4 sets each, Push cable fly is low-to-high ('Rozpiętki na bramie z dołu do góry', separate history) → chest ~17 sets/week, back ~17-18 effective; rear delts weaker (reverse butterfly 3 × 12-15 added on Upper right after butterfly, same machine); cable lateral raise 3 × 10-15 / side at the end of Upper (added, removed, then added back – final, Nov 2026, user) → side delts 7 sets/week; arms: cable triceps+biceps removed from Upper (Nov 2026, user: arms big enough; arms get Push/Pull work only); legs: one day on purpose (maintenance), Zercher before RDL (Nov 2026, user asked); after the research docs (Nov 21 2026, user asked): Pull: T-bar replaced by seated cable row with a wide overhand bar 3 × 8-10 (upper back; lats come from DB row + pulldown; separate history), order: negatives → DB row → cable row → wide lat pulldown 3 × 8-10 (user: machines after free weights) (user can't do many negatives yet; same name as on Upper = shared history) and hammer curls 2 × 10-12 after the incline curl; Nogi: seated leg curl (renamed from 'Uginanie nóg na maszynie', history kept via RENAMED), calves split into standing 2 + seated 2 – don't flag legs as a problem. Keep personal body data out of this public repo.
 
+## TODO (user, Nov 25 2026 – next sessions, in this spirit)
+- Settings split into sections / sub-pages (e.g. Wygląd, Trening, Progresja, Waga, Kopia, Strava, Język, Konto) instead of one long page.
+- Full check for App Store / Google Play (see the analysis from Nov 25: real backend, Sign in with Apple next to Google, account deletion in-app, privacy policy + terms, health-data disclosure, medical disclaimer, demo account for review, Capacitor wrapper + native extras (notifications, Apple Health, haptics), Play closed test 12 testers × 14 days, Apple dev account / cloud iOS build).
+- Commercialisation: look at it like a real product (pricing/subscription ideas, onboarding, analytics opt-in, crash reports, store listing, English everywhere).
+- Pick a colour (and maybe icon) per training in the plan editor.
+- Exercise library: catalogue of all exercises with own custom icons, "how to do it" (short description, maybe GIF/animation – optional), muscles; choose from it in the editor.
+- Badges / achievements (streaks, records, workout counts…).
+- Database + sign-in (Google / Apple), everything per account (see "Accounts + own database").
+- Review the overall project structure (code organisation, tests in the repo/CI, how commercial-ready it is).
+- Finish English translations (remaining dialogs/coach texts; crawler /tmp/pw/crawl.mjs approach).
+
 ## Ideas the user floated (not done)
 - Shrugs removed from Pull (Nov 2026, user). iOS Live Activity / Dynamic Island workout status: impossible for a PWA (needs a native app + Mac) – told the user.
 - Garmin Connect direct link (unofficial login) – user said no; Strava instead.
