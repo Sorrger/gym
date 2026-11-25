@@ -19,7 +19,7 @@
           <template v-for="sec in shown" :key="sec.k">
             <h4>{{ sec.pl }}</h4>
             <button v-for="b in sec.items" :key="b.id" class="ep-row press" @click="choose(b)">
-              <span><b>{{ b.pl }}</b><small v-if="b.aka && lang === 'pl'" class="aka" data-no-tr>potocznie: {{ b.aka }}</small><small>{{ eqText(b) }}</small></span><ion-icon :icon="chevronForward" />
+              <span><b>{{ b.pl }}</b><small v-if="lang === 'pl' ? b.aka : b.akaEn" class="aka" data-no-tr>{{ lang === 'pl' ? 'potocznie: ' + b.aka : 'also called: ' + b.akaEn }}</small><small>{{ eqText(b) }}</small></span><ion-icon :icon="chevronForward" />
             </button>
           </template>
           <p v-if="!shown.length" class="ep-empty">Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.</p>
@@ -49,7 +49,8 @@
             <p class="unit"><span>{{ UNIT_TEXT[res.unit] }}</span><span class="num"> · {{ res.range[0] }}–{{ res.range[1] }}</span><span>{{ res.unit === 's' ? ' s' : ' powt.' }}</span></p>
           </div>
         </div>
-        <p v-if="base.aka && lang === 'pl'" class="ep-how">Potocznie: {{ base.aka }}</p>
+        <p v-if="lang === 'pl' && base.aka" class="ep-how" data-no-tr>Potocznie: {{ base.aka }}<br>Po angielsku: {{ base.akaEn }}</p>
+        <p v-else-if="base.akaEn" class="ep-how" data-no-tr>Also called: {{ base.akaEn }}</p>
         <p v-if="base.how" class="ep-how">{{ base.how[0] }}</p>
         <p v-if="res.assisted" class="ep-how">Wpisujesz ciężar wspomagania – mniej kg = trudniej.</p>
         <button class="ep-pick press" @click="pick">Wybierz</button>
@@ -83,7 +84,7 @@ watch(() => props.open, o => { if (o) { base.value = null; q.value = '' } })
 const fold = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/ł/g, 'l')
 const shown = computed(() => {
   const words = fold(q.value.trim()).split(/\s+/).filter(Boolean)
-  const hit = b => words.every(w => fold(b.pl + ' ' + b.en + ' ' + (b.aka || '') + ' ' + (b.k || '')).includes(w))
+  const hit = b => words.every(w => fold(b.pl + ' ' + b.en + ' ' + (b.aka || '') + ' ' + (b.akaEn || '') + ' ' + (b.k || '')).includes(w))
   return GROUPS.filter(g => !grp.value || g.k === grp.value)
     .map(g => ({ ...g, items: BASES.filter(b => b.g === g.k && hit(b)) }))
     .filter(g => g.items.length)
