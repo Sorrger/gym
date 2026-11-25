@@ -160,3 +160,32 @@ export const PATTERNS = [
   ['połowa serii', 'half the sets'], ['Połowa serii', 'Half the sets'], ['te same serie', 'the same sets'], ['ok\\. (\\d+)% lżej', 'about $1% lighter'], ['(\\d+) tygodni ciężkich treningów', '$1 weeks of hard training'],
   ['(.+), zostaw 3-4 powtórzenia w zapasie\\. Apka sama ustawi ciężary\\.', '$1, leave 3-4 reps in reserve. The app sets the weights.']
 ]
+
+// ---- round 2 (Nov 25 2026): phrases found by the crawler ----
+Object.assign(EN, {
+  'barki': 'shoulders', 'górne plecy': 'upper back', 'najszersze grzbietu': 'lats', 'klatka': 'chest', 'triceps': 'triceps', 'kaptury': 'traps', 'tył barków': 'rear delts', 'biceps': 'biceps',
+  'brzuch': 'abs', 'skośne brzucha': 'obliques', 'czworogłowe uda': 'quads', 'pośladki': 'glutes', 'dwugłowe uda': 'hamstrings', 'łydki': 'calves', 'dolne plecy': 'lower back', 'przedramiona': 'forearms',
+  'ćwiczeń': 'exercises', 'serii': 'sets', 'rekord': 'record', 'rekordów': 'records', 'rekordy ': 'records', 'Ściąganie drążka szerokim chwytem': 'Wide-grip lat pulldown',
+  'Podpowiedzi same': 'Automatic tips', 'Podpowiedzi na dotyk': 'Tips on tap', 'Bez podpowiedzi': 'No tips', 'Tylko w telefonie': 'Only on this phone', 'Niepołączona': 'Not connected', 'Połączona': 'Connected',
+  'Czeka': 'Waiting', 'GitHub · automatycznie': 'GitHub · automatic', 'Błąd kopii': 'Backup error', 'Język · Language': 'Language · Język', 'Po zmianie apka przeładuje się na sekundę.': 'The app reloads for a second after the change.',
+  'Waga · średnia 7 dni': 'Weight · 7-day average', 'średnią 7 dni': '7-day average', '↑ Gotowe na więcej': '↑ Ready for more', 'np. kolejność, wskazówki': 'e.g. order, cues', 'Wybierz język · Choose your language': 'Choose your language · Wybierz język',
+  'Ćwiczenie idzie w górę, gdy wszystkie serie dojdą do góry zakresu (np. 3 × 8 przy 6-8) – albo wcześniej, gdy w każdej zostaje Twój zapas.': 'An exercise goes up when all sets reach the top of the range (e.g. 3 × 8 at 6-8) – or sooner when every set leaves your RIR.',
+  'Dotknij trening, żeby zmienić jego nazwę, ćwiczenia, serie, zamienniki i dni – albo dodaj nowy. Zmiany są tylko na tym telefonie (i w Twojej kopii) – zrobione treningi zostają w historii.': 'Tap a workout to change its name, exercises, sets, alternatives and days – or add a new one. Changes stay on this phone (and in your backup) – finished workouts stay in history.',
+  'Zmiany są tylko na tym telefonie (i w Twojej kopii na GitHubie). Ćwiczenie z nową nazwą zaczyna własną historię – stare treningi zostają.': 'Changes stay on this phone (and in your GitHub backup). An exercise with a new name starts its own history – old workouts stay.',
+  'Np. 2 treningi (A/B), 3 (FBW) albo 5–6 – tyle, ile chcesz. Gdy nie ustawisz dni tygodnia, apka podpowiada treningi po kolei.': 'E.g. 2 workouts (A/B), 3 (full body) or 5–6 – as many as you like. Without weekdays the app suggests them in turn.',
+  'Wklej token z uprawnieniem tylko do Gistów (zaczyna się od github_pat_ albo ghp_).': 'Paste a token with Gist access only (starts with github_pat_ or ghp_).',
+  '– apka sama mówi, kiedy dodać ciężar.': '– the app tells you when to add weight.', '– Profil → Ustawienia: zasady progresji, lżejszy tydzień, motyw, język.': '– Profile → Settings: progression rules, light week, theme, language.',
+  '– wszystko działa na siłowni bez zasięgu.': '– everything works in the gym without signal.', 'Kolor': 'Colour', 'Kolor treningu': 'Workout colour'
+})
+PATTERNS.unshift(
+  ['([^:\\n]+): ([\\s\\S]+)\\n\\n([^:\\n]+): ([\\s\\S]+)', '$1: $2\n\n$3: $4'],
+  ['Ostatnio (\\S+) kg: (.+) (?:powtórzeń|powtórzenia|powtórzenie)\\. Zostań na (\\S+) kg i zrób (.+)\\. Jak się uda, następnym razem więcej kilogramów\\.', 'Last time $1 kg: $2 reps. Stay at $3 kg and do $4. If it works, more weight next time.'],
+  ['Ostatnio: (.+) powt\\. Dziś celuj w (.+) powt\\.', 'Last time: $1 reps. Today aim for $2 reps.'], ['Ostatnio: (.+) s\\. Dziś celuj w (.+) s\\.', 'Last time: $1 s. Today aim for $2 s.'],
+  ['Ostatnio (\\S+) \\((.+)\\): (.+)', 'Last time $1 ($2): $3'], ['ostatnio (.+)', 'last $1'], ['(\\d+) seri[ae]', '$1 sets'],
+  ['Ćwiczenie (\\d+) z (\\d+)', 'Exercise $1 of $2'], ['Ćwiczenie (\\d+)', 'Exercise $1'], ['Trwa trening (.+)', '$1 workout in progress'], ['Wróć do (.+)', 'Back to $1'], ['Zakończ i zacznij (.+)', 'Finish and start $1'],
+  ['Masz odhaczone (\\S+) serii\\. Na pewno zakończyć go \\(zostanie zapisany\\) i zacząć (.+)\\?', 'You have $1 sets ticked. Finish it (it will be saved) and start $2?'],
+  ['lżejszy tydzień co (\\d+) tyg\\.', 'light week every $1 wks'], ['Zapas (\\S+)', 'RIR $1']
+)
+PATTERNS.push(['(.+) · (.+)', '$1 · $2'], ['([^\\d,]+) (\\d+(?:[.,]\\d+)?)', '$1 $2'])
+PATTERNS.push(['([^\\d,]+) (\\d+%)', '$1 $2'],
+  ['Na start masz plan podstawowy: (.+)\\. Zmienisz go w Trening → Edytuj plan – ćwiczenia, dni, ile chcesz treningów\\.', 'You start with the basic plan: $1. Change it in Workout → Edit plan – exercises, days, as many workouts as you want.'])
