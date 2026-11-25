@@ -8,6 +8,16 @@
       </header>
       <div class="page">
 
+        <div class="tab-banner">
+          <span class="tb-label">{{ isCurrentMonth ? 'W tym miesiącu' : monthLabel }}</span>
+          <span class="tb-big num">{{ monthList.length }}<small>{{ monthList.length === 1 ? 'trening' : monthList.length >= 2 && monthList.length <= 4 ? 'treningi' : 'treningów' }}</small></span>
+          <div class="tb-nums">
+            <div><b class="num">{{ monthSets }}</b><span>serie</span></div>
+            <div><b class="num">{{ fmtTon(monthVol) }}</b><span>objętość</span></div>
+            <div><b class="num">{{ streak }} <Ico v-if="streak" name="flame" /></b><span>tyg. z rzędu</span></div>
+          </div>
+        </div>
+
         <div class="card cal">
           <div class="cal-head">
             <button class="nav press" @click="shift(-1)" aria-label="Poprzedni miesiąc"><ion-icon :icon="chevronBack" /></button>
@@ -26,12 +36,6 @@
           <div class="legend">
             <span v-for="d in PLAN.filter(x => !x.hidden)" :key="d.key"><i :style="{ background: COLORS[d.key] }"></i>{{ d.name }}</span>
           </div>
-        </div>
-
-        <div class="stats">
-          <div><span>Treningi</span><b>{{ monthList.length }}</b></div>
-          <div><span>Serie</span><b>{{ monthSets }}</b></div>
-          <div><span>Tyg. z rzędu</span><b>{{ streak }}<small v-if="streak"> <Ico name="flame" /></small></b></div>
         </div>
 
         <div class="list-head">
@@ -65,7 +69,7 @@
 
 <script setup>
 import { LOC } from '../i18n'
-import { weekStreak } from '../stats'
+import { weekStreak, volumeOf, fmtTon } from '../stats'
 import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { ask as askDialog } from '../dialog'
@@ -96,6 +100,7 @@ const cells = computed(() => {
   })
 })
 const monthList = computed(() => all.value.filter(s => s.date.startsWith(prefix.value)))
+const monthVol = computed(() => monthList.value.reduce((a, s) => a + volumeOf(s), 0))
 const monthSets = computed(() => monthList.value.reduce((a, s) => a + counts(s).n, 0))
 const shown = computed(() => (selected.value ? monthList.value.filter(s => s.date === selected.value) : monthList.value))
 

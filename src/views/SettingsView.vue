@@ -107,7 +107,7 @@ const MENU = [
 .settings-page .seg3 { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--app-field); margin-bottom: 14px; }
 .settings-page .seg3 button { flex: 1; border: 0; border-radius: 8px; padding: 8px 2px; font: inherit; font-size: 14px; font-weight: 600; background: none; color: var(--ion-text-color); }
 .settings-page .seg3 button.on { background: var(--app-card); color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
-.settings-page .sw { display: flex; gap: 6px; }
+.settings-page .sw { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px 6px; }
 .settings-page .sw button { flex: 1 1 0; min-width: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 2px 0; font: inherit; color: var(--app-muted); }
 .settings-page .sw i { width: 34px; height: 34px; border-radius: 50%; display: block; box-shadow: 0 0 0 2px var(--app-card), 0 0 0 2px transparent; }
 .settings-page .sw button.on i { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--ion-text-color); }

@@ -8,7 +8,7 @@
       <div class="page">
 
         <!-- who: nickname now, a real account later -->
-        <button class="card me press" @click="editNick">
+        <button class="tab-banner me press" @click="editNick">
           <span class="avatar"><template v-if="account.nick">{{ initials(account.nick) }}</template><ion-icon v-else :icon="person" /></span>
           <div class="grow">
             <b>{{ account.nick || 'Dodaj swój nick' }}</b>
@@ -114,12 +114,12 @@ async function login(id) { toast.value = (await signIn(id)).message }
 .r-ico { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; flex: none; color: #fff; background: var(--c); font-size: 18px; }
 .row .grow b { font-size: 16px; font-weight: 600; }
 .chev { color: var(--app-faint); font-size: 18px; }
-.me { display: flex; align-items: center; gap: 14px; width: calc(100% - 32px); margin: 0 16px 12px; padding: 16px; border: 0; text-align: left; font: inherit; color: inherit; }
-.avatar { width: 60px; height: 60px; border-radius: 50%; flex: none; display: grid; place-items: center; color: var(--accent); font-size: 23px; font-weight: 800; letter-spacing: .5px; font-family: var(--num-font);
-  background: color-mix(in srgb, var(--accent) 15%, var(--app-card)); }
+.me { display: flex; align-items: center; gap: 14px; padding: 18px 16px; }
+.avatar { width: 68px; height: 68px; border-radius: 50%; flex: none; display: grid; place-items: center; color: var(--accent); font-size: 23px; font-weight: 800; letter-spacing: .5px; font-family: var(--num-font);
+  background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .avatar ion-icon { font-size: 30px; }
 .me .grow { display: flex; flex-direction: column; min-width: 0; }
-.me b { font-size: 21px; font-weight: 700; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.me b { font-size: 24px; font-family: var(--num-font); font-weight: 700; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .me span { font-size: 14px; color: var(--app-muted); margin-top: 2px; }
 .me .edit { font-size: 21px; color: var(--accent); flex: none; }
 .nums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 16px 6px; }

@@ -56,6 +56,16 @@
           <div><span><Ico name="dumbbell" /> Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
         </div>
 
+        <button v-if="last" class="card last press" :style="{ '--c': COLORS[PLAN[last.day].key] }" @click="router.push('/session/' + last.id)">
+          <span class="plan-ico">{{ PLAN[last.day].abbr }}</span>
+          <div class="grow">
+            <span class="l-head">Ostatni trening · {{ ago(last.date) }}</span>
+            <b>{{ PLAN[last.day].name }}</b>
+            <span class="l-nums num">{{ counts(last).n }} serii · {{ fmtTon(volumeOf(last)) }}<template v-if="lastPRs"> · <Ico name="trophy" /> {{ lastPRs }} {{ lastPRs === 1 ? 'rekord' : lastPRs <= 4 ? 'rekordy' : 'rekordów' }}</template></span>
+          </div>
+          <ion-icon :icon="chevronForward" class="chev" />
+        </button>
+
         <div v-if="dl.active || dl.due" class="card warn dl-card">
           <ion-icon :icon="trendingDown" />
           <div><b>Tydzień lżejszy (deload)</b>
@@ -78,12 +88,13 @@ import { dayMuscles, MUSCLE_NAMES } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
 import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, barbell } from 'ionicons/icons'
-import { PLAN, COLORS, groupsOf } from '../plan'
+import { PLAN, COLORS, groupsOf, entriesOf } from '../plan'
 import { cloud } from '../cloud'
 import { weights, smooth, trend } from '../weight'
 import { askWeight } from '../weightQuick'
-import { weekStreak, overview } from '../stats'
-import { state, activeSession, suggestion, deloadState, doneSessions, counts, iso, offMarks, remove, dropEmptyManual } from '../store'
+import { weekStreak, overview, volumeOf, fmtTon } from '../stats'
+import { sessionRecords } from './workout/records'
+import { state, activeSession, suggestion, deloadState, doneSessions, counts, iso, offMarks, remove, dropEmptyManual, ago } from '../store'
 import { ask } from '../dialog'
 
 const router = useIonRouter()
@@ -113,6 +124,9 @@ async function dayTap(d) {
   if (role !== 'cancel' && state.sessions[role]?.offApp) remove(role)
 }
 const streak = computed(() => { void state.sessions; return weekStreak() })
+// the last finished workout: a quick look back + a way into its details
+const last = computed(() => { void state.sessions; return doneSessions().find(s => s.finished) || null })
+const lastPRs = computed(() => (last.value ? sessionRecords(last.value, entriesOf(last.value.day, last.value)).filter(r => r.pr).length : 0))
 const prTotal = computed(() => { void state.sessions; return overview(null).prs })
 const wNow = computed(() => { const l = weights.value; return l.length ? smooth(l).at(-1).avg : null })
 const wTrend = computed(() => trend(weights.value))
@@ -167,6 +181,12 @@ const bSub = computed(() => {
 .warn ion-icon { font-size: 26px; flex: none; }
 .warn b { display: block; font-size: 15px; font-weight: 600; }
 .warn span { display: block; font-size: 13px; color: var(--app-muted); }
+.last { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 0 16px 12px; padding: 12px 14px; border: 0; text-align: left; font: inherit; color: var(--ion-text-color); }
+.last .grow { display: flex; flex-direction: column; min-width: 0; }
+.last .l-head { font-size: 12.5px; color: var(--app-muted); }
+.last b { font-size: 17px; font-weight: 700; letter-spacing: -.2px; }
+.last .l-nums { font-size: 13px; color: var(--app-muted); }
+.last .chev { color: var(--app-faint); font-size: 18px; flex: none; }
 .dl-card { color: #0a84ff; background: color-mix(in srgb, #0a84ff 9%, var(--app-card)); align-items: flex-start; }
 .dl-card ion-icon { font-size: 20px; padding: 8px; border-radius: 11px; background: color-mix(in srgb, #0a84ff 16%, transparent); }
 .dl-card span { margin-top: 2px; line-height: 1.35; }

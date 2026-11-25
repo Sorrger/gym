@@ -7,6 +7,15 @@
         <p class="sub">{{ active ? 'Masz otwarty trening ' + PLAN[active.day].name : 'Wybierz, co dziś robisz' }}</p>
       </header>
       <div class="page">
+        <div class="tab-banner wk">
+          <span class="tb-label">Ten tydzień</span>
+          <span class="tb-big num">{{ doneWeek.size }}<small>z {{ vis.length }} {{ vis.length === 1 ? 'treningu' : 'treningów' }}</small></span>
+          <div class="wk-chips">
+            <span v-for="i in vis" :key="i" class="wk-chip" :class="{ done: doneWeek.has(i) }" :style="{ '--p': COLORS[PLAN[i].key] }">
+              <ion-icon v-if="doneWeek.has(i)" :icon="checkmark" />{{ PLAN[i].name }}
+            </span>
+          </div>
+        </div>
         <button v-if="active" class="cont press" :style="{ '--c': COLORS[PLAN[active.day].key] }" @click="router.push('/workout/' + active.id)">
           <span class="plan-ico">{{ PLAN[active.day].abbr }}</span><div class="grow"><b>Kontynuuj {{ PLAN[active.day].name }}</b><span>trening w toku</span></div><ion-icon :icon="chevronForward" />
         </button>
@@ -40,10 +49,10 @@
 import { addDoneDialog } from '../addDone'
 import { computed } from 'vue'
 import { IonPage, IonContent, IonIcon, useIonRouter } from '@ionic/vue'
-import { createOutline, addCircleOutline, chevronForward } from 'ionicons/icons'
-import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
+import { createOutline, addCircleOutline, chevronForward, checkmark } from 'ionicons/icons'
+import { PLAN, COLORS, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
 import { dayMuscles } from '../muscles'
-import { state, activeSession, suggestion } from '../store'
+import { state, activeSession, suggestion, counts, iso } from '../store'
 
 
 import { useScrolled } from '../useScrolled'
@@ -55,9 +64,19 @@ const days = i => [1, 2, 3, 4, 5, 6, 0].filter(js => WEEKDAY_TO_DAY[js] === i).m
 const active = computed(() => { void state.sessions; return activeSession() })
 const sug = computed(() => { void state.sessions; return suggestion() })
 const next = computed(() => sug.value.day)
+const vis = computed(() => { void state.sessions; return visiblePlans() })
+// trainings done this week (Mon–Sun), incl. ones marked as done outside the app
+const doneWeek = computed(() => {
+  const now = new Date(), monday = iso(new Date(now.getFullYear(), now.getMonth(), now.getDate() - (now.getDay() + 6) % 7))
+  return new Set(Object.values(state.sessions).filter(s => s.date >= monday && (s.offApp || counts(s).n > 0)).map(s => s.day))
+})
 </script>
 
 <style scoped>
+.wk-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.wk-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; padding: 5px 10px; border-radius: 999px; color: var(--app-muted); background: color-mix(in srgb, var(--ion-text-color) 7%, transparent); }
+.wk-chip.done { color: var(--p); background: color-mix(in srgb, var(--p) 18%, transparent); }
+.wk-chip ion-icon { font-size: 14px; }
 .cont { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 0 16px 14px; padding: 12px 14px; border: 0; border-radius: var(--r-lg); text-align: left; font: inherit; color: var(--ion-text-color); background: color-mix(in srgb, var(--c) 14%, var(--app-card)); }
 .cont b { display: block; font-size: 16px; }
 .cont span { font-size: 13px; color: var(--app-muted); }

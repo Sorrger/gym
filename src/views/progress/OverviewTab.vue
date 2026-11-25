@@ -94,7 +94,8 @@ const trend = computed(() => {
 </script>
 
 <style scoped>
-.hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: var(--ion-text-color); background: var(--app-card); }
+.hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: var(--ion-text-color); background: color-mix(in srgb, var(--accent) 14%, var(--app-card)); }
+:global(.ion-palette-dark) .hero { background: color-mix(in srgb, var(--accent) 22%, var(--app-card)); }
 .h-top { display: flex; align-items: flex-end; gap: 12px; }
 .h-top > div { flex: none; display: flex; flex-direction: column; }
 .h-top small { font-size: 13px; color: var(--app-muted); }
