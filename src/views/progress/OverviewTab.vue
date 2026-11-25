@@ -61,6 +61,7 @@
 import { computed } from 'vue'
 import { useIonRouter } from '@ionic/vue'
 import Ico from '../Ico.vue'
+import { LOC } from '../../i18n'
 import { PLAN, COLORS, fmtVal } from '../../plan'
 import { state } from '../../store'
 import { overview, recentPRs, weekly, strengthTrend, fmtTon } from '../../stats'
@@ -73,8 +74,7 @@ const nPlans = computed(() => plans.value.length)
 const avgGain = computed(() => { const g = plans.value.map(p => p.s.gain).filter(x => x != null); return g.length ? Math.round(g.reduce((a, b) => a + b, 0) / g.length) : null })
 const ov = computed(() => { void state.sessions; return overview(props.period) })
 const prs = computed(() => { void state.sessions; return recentPRs(5, props.period) })
-const MONTHS = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru']
-const prDate = d => +d.slice(8) + ' ' + MONTHS[+d.slice(5, 7) - 1]
+const prDate = d => new Date(d + 'T12:00:00').toLocaleDateString(LOC(), { day: 'numeric', month: 'short' })
 const wk = computed(() => { void state.sessions; return weekly(8) })
 const wkMax = computed(() => Math.max(nPlans.value, ...wk.value.map(w => w.n)))
 // average of the finished weeks since the first one with a workout
