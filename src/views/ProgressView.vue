@@ -259,9 +259,10 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 </script>
 
 <style scoped>
-.ptabs { display: flex; gap: 6px; margin: 2px 16px 10px; padding: 4px; border-radius: 14px; background: var(--app-card); }
-.ptabs button { flex: 1; border: 0; padding: 9px 4px; border-radius: 10px; font: inherit; font-size: 15px; font-weight: 600; color: var(--app-muted); background: transparent; transition: background .2s, color .2s; }
-.ptabs button.on { color: #fff; background: var(--accent); box-shadow: 0 3px 10px rgba(var(--accent-rgb), .35); }
+.ptabs { display: flex; gap: 2px; margin: 2px 16px 10px; padding: 2px; border-radius: 9px; background: var(--app-field); }
+.ptabs button { flex: 1; border: 0; padding: 7px 4px; border-radius: 7px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ion-text-color); background: transparent; transition: background .2s; }
+:global(.ion-palette-dark) .ptabs button.on { background: #636366; }
+.ptabs button.on { background: var(--app-card); box-shadow: 0 2px 6px rgba(0,0,0,.12), 0 0 0 0.5px rgba(0,0,0,.04); }
 .wcard { display: flex; align-items: center; gap: 12px; width: calc(100% - 32px); margin: 0 16px 6px; padding: 14px 14px 14px 16px; border: 0; text-align: left; font: inherit; color: inherit; }
 .wc-l { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .wc-l small { font-size: 13px; color: var(--app-muted); }
@@ -274,22 +275,20 @@ const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 .period { margin: 4px 16px 14px; width: auto; --background: var(--app-field); }
 .period ion-segment-button { --indicator-color: var(--seg-on, var(--app-card)); --color: var(--ion-text-color); --color-checked: var(--ion-text-color); font-size: 13px; font-weight: 600; min-height: 32px; }
 :global(.ion-palette-dark) .period { --seg-on: #636366; }
-.hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: #fff;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--accent) 75%, #fff) 0%, var(--accent) 55%, color-mix(in srgb, var(--accent) 80%, #000) 100%);
-  box-shadow: 0 10px 26px color-mix(in srgb, var(--accent) 30%, transparent); }
+.hero { margin: 0 16px; padding: 16px 16px 14px; border-radius: var(--r-lg); color: var(--ion-text-color); background: var(--app-card); }
 .h-top { display: flex; align-items: flex-end; gap: 12px; }
 .h-top > div { flex: none; display: flex; flex-direction: column; }
-.h-top small { font-size: 13px; opacity: .85; }
-.h-top b { font-size: 40px; font-weight: 800; letter-spacing: -1px; line-height: 1.05; }
-.h-sub { font-size: 12px; opacity: .75; }
+.h-top small { font-size: 13px; color: var(--app-muted); }
+.h-top b { font-size: 44px; font-weight: 800; letter-spacing: -1px; line-height: 1.05; color: var(--accent); font-family: var(--num-font); }
+.h-sub { font-size: 12px; color: var(--app-muted); }
 .h-spark { flex: 1; height: 62px; min-width: 0; }
-.h-spark .l { fill: none; stroke: #fff; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
-.h-spark .a { fill: rgba(255,255,255,.16); }
-.h-spark .d { fill: #fff; }
-.h-stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 14px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.25); }
+.h-spark .l { fill: none; stroke: var(--accent); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.h-spark .a { fill: color-mix(in srgb, var(--accent) 12%, transparent); }
+.h-spark .d { fill: var(--accent); }
+.h-stats { display: grid; grid-template-columns: repeat(4, 1fr); margin-top: 14px; padding-top: 12px; border-top: 0.5px solid var(--app-line); }
 .h-stats div { display: flex; flex-direction: column; align-items: center; }
-.h-stats b { font-size: 18px; font-weight: 700; letter-spacing: -.3px; white-space: nowrap; }
-.h-stats small { font-size: 11.5px; opacity: .8; }
+.h-stats b { font-size: 19px; font-weight: 700; letter-spacing: -.2px; white-space: nowrap; font-family: var(--num-font); }
+.h-stats small { font-size: 11.5px; color: var(--app-muted); }
 .weeks { margin: 0 16px; padding: 14px 14px 10px; }
 .w-head { display: flex; justify-content: space-between; align-items: baseline; }
 .w-head b { font-size: 22px; font-weight: 700; color: var(--accent); }

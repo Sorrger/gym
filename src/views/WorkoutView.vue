@@ -672,7 +672,7 @@ function save() {
 
 <style scoped>
 .tb-trash { --color: var(--app-muted); }
-.tb-finish { height: 32px; margin: 0 8px 0 2px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--c); color: #fff;
+.tb-finish { height: 32px; margin: 0 8px 0 2px; padding: 0 14px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c);
   font-size: 15px; font-weight: 600; }
 .tb-finish:active { opacity: .7; }
 .dots-bar { --padding-start: 12px; --padding-end: 12px; --padding-bottom: 10px; --min-height: 40px; }
@@ -690,7 +690,7 @@ function save() {
 .saved ion-icon { font-size: 14px; }
 .saved.cloudok { color: var(--app-ok); }
 .ex-meta { display: flex; justify-content: space-between; align-items: center; color: var(--app-muted); font-size: 13px; font-weight: 600;
-  text-transform: uppercase; letter-spacing: .3px; padding: 0 4px; }
+  padding: 0 4px; }
 h1.long { font-size: 24px; }
 h1.xlong { font-size: 21px; }
 h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; letter-spacing: -.3px; text-wrap: balance; }
@@ -709,7 +709,7 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .tip-chip b { font-weight: 700; }
 .tip-chip ion-icon { font-size: 15px; }
 .tip-chip.down { color: var(--app-bad); background: color-mix(in srgb, var(--app-bad) 12%, transparent); }
-.warm { margin: 8px 4px 2px; padding: 10px 12px; border-radius: 14px; background: color-mix(in srgb, #ff9f0a 10%, var(--app-card, transparent)); }
+.warm { margin: 8px 4px 2px; padding: 10px 12px; border-radius: 14px; background: var(--app-field); }
 .warm-h { display: flex; align-items: center; gap: 6px; color: #ff9f0a; font-size: 14px; }
 .warm-h span { margin-left: auto; font-size: 11.5px; color: var(--app-muted); }
 .warm-row { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 14.5px; border-top: 0.5px solid var(--app-line); }
@@ -760,7 +760,7 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 
 .timer-screen { position: absolute; inset: 0; z-index: 110; display: flex; flex-direction: column; align-items: center; background: var(--app-bg);
   padding: calc(env(safe-area-inset-top, 0px) + 28px) 24px calc(20px + env(safe-area-inset-bottom, 0px)); }
-.tm-head { color: var(--app-muted); font-size: 15px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.tm-head { color: var(--app-muted); font-size: 15px; font-weight: 600; }
 .tm-ring { position: relative; width: min(80vw, 310px); aspect-ratio: 1; margin: auto 0 0; touch-action: none; }
 .tm-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .tm-ring circle { fill: none; stroke-width: 10; }
@@ -777,7 +777,7 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .tm-ring.ph-done .tm-val b { color: var(--app-ok); }
 .tm-val span { margin-top: 6px; color: var(--app-muted); font-size: 16px; }
 .tm-adj { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; margin: 22px 0 auto; }
-.tm-adj button { height: 44px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c);
+.tm-adj button { height: 44px; border: 0; border-radius: 999px; background: var(--app-field); color: var(--ion-text-color);
   font-size: 16px; font-weight: 600; }
 .tm-adj button:active { opacity: .6; }
 .tm-goal { min-height: 44px; margin: 22px 0 auto; font-size: 17px; font-weight: 600; color: var(--app-muted); display: grid; place-items: center; }
@@ -788,13 +788,13 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .tm-btns button:active { transform: scale(.97); }
 .set + .set::before { content: ''; position: absolute; top: 0; left: 28px; right: 0; border-top: 0.5px solid var(--app-line); }
 .idx { color: var(--app-faint); font-weight: 600; font-size: 15px; text-align: center; }
-.step { width: 44px; height: 44px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c);
+.step { width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--app-field); color: var(--ion-text-color);
   font-size: 22px; display: grid; place-items: center; padding: 0; transition: transform .1s; }
 .step:active { transform: scale(.88); }
 .weight { height: 50px; border: 0; border-radius: var(--r-sm); background: none; color: var(--ion-text-color);
   display: flex; align-items: baseline; justify-content: center; gap: 4px; padding-top: 8px; transition: background .15s; }
 .weight:active { background: var(--app-field); }
-.weight b { font-size: 28px; font-weight: 600; letter-spacing: -.5px; }
+.weight b { font-size: 30px; font-weight: 700; letter-spacing: -.4px; font-family: var(--num-font); }
 .weight small { color: var(--app-muted); font-size: 15px; }
 .check { width: 46px; height: 46px; border-radius: 50%; border: 2px solid var(--app-faint); background: none; color: transparent; font-size: 26px;
   display: grid; place-items: center; transition: background .15s, border-color .15s, transform .15s; justify-self: end; padding: 0; }
@@ -903,7 +903,7 @@ ion-footer { background: color-mix(in srgb, var(--app-bg) 80%, transparent); bac
 .wheel-sheet ion-picker { --highlight-background: var(--app-field); }
 .wheel-sheet ion-picker-column-option { font-size: 22px; }
 .wheel-sheet .quick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 8px; }
-.wheel-sheet .quick button { height: 44px; border: 0; border-radius: 999px; background: color-mix(in srgb, var(--c) 12%, transparent); color: var(--c); font-size: 17px; font-weight: 600; }
+.wheel-sheet .quick button { height: 44px; border: 0; border-radius: 999px; background: var(--app-field); color: var(--ion-text-color); font-size: 17px; font-weight: 600; }
 .wheel-sheet .quick button:active { opacity: .6; }
 .wheel-sheet .apply-all { width: 100%; margin-top: 10px; height: 50px; border: 0; border-radius: 14px; background: var(--c); color: #fff !important;
   color: var(--c); font-size: 15px; font-weight: 600; }

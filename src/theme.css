@@ -25,7 +25,8 @@
   --app-ok: #28b463;
   --app-bad: #ff3b30;
   --app-gold: #ffb800;
-  --app-shadow: 0 1px 2px rgba(0, 0, 0, .04), 0 6px 20px rgba(0, 0, 0, .05);
+  --app-shadow: none; /* iOS grouped style: surfaces separate by tone, not shadows */
+  --num-font: ui-rounded, "SF Pro Rounded", -apple-system, system-ui, sans-serif;
 
   --ion-background-color: #f2f2f7;
   --ion-background-color-rgb: 242, 242, 247;
@@ -69,7 +70,7 @@ img { -webkit-user-drag: none; }
 button { font-family: inherit; cursor: default; }
 ion-content { --background: var(--app-bg); }
 ion-content::part(scroll) { overscroll-behavior-y: auto; }
-.num { font-variant-numeric: tabular-nums; }
+.num { font-variant-numeric: tabular-nums; font-family: var(--num-font); }
 
 /* translucent iOS bars */
 ion-toolbar { --background: color-mix(in srgb, var(--app-bg) 78%, transparent); --border-color: var(--app-line); }
@@ -100,7 +101,7 @@ ion-back-button { --color: var(--accent); }
 .page-head { padding: 0 20px 14px; }
 .page-head h1 { margin: 0; font-size: 34px; font-weight: 700; letter-spacing: .2px; line-height: 1.12; }
 .page-head p { margin: 2px 0 0; color: var(--app-muted); font-size: 15px; }
-.section-title { margin: 24px 20px 8px; font-size: 13px; font-weight: 400; text-transform: uppercase; letter-spacing: .2px; color: var(--app-muted); }
+.section-title { margin: 28px 20px 10px; font-size: 21px; font-weight: 700; letter-spacing: -.4px; color: var(--ion-text-color); }
 .section-foot { margin: 6px 20px 0; font-size: 13px; color: var(--app-muted); line-height: 1.35; }
 
 .card { background: var(--app-card); border-radius: var(--r-lg); margin: 0 16px 12px; padding: 16px; box-shadow: var(--app-shadow); }
@@ -111,7 +112,7 @@ ion-back-button { --color: var(--accent); }
 .stats > div { padding: 0 14px; min-width: 0; }
 .stats > div + div { border-left: 0.5px solid var(--app-line); }
 .stats span { display: block; font-size: 13px; color: var(--app-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.stats b { display: block; font-size: 22px; font-weight: 700; letter-spacing: -.3px; margin-top: 2px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats b { display: block; font-size: 23px; font-weight: 700; letter-spacing: -.2px; margin-top: 2px; font-variant-numeric: tabular-nums; font-family: var(--num-font); white-space: nowrap; }
 .stats b small { font-size: 14px; color: var(--app-muted); font-weight: 500; letter-spacing: 0; margin-left: 1px; }
 .stats b.up { color: var(--app-ok); }
 .stats b.down { color: var(--app-bad); }
@@ -134,8 +135,8 @@ button.row:active, .row.tap:active { background: var(--app-field); }
 
 /* plan badge */
 .plan-ico { --s: 40px; width: var(--s); height: var(--s); border-radius: calc(var(--s) * .28); display: grid; place-items: center; flex: none;
-  color: #fff; font-weight: 700; font-size: calc(var(--s) * .38); letter-spacing: -.3px;
-  background: linear-gradient(150deg, color-mix(in srgb, var(--c) 72%, #fff) 0%, var(--c) 70%); }
+  color: var(--c); font-weight: 800; font-size: calc(var(--s) * .38); letter-spacing: -.3px; font-family: var(--num-font);
+  background: color-mix(in srgb, var(--c) 15%, var(--app-card)); }
 
 /* buttons */
 .btn { height: 50px; border: 0; border-radius: 14px; padding: 0 20px; display: inline-flex; align-items: center; justify-content: center; gap: 6px;

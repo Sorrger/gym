@@ -3,7 +3,7 @@
   <svg class="ico" viewBox="0 0 24 24" aria-hidden="true">
     <defs>
       <linearGradient :id="id" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0" :stop-color="pal[0]" /><stop offset="1" :stop-color="pal[1]" />
+        <stop offset="0" :stop-color="pal[1]" /><stop offset="1" :stop-color="pal[1]" />
       </linearGradient>
     </defs>
     <template v-if="name === 'flame'">

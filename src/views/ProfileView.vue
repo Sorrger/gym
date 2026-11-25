@@ -114,8 +114,8 @@ async function login(id) { toast.value = (await signIn(id)).message }
 .row .grow b { font-size: 16px; font-weight: 600; }
 .chev { color: var(--app-faint); font-size: 18px; }
 .me { display: flex; align-items: center; gap: 14px; width: calc(100% - 32px); margin: 0 16px 12px; padding: 16px; border: 0; text-align: left; font: inherit; color: inherit; }
-.avatar { width: 60px; height: 60px; border-radius: 50%; flex: none; display: grid; place-items: center; color: #fff; font-size: 23px; font-weight: 700; letter-spacing: .5px;
-  background: linear-gradient(145deg, var(--accent-2, var(--accent)), var(--accent)); box-shadow: 0 6px 16px rgba(var(--accent-rgb), .35); }
+.avatar { width: 60px; height: 60px; border-radius: 50%; flex: none; display: grid; place-items: center; color: var(--accent); font-size: 23px; font-weight: 800; letter-spacing: .5px; font-family: var(--num-font);
+  background: color-mix(in srgb, var(--accent) 15%, var(--app-card)); }
 .avatar ion-icon { font-size: 30px; }
 .me .grow { display: flex; flex-direction: column; min-width: 0; }
 .me b { font-size: 21px; font-weight: 700; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

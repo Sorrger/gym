@@ -34,7 +34,7 @@
             <div class="bar"><i :style="{ width: target.pct + '%' }"></i></div>
             <small>{{ target.eta }}</small>
           </template>
-          <template v-else><div class="t-top"><b>Ustaw cel wagi</b><span>np. 80 kg – pokażę postęp i kiedy go osiągniesz</span></div></template>
+          <template v-else><div class="t-top t-empty"><b>Ustaw cel wagi</b><span>np. 80 kg – pokażę postęp i kiedy go osiągniesz</span></div></template>
         </button>
 
         <ion-segment class="period" :value="String(range ?? 'all')" @ionChange="e => (range = e.detail.value === 'all' ? null : +e.detail.value)">
@@ -261,8 +261,8 @@ onBeforeUnmount(() => chart?.destroy())
 .ok { color: var(--app-ok); }
 .bad { color: var(--app-bad); }
 .verdict { display: flex; gap: 12px; align-items: flex-start; }
-.verdict.good { background: color-mix(in srgb, var(--app-ok) 12%, var(--app-card)); }
-.verdict.warn { background: color-mix(in srgb, #ff9f0a 14%, var(--app-card)); }
+.verdict.good b { color: var(--app-ok); }
+.verdict.warn b { color: #ff9500; }
 .v-ico { font-size: 24px; line-height: 1.2; }
 .verdict b { font-size: 16px; }
 .verdict p { margin: 2px 0 0; color: var(--app-muted); font-size: 14px; line-height: 1.35; }
@@ -304,7 +304,9 @@ onBeforeUnmount(() => chart?.destroy())
 .seg3 button.on { background: var(--app-card); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
 .target { display: block; width: calc(100% - 32px); margin: 0 16px 10px; padding: 13px 15px; border: 0; text-align: left; font: inherit; color: inherit; }
 .t-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.t-top b { font-size: 16px; font-weight: 700; }
+.t-top b { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.t-top.t-empty { flex-direction: column; align-items: flex-start; gap: 2px; }
+.t-top.t-empty span { text-align: left; }
 .t-top span { font-size: 13px; color: var(--app-muted); text-align: right; }
 .target .bar { height: 8px; border-radius: 4px; background: var(--app-field); margin: 9px 0 6px; overflow: hidden; }
 .target .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-2, var(--accent)), var(--accent)); }

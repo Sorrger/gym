@@ -71,14 +71,14 @@ async function reset() {
 .cont ion-icon { color: var(--c); font-size: 20px; }
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px; }
 .plan { position: relative; text-align: left; color: var(--ion-text-color); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column; min-height: 168px; background: var(--app-card); box-shadow: var(--app-shadow); }
-.plan.next { box-shadow: inset 0 0 0 2px var(--c), var(--app-shadow); }
+.plan.next { box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--c) 55%, transparent); }
 .plan-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: auto; padding-bottom: 12px; }
 .plan .plan-ico { --s: 42px; }
 .plan-l { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .plan-body { height: 78px; margin: -4px -4px 0 0; pointer-events: none; }
 .plan b { font-size: 17px; font-weight: 600; letter-spacing: -.2px; line-height: 1.2; padding-right: 30px; }
 .meta { font-size: 13px; color: var(--app-muted); padding-right: 30px; }
-.next-pill { background: var(--c); color: #fff; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 3px 8px; }
+.next-pill { background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 8px; }
 .edit { position: absolute; right: 8px; bottom: 8px; width: 34px; height: 34px; border: 0; border-radius: 50%; display: grid; place-items: center; padding: 0; font-size: 17px; color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
 .ri { font-size: 22px; color: var(--accent); flex: none; }
 .ri.bad, b.bad { color: var(--app-bad); }

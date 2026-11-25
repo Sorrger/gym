@@ -221,7 +221,7 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 </script>
 
 <style scoped>
-.eyebrow { margin: 0 0 2px; color: var(--app-muted); font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.eyebrow { margin: 0 0 2px; color: var(--app-muted); font-size: 15px; font-weight: 600;  }
 
 .warn { display: flex; gap: 12px; align-items: center; color: var(--app-bad); }
 .warn ion-icon { font-size: 26px; flex: none; }
@@ -264,9 +264,9 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .dot { width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; font-weight: 500;
   background: var(--app-field); color: var(--ion-text-color); }
 .day.future .dot { background: none; color: var(--app-faint); }
-.day.today .dot { background: var(--accent); color: #fff; font-weight: 700; }
-.dot.has { background: var(--c); color: #fff; font-size: 18px; }
-.day.today .dot.has { background: var(--c); box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--c); }
+.day.today .dot { color: var(--accent); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.dot.has { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); font-size: 18px; font-weight: 800; }
+.day.today .dot.has { box-shadow: inset 0 0 0 1.5px var(--c); }
 
 .section-title { margin-top: 20px; }
 .plans { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 16px; }
@@ -286,14 +286,14 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .all-link { display: flex; align-items: center; justify-content: center; gap: 4px; width: calc(100% - 32px); margin: 12px 16px 4px; padding: 13px; border: 0; border-radius: var(--r-md); font: inherit; font-size: 15.5px; font-weight: 600; color: var(--accent); background: var(--app-card); }
 .plan { text-align: left; border: 0; color: var(--ion-text-color); border-radius: var(--r-lg); padding: 14px; display: flex; flex-direction: column;
   gap: 2px; font: inherit; min-height: 128px; background: var(--app-card); box-shadow: var(--app-shadow); }
-.plan.next { box-shadow: inset 0 0 0 2px var(--c), var(--app-shadow); }
+.plan.next { box-shadow: none; }
 .plan-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: auto; padding-bottom: 12px; }
 .plan .plan-ico { --s: 42px; }
 .plan-l { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; }
 .plan-body { height: 78px; margin: -4px -4px 0 0; pointer-events: none; }
 .plan b { font-size: 17px; font-weight: 600; letter-spacing: -.2px; line-height: 1.2; }
 .meta { font-size: 13px; color: var(--app-muted); }
-.next-pill { background: var(--c); color: #fff; font-size: 11px; font-weight: 600; border-radius: 999px; padding: 3px 8px; }
+.next-pill { background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c); font-size: 12px; font-weight: 700; border-radius: 999px; padding: 3px 8px; }
 
 .foot { margin-top: 16px; }
 </style>

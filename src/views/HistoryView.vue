@@ -134,8 +134,8 @@ async function ask(s) {
   font-size: 17px; font-weight: 400; display: grid; place-items: center; transition: transform .1s; }
 .day:active { transform: scale(.9); }
 .day.future { color: var(--app-faint); }
-.day.today { color: var(--accent); font-weight: 700; }
-.day.has { background: var(--c); color: #fff; font-weight: 600; }
+.day.today { color: var(--accent); font-weight: 800; box-shadow: inset 0 0 0 1.5px var(--accent); }
+.day.has { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); font-weight: 800; box-shadow: none; }
 .day.sel { box-shadow: 0 0 0 2px var(--app-card), 0 0 0 4px var(--c, var(--accent)); }
 .marks { position: absolute; bottom: 3px; display: flex; gap: 2px; }
 .marks i { width: 5px; height: 5px; border-radius: 50%; box-shadow: 0 0 0 1px #fff; }
