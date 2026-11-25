@@ -20,6 +20,7 @@ export const DEFAULT_PREFS = {
   deloadHalf: true, // light week: half the sets
   restTimer: false, // rest timer starts by itself after a ticked set (off for the owner – user asked)
   restSec: 120,     // … this long
+  goalKg: null,     // target body weight (Waga page), optional
   setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }
 export const prefs = reactive({ ...DEFAULT_PREFS })

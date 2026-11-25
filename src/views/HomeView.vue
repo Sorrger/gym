@@ -54,7 +54,7 @@
         <!-- quick numbers: streak, body weight, all trainings -->
         <div class="stats home-stats">
           <div><span><Ico name="flame" /> Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
-          <div class="press" @click="router.push('/weight')"><span><Ico name="scale" /> Waga</span>
+          <div class="press w-tile" @click="quickWeight" aria-label="Zapisz dzisiejszą wagę"><span><Ico name="scale" /> Waga<i class="w-plus" :class="{ done: weighedToday }">{{ weighedToday ? '✓' : '+' }}</i></span>
             <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>kg</small></b><b v-else class="add">Dodaj</b>
             <em v-if="wTrend != null" class="num" :class="weightTone(wTrend)">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
           <div><span><Ico name="dumbbell" /> Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
@@ -108,6 +108,7 @@ import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDo
 import { PLAN, COLORS, WEEKDAY_TO_DAY } from '../plan'
 import { cloud } from '../cloud'
 import { weights, smooth, trend } from '../weight'
+import { askWeight } from '../weightQuick'
 import { weekStreak } from '../stats'
 import { state, activeSession, lastDoneOf, suggestion, deloadState, doneSessions, counts, ago, iso, markDoneOff, offMarks, remove, addPastSession, dropEmptyManual } from '../store'
 import { ask } from '../dialog'
@@ -179,6 +180,13 @@ async function dayTap(d) {
 const streak = computed(() => { void state.sessions; return weekStreak() })
 const wNow = computed(() => { const l = weights.value; return l.length ? smooth(l).at(-1).avg : null })
 const wTrend = computed(() => trend(weights.value))
+// weight in one tap from Start: dialog right here (details → the Weight page)
+const weighedToday = computed(() => weights.value.some(p => p.date === iso(new Date())))
+async function quickWeight() {
+  const r = await askWeight({ details: true })
+  if (r === 'details') router.push('/weight')
+  else if (r === 'saved') state.flash = 'Waga zapisana'
+}
 const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',')
 const totalDone = computed(() => doneSessions().length)
 const monthDone = computed(() => { const m = iso(new Date()).slice(0, 7); return doneSessions().filter(s => s.date.startsWith(m)).length })
@@ -270,6 +278,9 @@ const nVisible = computed(() => PLAN.filter(p => !p.hidden).length)
 .home-stats b { font-size: 21px; }
 .home-stats b.add { color: var(--accent); font-size: 17px; padding-top: 3px; }
 .home-stats em { display: block; font-style: normal; font-size: 11.5px; color: var(--app-muted); margin-top: 1px; white-space: nowrap; }
+.w-plus { margin-left: auto; width: 20px; height: 20px; border-radius: 50%; display: inline-grid; place-items: center; font-style: normal; font-size: 15px; font-weight: 700; line-height: 1; color: #fff; background: var(--accent); }
+.w-plus.done { background: var(--app-ok); font-size: 12px; }
+.w-tile span { display: flex; align-items: center; gap: 4px; }
 .home-stats em.dn { color: var(--app-ok); }
 .home-stats em.upw { color: var(--app-bad); }
 .all-link { display: flex; align-items: center; justify-content: center; gap: 4px; width: calc(100% - 32px); margin: 12px 16px 4px; padding: 13px; border: 0; border-radius: var(--r-md); font: inherit; font-size: 15.5px; font-weight: 600; color: var(--accent); background: var(--app-card); }

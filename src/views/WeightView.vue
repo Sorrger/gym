@@ -27,6 +27,16 @@
           <div><b>{{ verdict.title }}</b><p>{{ verdict.text }}</p></div>
         </div>
 
+        <!-- target weight: progress + when, at the current pace -->
+        <button v-if="list.length" class="card target press" @click="setTarget">
+          <template v-if="prefs.goalKg">
+            <div class="t-top"><b>Cel {{ fmtKg(prefs.goalKg) }} kg</b><span class="num">{{ target.left > 0.05 ? 'zostało ' + fmtKg(r1(target.left)) + ' kg' : 'cel osiągnięty!' }}</span></div>
+            <div class="bar"><i :style="{ width: target.pct + '%' }"></i></div>
+            <small>{{ target.eta }}</small>
+          </template>
+          <template v-else><div class="t-top"><b>Ustaw cel wagi</b><span>np. 80 kg – pokażę postęp i kiedy go osiągniesz</span></div></template>
+        </button>
+
         <ion-segment class="period" :value="String(range ?? 'all')" @ionChange="e => (range = e.detail.value === 'all' ? null : +e.detail.value)">
           <ion-segment-button value="30"><ion-label>30 dni</ion-label></ion-segment-button>
           <ion-segment-button value="90"><ion-label>90 dni</ion-label></ion-segment-button>
@@ -39,9 +49,28 @@
           <div v-if="!shown.length" class="empty">Brak pomiarów{{ list.length ? ' w tym okresie' : '' }}.<br>Dodaj pierwszy przyciskiem poniżej.</div>
         </div>
 
+        <!-- details for the chosen period -->
+        <div v-if="shown.length > 1" class="card det num">
+          <div><small>Najniżej</small><b>{{ fmtKg(det.min) }}</b></div>
+          <div><small>Najwyżej</small><b>{{ fmtKg(det.max) }}</b></div>
+          <div><small>Średnio</small><b>{{ fmtKg(r1(det.avg)) }}</b></div>
+          <div><small>30 dni</small><b :class="det.m30 == null ? '' : tone(det.m30)">{{ det.m30 == null ? '–' : sign(det.m30) }}</b></div>
+          <div><small>Pomiarów</small><b>{{ shown.length }}</b></div>
+          <div><small>W tym tyg.</small><b>{{ det.week }}<i>/7</i></b></div>
+        </div>
+
         <div class="btns">
           <button class="btn block primary-btn press" @click="add"><ion-icon :icon="add_" /> Dodaj dzisiejszą wagę</button>
           <button class="btn block plain press" @click="paste"><ion-icon :icon="clipboardOutline" /> Wklej stare pomiary</button>
+        </div>
+
+        <div class="card weeks" v-if="weeksList.length > 1">
+          <div class="card-title">Tygodnie <span class="leg">średnia · zmiana</span></div>
+          <div v-for="w in weeksList" :key="w.from" class="wk-row num">
+            <span>{{ w.label }}</span>
+            <b>{{ fmtKg(r1(w.avg)) }} kg</b>
+            <small :class="w.d == null ? '' : tone(w.d)">{{ w.d == null ? '' : sign(w.d) }}</small>
+          </div>
         </div>
 
         <div class="card" v-if="list.length">
@@ -76,6 +105,7 @@ import { add as add_, clipboardOutline, scale, trashOutline } from 'ionicons/ico
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
 import { cloud } from '../cloud'
 import { weights, setWeight, delWeight, parseList, smooth, trend } from '../weight'
+import { askWeight, parseKg } from '../weightQuick'
 import { ask } from '../dialog'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, Tooltip)
@@ -103,6 +133,43 @@ const dayName = s => new Date(s + 'T12:00').toLocaleDateString(LOC(), { weekday:
 
 // verdict for the chosen goal (Ustawienia / here): cut = slow cut keeping muscle (0,2–0,7 %/week),
 // maintain = within ±0,25 %/week, bulk = lean gain (0,1–0,5 %/week)
+const r1 = v => Math.round(v * 10) / 10
+// details of the shown period
+const det = computed(() => {
+  const v = shown.value.map(p => p.kg), today = iso(new Date())
+  const ago30 = iso(new Date(Date.now() - 30 * 864e5)), old = list.value.filter(p => p.date <= ago30).at(-1)
+  const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7))
+  return { min: Math.min(...v), max: Math.max(...v), avg: v.reduce((a, b) => a + b, 0) / v.length,
+    m30: old && last.value ? last.value.avg - old.avg : null, week: list.value.filter(p => p.date >= iso(mon) && p.date <= today).length }
+})
+// last 8 Mon–Sun weeks with measurements: average and change vs the week before
+const weeksList = computed(() => {
+  const by = {}
+  for (const p of list.value) { const d = new Date(p.date + 'T12:00'); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); (by[iso(d)] ||= []).push(p.kg) }
+  const ks = Object.keys(by).sort()
+  return ks.map((k, i) => ({ from: k, avg: by[k].reduce((a, b) => a + b, 0) / by[k].length, prev: i ? ks[i - 1] : null }))
+    .map(w => ({ ...w, d: w.prev ? w.avg - by[w.prev].reduce((a, b) => a + b, 0) / by[w.prev].length : null, label: fmtShort(w.from) + ' – ' + fmtShort(iso(new Date(new Date(w.from + 'T12:00').getTime() + 6 * 864e5))) }))
+    .slice(-8).reverse()
+})
+// target weight progress + ETA at the current pace
+const target = computed(() => {
+  const g = prefs.goalKg, now = avg7.value ?? last.value?.kg
+  if (!g || now == null) return { left: 0, pct: 0, eta: '' }
+  const start = list.value[0].kg, left = Math.abs(now - g)
+  const pct = Math.max(0, Math.min(100, Math.round(start === g ? 100 : (start - now) / (start - g) * 100)))
+  let eta = ''
+  if (left <= 0.05) eta = 'Gratulacje – trzymaj wagę.'
+  else if (wk.value == null) eta = 'Termin pokażę, gdy będzie tempo (3 pomiary w 3 tygodnie).'
+  else if (Math.sign(g - now) !== Math.sign(wk.value) || Math.abs(wk.value) < 0.02) eta = 'Przy obecnym tempie waga nie idzie w stronę celu.'
+  else { const w = left / Math.abs(wk.value), d = new Date(Date.now() + w * 7 * 864e5); eta = 'Przy obecnym tempie: ok. ' + Math.ceil(w) + ' tyg. – około ' + fmtDate(iso(d)) }
+  return { left, pct, eta }
+})
+async function setTarget() {
+  const r = await ask({ icon: scale, title: 'Cel wagi', message: 'Ile chcesz ważyć? Zostaw puste, żeby usunąć cel.', input: { mode: 'decimal', value: prefs.goalKg ? fmtKg(prefs.goalKg) : '', placeholder: 'np. 80' },
+    buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (r.role !== 'ok') return
+  setPref('goalKg', String(r.value || '').trim() ? parseKg(r.value) : null)
+}
 const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
 const tone = v => { const g = prefs.goal; if (g === 'maintain' || Math.abs(v) < 0.05) return ''; return (g === 'bulk' ? v > 0 : v < 0) ? 'ok' : 'bad' }
 const verdict = computed(() => {
@@ -127,18 +194,9 @@ const verdict = computed(() => {
   return { ico: 'up', cls: 'warn', title: 'Waga rośnie', text: 'Średnia idzie w górę. Sprawdź, czy kalorie się zgadzają.' }
 })
 
-const parseKg = v => { const n = +String(v || '').replace(',', '.').replace(/[^\d.]/g, ''); return n >= 30 && n <= 300 ? Math.round(n * 10) / 10 : null }
+const parseKg0 = v => { const n = +String(v || '').replace(',', '.').replace(/[^\d.]/g, ''); return n >= 30 && n <= 300 ? Math.round(n * 10) / 10 : null }
 
-async function add() {
-  const today = iso(new Date())
-  const cur = weights.value.find(p => p.date === today)
-  const r = await ask({ icon: scale, title: 'Dzisiejsza waga', message: 'W kilogramach, np. 106,3', input: { mode: 'decimal', value: cur ? fmtKg(cur.kg) : '', placeholder: last.value ? fmtKg(last.value.kg) : '0,0' },
-    buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (r.role !== 'ok') return
-  const kg = parseKg(r.value)
-  if (kg == null) return ask({ icon: scale, title: 'Nie rozumiem liczby', message: 'Wpisz wagę w kg, np. 106,3', buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
-  setWeight(today, kg)
-}
+async function add() { await askWeight() }
 async function edit(p) {
   const r = await ask({ icon: scale, title: fmtDate(p.date), message: 'Popraw wagę albo usuń pomiar', input: { mode: 'decimal', value: fmtKg(p.kg) },
     buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, { text: 'Usuń pomiar', role: 'del', kind: 'danger' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
@@ -188,6 +246,7 @@ function draw() {
 }
 watch(shown, () => nextTick(draw))
 onMounted(() => nextTick(draw))
+// drawn while the page was still sliding in → draw again once it is on screen
 onIonViewDidEnter(() => nextTick(draw))
 onBeforeUnmount(() => chart?.destroy())
 </script>
@@ -243,4 +302,21 @@ onBeforeUnmount(() => chart?.destroy())
 .seg3 { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 2px; border-radius: 10px; background: var(--app-field); }
 .seg3 button { border: 0; padding: 7px 4px; border-radius: 8px; font: inherit; font-size: 14px; font-weight: 600; color: var(--ion-text-color); background: transparent; }
 .seg3 button.on { background: var(--app-card); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+.target { display: block; width: calc(100% - 32px); margin: 0 16px 10px; padding: 13px 15px; border: 0; text-align: left; font: inherit; color: inherit; }
+.t-top { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.t-top b { font-size: 16px; font-weight: 700; }
+.t-top span { font-size: 13px; color: var(--app-muted); text-align: right; }
+.target .bar { height: 8px; border-radius: 4px; background: var(--app-field); margin: 9px 0 6px; overflow: hidden; }
+.target .bar i { display: block; height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--accent-2, var(--accent)), var(--accent)); }
+.target small { font-size: 13px; color: var(--app-muted); }
+.det { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px 6px; margin: 0 16px 12px; padding: 13px 14px; }
+.det div { display: flex; flex-direction: column; }
+.det small { font-size: 12px; color: var(--app-muted); }
+.det b { font-size: 18px; font-weight: 700; }
+.det b i { font-style: normal; font-size: 13px; color: var(--app-muted); font-weight: 500; }
+.det b.ok { color: var(--app-ok); } .det b.bad { color: var(--app-bad); }
+.weeks .wk-row { display: grid; grid-template-columns: 1fr auto 64px; gap: 10px; align-items: baseline; padding: 9px 16px; border-top: 0.5px solid var(--app-line); font-size: 14.5px; }
+.weeks .wk-row span { color: var(--app-muted); }
+.weeks .wk-row small { text-align: right; font-weight: 600; color: var(--app-muted); }
+.weeks .wk-row small.ok { color: var(--app-ok); } .weeks .wk-row small.bad { color: var(--app-bad); }
 </style>

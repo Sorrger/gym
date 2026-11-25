@@ -76,6 +76,12 @@ initUpdater()
 // first start on a phone with nothing in it: language + account first (an existing user never sees it)
 const needsWelcome = () => { try { if (localStorage.getItem('onboarded')) return false } catch { return false }
   return !Object.keys(state.sessions).length && !account.nick }
+// safety net: a page must never stay invisible after navigation (black screen on the phone)
+router.afterEach(() => setTimeout(() => {
+  document.querySelectorAll('ion-router-outlet > .ion-page.ion-page-invisible:not(.ion-page-hidden)').forEach(el => {
+    if (el === el.parentElement.lastElementChild) el.classList.remove('ion-page-invisible')
+  })
+}, 900))
 router.beforeEach(to => {
   if (to.path !== '/welcome' && needsWelcome()) return '/welcome'
   if (to.path === '/welcome' && !needsWelcome()) return '/tabs/home'

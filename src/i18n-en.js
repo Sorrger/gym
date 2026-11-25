@@ -194,3 +194,9 @@ Object.assign(EN, { 'Minutnik przerwy': 'Rest timer', 'Startuje sam po odhaczeni
   'Czas przerwy': 'Rest time', 'Po każdej serii (w trakcie: −15 / +15 s)': 'After every set (during: −15 / +15 s)', 'Przerwa': 'Rest', 'Koniec przerwy': 'Rest over', 'Pomiń': 'Skip',
   'rozgrzewka · ': 'warm-up · ', 'drop set · ': 'drop set · ', 'do upadku · ': 'to failure · ' })
 PATTERNS.push(['przerwa (.+)', 'rest $1'], ['Rodzaj serii: (.+)', 'Set type: $1'])
+Object.assign(EN, { 'Ustaw cel wagi': 'Set a target weight', 'np. 80 kg – pokażę postęp i kiedy go osiągniesz': 'e.g. 80 kg – I\'ll show progress and when you get there',
+  'Najniżej': 'Lowest', 'Najwyżej': 'Highest', 'Średnio': 'Average', 'Pomiarów': 'Weigh-ins', 'W tym tyg.': 'This week', 'Tygodnie': 'Weeks', 'średnia · zmiana': 'average · change',
+  'cel osiągnięty!': 'goal reached!', 'Gratulacje – trzymaj wagę.': 'Congrats – now hold it.', 'Termin pokażę, gdy będzie tempo (3 pomiary w 3 tygodnie).': 'The date shows once there is a pace (3 weigh-ins in 3 weeks).',
+  'Przy obecnym tempie waga nie idzie w stronę celu.': 'At the current pace your weight is not moving towards the goal.', 'Cel wagi': 'Target weight', 'Ile chcesz ważyć? Zostaw puste, żeby usunąć cel.': 'What do you want to weigh? Leave empty to remove the target.',
+  'Wykres i szczegóły': 'Chart and details', 'Waga zapisana': 'Weight saved', 'Dziś już zapisane – możesz poprawić.': 'Already saved today – you can correct it.', 'W kilogramach, rano na czczo, np. 82,4': 'In kilograms, in the morning before eating, e.g. 82.4' })
+PATTERNS.push(['Cel ([\\d,.]+) kg', 'Target $1 kg'], ['zostało (.+) kg', '$1 kg to go'], ['Przy obecnym tempie: ok\\. (\\d+) tyg\\. – około (.+)', 'At the current pace: about $1 wks – around $2'])

@@ -1,1 +1,0 @@
-import{Xt as e}from"./store-B_v-7X5F.js";function t(t=40){let n=e(!1);return{scrolled:n,onScroll:e=>{let r=e.detail.scrollTop>t;r!==n.value&&(n.value=r)}}}export{t};
