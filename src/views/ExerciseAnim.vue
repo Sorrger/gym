@@ -66,7 +66,7 @@ onBeforeUnmount(() => cancelAnimationFrame(raf))
 .xa line.gear, .xa .gear-line, .xa .frame { stroke: color-mix(in srgb, var(--ion-text-color) 30%, var(--box)); stroke-linecap: round; fill: none; }
 .xa .frame { stroke: color-mix(in srgb, var(--ion-text-color) 22%, var(--box)); }
 .xa .cable { stroke: color-mix(in srgb, var(--ion-text-color) 45%, var(--box)); fill: none; }
-.xa .band { stroke: var(--c, var(--accent)); opacity: .55; stroke-linecap: round; }
+.xa .band { stroke: var(--c, var(--accent)); opacity: .55; stroke-linecap: round; fill: none; }
 .xa .rim { fill: none; stroke: var(--fig); stroke-width: 2; }
 .xa .hub { fill: var(--fig); }
 .xa .body { fill: var(--fig); stroke: var(--fig); stroke-linecap: round; }
