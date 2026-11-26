@@ -30,7 +30,7 @@
     "eslint-plugin-vue": "^10.12.1",
     "globals": "^17.14.0",
     "playwright-core": "^1.65.1",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^8.3.8",
     "vite-plugin-pwa": "^2.0.0",
     "vue-tsc": "^3.3.14",
