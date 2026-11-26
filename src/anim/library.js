@@ -575,7 +575,7 @@ const LIB = {
   'power-clean': sel => {
     const bot = { hx: -60, hy: -82, t: -24, fx: 8, a1: 90, a2: 90 }
     const ext = st({ fx: 14, fy: -16, fo: 30, sg: 8, hy: -152 })
-    const catchP = st({ hy: -128, hx: -8, hold: 'rack', ab: 1 })
+    const catchP = st({ hy: -128, hx: -8, a1: 10, a2: -150 }) // front rack: elbows high in front, bar on the shoulders
     const frames = sel.v === 'hang' ? [{ ...bot, hx: -36, hy: -128, t: -50 }, ext, catchP] : [bot, ext, catchP]
     return { frames, gear: held(sel.eq), ph: [[900, 'Ciągnij', 0, 0.5], [500, 'Zarzuć', 0.5, 1], [800, 'Trzymaj', 1, 1], [1200, 'Opuść', 1, 0]] }
   },
@@ -586,19 +586,20 @@ const LIB = {
     // the bar stays close: hips extend, elbows pull high and out to the chest, then the arms turn over to lock out
     const pull = { ...st({ fx: 14, fy: -12, fo: 30, sg: 10, hy: -150 }) }, S = shoulderOf(pull)
     void S
-    const high = { ...pull, a1: -8, a2: 104, af: 0.5, ff: 1 } // elbows high and out to the sides (seen from the side: short upper arm), bar at the chest
-    const turn = { ...pull, sg: 4, hy: -140, a1: -20, a2: -96, af: 0.55, ff: 1 } // wrists turn over in front of the face
-    const So = shoulderOf(ov), top = { ...ov, hold: undefined, ax: So.x - 4, ay: So.y - 86, ab: 1 }
+    // the elbow stays high in front while the forearm turns over it: the bar travels up close to the body, no loop
+    const high = { ...pull, a1: -10, a2: 132 } // elbows high, bar at the chest
+    const turn = { ...pull, sg: 4, hy: -140, a1: -22, a2: -128 } // forearm turned up in front of the face
+    const top = { ...ov, hold: undefined, a1: -96, a2: -96 }
     return { frames: [sel.v === 'hang' ? { ...bot, hx: -36, hy: -128, t: -50 } : bot, ext, high, turn, top], gear: held(sel.eq), ph: [[900, 'Ciągnij', 0, 0.5], [500, 'Nad głowę', 0.5, 1], [800, 'Trzymaj', 1, 1], [1200, 'Opuść', 1, 0]] }
   },
   'clean-jerk': sel => {
-    const rack = st({ hold: 'rack', ab: 1 }), dip = { ...rack, hy: -128, hx: -6 }
-    const split = { hx: 0, hy: -118, t: -90, fx: 66, fy: -7, gx: -76, gy: -10, fo2: 30, hold: 'up' }
+    const rack = st({ ra1: 100, ra2: -60 }), dip = { ...rack, hy: -128, hx: -6 }
+    const split = { hx: 0, hy: -118, t: -90, fx: 66, fy: -7, gx: -76, gy: -10, fo2: 30, ra1: -6, ra2: -6 }
     return { frames: [rack, dip, split], gear: held(sel.eq), ph: [[600, 'Ugnij kolana', 0, 0.5], [500, 'Podrzuć', 0.5, 1], [800, 'Trzymaj', 1, 1], [1100, 'Wróć', 1, 0]] }
   },
   thruster: sel => {
-    const bot = { hx: -36, hy: -68, t: -70, fx: 10, hold: 'rack', ab: 1 }
-    return { frames: [bot, st({ hold: 'rack', ab: 1, fx: 10 }), st({ hold: 'up', fx: 10 })], gear: held(sel.eq, { at: 'hold' }), ph: [[700, 'Wstań', 0, 0.5], [600, 'Wypchnij', 0.5, 1], [600, 'Trzymaj', 1, 1], [1200, 'Zejdź', 1, 0]] }
+    const bot = { hx: -36, hy: -68, t: -70, fx: 10, ra1: 100, ra2: -60 } // front rack: elbows high
+    return { frames: [bot, st({ ra1: 100, ra2: -60, fx: 10 }), st({ ra1: -6, ra2: -6, fx: 10 })], gear: held(sel.eq), ph: [[700, 'Wstań', 0, 0.5], [600, 'Wypchnij', 0.5, 1], [600, 'Trzymaj', 1, 1], [1200, 'Zejdź', 1, 0]] }
   },
   'wall-ball': () => {
     const bot = { hx: -36, hy: -68, t: -70, fx: 10, hold: 'rack', ab: 1 }
