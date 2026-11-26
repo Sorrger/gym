@@ -15,6 +15,7 @@ function hand(p, dx, dy, far) { const S = joints(p).S; return far ? { ...p, bx: 
 const shoulderOf = p => joints(p).S
 // straight body from the feet at angle `ang` (plank / push-up): legs straight, torso in line
 const LEG = 138
+/** @param {Record<string, any>} [ex] @returns {Record<string, any>} */
 function board(fx, fy, ang, ex = {}) {
   // face down: on the toes, heels up – the ankle sits above the floor and the foot slants down to the toes
   const down = ang > -90 && ang < 60, ay = down ? fy - 8 : fy
@@ -623,7 +624,7 @@ const LIB = {
   },
   burpee: () => {
     // hands planted in front, feet jump back to a plank (legs fly back, not a kneel), back in, jump with the arms up
-    const plank = board(-122, -7, -23, { ax: shoulderX(-122, -23), ay: -4, ab: -1 }), hx = plank.ax
+    const hx = shoulderX(-122, -23), plank = board(-122, -7, -23, { ax: hx, ay: -4, ab: -1 })
     const stand = st({}), squat = { hx: -20, hy: -60, t: -20, fx: 10, fy: -7, ax: hx, ay: -4, ab: -1 }
     const kick = { hx: -10, hy: -100, t: -38, fx: -118, fy: -30, ax: hx, ay: -4, ab: -1 }
     const jump = st({ hy: -184, fy: -46, fo: 30, a1: -90, a2: -90, ab: -1 })
