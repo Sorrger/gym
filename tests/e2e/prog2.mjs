@@ -15,7 +15,7 @@ await row('Zejdź o').locator('button[aria-label="Więcej"]').click()
 await p.waitForTimeout(300)
 console.log('values:', await p.locator('.row.every .stepper b').allInnerTexts(), 'reset btn:', await p.locator('.reset-btn').count())
 await row('Progresja').count()
-await p.locator('h1.t-large:visible', { hasText: 'Progresja' }).waitFor()
+await p.locator('h1.t-large:visible', { hasText: 'Szczegóły treningu' }).waitFor()
 // zapas chips in the workout now go to 5+
 await p.goto('http://localhost:4173/#/plan/0'); await p.reload(); await p.waitForTimeout(1500); await p.locator('.go:visible').click(); await p.waitForTimeout(1800)
 await p.locator('.dlg-btn:visible').last().click().catch(() => {}); await p.waitForTimeout(300)

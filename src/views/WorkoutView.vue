@@ -175,18 +175,19 @@ import BodyMap from './BodyMap.vue'
 import HowToSheet from './HowToSheet.vue'
 import { defineAsyncComponent } from 'vue'
 const ExercisePicker = defineAsyncComponent(() => import('./ExercisePicker.vue'))
-import { custom } from '../customPlan'
-import { suggest, applySuggestion, live } from '../coach'
+import { useTips } from './workout/useTips'
+import { useSetEdit } from './workout/useSetEdit'
+import { useExercises } from './workout/useExercises'
 import { t } from '../i18n'
 import { musclesOf } from '../muscles'
-import { computed, ref, watch, watchEffect, nextTick, onUnmounted } from 'vue'
+import { computed, ref, watchEffect, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, IonToast, useIonRouter } from '@ionic/vue'
-import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal, linkOutline } from 'ionicons/icons'
-import { prefs, rirTop, rirLabel, deloadWords, SET_TYPES, SET_TYPE_LABEL } from '../prefs'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon, exOf, barOf, PLATES } from '../plan'
+import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, swapHorizontal, linkOutline } from 'ionicons/icons'
+import { prefs, rirTop, rirLabel, SET_TYPE_LABEL } from '../prefs'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, targetOf, isAssisted, nameIn, exOf } from '../plan'
 import { cloud } from '../cloud'
-import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, cancelDeload, swapExercise, dropEmptyManual, addExtra, removeExtra, noteFor, setNote, partnerOf, setSuperset } from '../store'
+import { state, finishSession, remove, fmtShort, fmtDate, counts, dropEmptyManual } from '../store'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -218,27 +219,6 @@ const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, exList.valu
 const isExtra = computed(() => !!plan.value && idx.value >= plan.value.ex.length)
 const planName = computed(() => exList.value[idx.value]?.[0] || '')
 const exName = computed(() => (plan.value ? nameIn(exList.value[idx.value], s.value) : ''))
-// alternatives for a busy machine (ALT in plan.js): the plan's exercise first
-// alternatives already done at another place of this workout are left out (two places can't share one exercise)
-const swapOpts = computed(() => {
-  if (!planName.value) return []
-  const taken = new Set(exList.value.filter((e, i) => i !== idx.value).flatMap(e => [e[0], nameIn(e, s.value)]))
-  return [planName.value, ...altOf(planName.value).filter(n => !taken.has(n))]
-})
-async function swapAsk() {
-  const sess = s.value, cur = exName.value
-  if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) {
-    await ask({ icon: swapHorizontal, color: color.value, title: 'Masz już zaliczone serie', message: `Żeby zamienić ćwiczenie, najpierw odznacz serie ${cur}.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
-    return
-  }
-  const { role } = await ask({ icon: swapHorizontal, color: color.value, title: 'Zamień ćwiczenie',
-    message: 'Zrób to, co jest wolne. Każde ćwiczenie ma swoją historię i swoje podpowiedzi ciężaru.',
-    buttons: [...swapOpts.value.map((n, k) => ({ text: (n === cur ? '✓ ' : '') + n + (k === 0 ? ' (z planu)' : ''), role: n, kind: n === cur ? 'soft' : 'primary' })), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role === 'cancel' || role === cur || !swapOpts.value.includes(role)) return
-  swapExercise(sess, planName.value, role)
-  state.flash = 'Dziś: ' + role
-  await nextTick(); const l = sugList(); if (l.length && prefs.coach === 'auto') showTip(l); else if (l.length && prefs.coach === 'set') autoSet(l)
-}
 const exTarget = computed(() => (plan.value ? targetOf(exList.value[idx.value], s.value) || '' : ''))
 const exTag = computed(() => exList.value[idx.value]?.[2])
 const exMuscles = computed(() => musclesOf(exName.value))
@@ -265,63 +245,16 @@ function tEnd(e) {
   if (Math.abs(dx) > 70 && Math.abs(dx) > Math.abs(dy) * 1.5) go(idx.value + (dx < 0 ? 1 : -1))
 }
 
-// progression hint: shown in a dialog the first time an exercise is opened in a workout (nothing ticked yet), and as a chip
-const sugs = computed(() => { void state.sessions; return s.value ? groups.value.map(g => ({ g, sug: suggest(g, s.value) })) : [] })
-const sugOf = g => { const x = sugs.value.find(y => y.g.key === g.key)?.sug; return x && x.kind !== 'first' ? x : null }
-const sugList = () => sugs.value.filter(x => x.sug && x.sug.kind !== 'first')
-const tipsShown = new Set()
-async function showTip(list) {
-  if (!list.length) return
-  const multi = list.length > 1
-  const main = list.find(x => x.sug.kind === 'stage') || list.find(x => x.sug.kind === 'up') || list.find(x => x.sug.kind === 'down') || list[0]
-  const can = list.some(x => x.sug.sets)
-  const { role } = await ask({ icon: kindIcon(main.sug.kind), color: main.sug.kind === 'deload' ? '#0a84ff' : main.sug.kind === 'stage' ? '#ff9f0a' : color.value,
-    title: multi ? (main.sug.kind === 'stage' || main.sug.kind === 'deload' ? main.sug.title : 'Podpowiedź na dziś') : main.sug.title,
-    message: [...new Set(list.map(x => x.sug.note).filter(Boolean)), ...list.map(x => (multi ? x.g.label + ': ' : '') + x.sug.text)].join('\n\n'),
-    buttons: can ? [{ text: multi ? 'Ustaw w seriach' : 'Ustaw: ' + main.sug.short, role: 'apply', kind: 'primary' }, { text: 'Zostaw jak jest', role: 'cancel' }]
-      : [{ text: 'OK', role: 'cancel', kind: 'primary' }] })
-  if (role === 'apply') { list.forEach(x => applySuggestion(sets(x.g.key), x.sug, x.g.unit)); touch() }
-}
+// finishing shows the summary screen; "Zapisz trening" saves and returns to the main menu
+const summary = ref(false)
+const note = ref('') // short toast: what the quiet coach filled in
 
-function warm(g) {
-  if (!prefs.warmup) return null
-  if (WARMUP[g.name] == null && WARMUP[canon(g.name)] == null) return null
-  const bar = barOf(g.name, prefs.barKg)
-  if (bar == null || g.label) return null
-  const arr = sets(g.key)
-  if (arr.some(x => x.d)) return null // hidden once the first working set is done
-  const W = arr.find(x => x.w != null)?.w
-  const set = plateSet()
-  const list = warmupSets(W, bar, set)
-  return list.length ? { W, sets: list, plates: platesPerSide(W, bar, set) } : null
-}
-const lastDone = g => sets(g.key).reduce((k, x, i) => (x.d ? i : k), -1)
-const liveOf = g => (s.value && prefs.live ? live(g, s.value) : null)
-function applyLive(g) {
-  const t = liveOf(g)
-  if (!t) return
-  sets(g.key).forEach(x => { if (!x.d) { x.w = t.w; x.r = t.r } })
-  touch()
-}
-function kindIcon(k) { return k === 'up' ? trendingUp : k === 'down' || k === 'deload' ? trendingDown : k === 'stage' ? trophyOutline : bulbOutline }
-async function deloadInfo() {
-  const { role } = await ask({ icon: trendingDown, color: '#0a84ff', title: 'Tydzień lżejszy (deload)',
-    message: 'Co kilka tygodni apka sama robi lżejszy tydzień: te same ćwiczenia, ' + deloadWords() + ' i 3-4 powtórzenia w zapasie. Zmęczenie schodzi, stawy odpoczywają, a po nim wracasz do normalnych ciężarów – zwykle z nową siłą.',
-    buttons: s.value.finished ? [{ text: 'OK', role: 'ok', kind: 'primary' }]
-      : [{ text: 'OK', role: 'ok', kind: 'primary' }, { text: 'Dziś trenuj normalnie', role: 'normal', kind: 'soft' }] })
-  if (role === 'normal') { cancelDeload(s.value); state.flash = 'Normalny trening – lżejszy tydzień za tydzień' }
-}
-function lastText(g) {
-  const p = lastFor(g.key, s.value)
-  const rg = rangeOf(g.target)
-  if (!p && isAssisted(g)) return `Pierwszy raz. Dobierz wspomaganie (kg pomocy) na ${rg.lo}-${rg.hi} powtórzeń.`
-  if (!p) return g.unit === 'kg' ? (rg ? `Pierwszy raz. Dobierz ciężar na ${rg.lo}-${rg.hi} powtórzeń.` : 'Pierwszy raz. Ustaw ciężar dla serii.') : 'Pierwszy raz. Ustaw wartość dla serii.'
-  const done = p.ex[g.key].filter(x => x.d && x.w != null)
-  const txt = g.unit === 'kg' && done.some(x => x.r)
-    ? done.map(x => fmtNum(x.w) + (x.r ? '×' + x.r : '')).join(' · ') + ' kg'
-    : done.map(x => fmtNum(x.w)).join(' · ') + ' ' + UNITS[g.unit].short
-  return 'Ostatnio ' + fmtShort(p.date) + ' (' + ago(p.date) + '): ' + txt
-}
+const tips = useTips({ s, groups, idx, color, sets, touch, note, summary, route })
+const { sugOf, sugList, showTip, kindIcon, lastDone, liveOf, applyLive, deloadInfo, lastText } = tips
+const { swapOpts, swapAsk, exNote, editNote, addOpen, addReady, openAdd, ownList, addPicked, dropExtra, partner, hasOpen, ssSide, ssAsk } =
+  useExercises({ s, exList, idx, exName, planName, groups, color, note, dir, tips })
+const { typeName, cycleType, step, addSet, stepReps, popSet, pickerOpen, pickSet, pickG, pickField, pickInit, openPicker, warm, platesTxt, timer, nextSet, openTimer, hangSaved } =
+  useSetEdit({ s, sets, touch, toggle })
 
 const recPop = ref(null)
 let recT = 0
@@ -349,15 +282,6 @@ function toggle(g, si) {
   if (!x.d) rest.stop()
 }
 let nextT = 0
-// set types (Ustawienia → Trening → Rodzaje serii): tap the set number to cycle
-const TYPE_NAMES = { w: 'rozgrzewkowa', d: 'drop set', f: 'do upadku' }
-const typeName = t => TYPE_NAMES[t] || 'robocza'
-function cycleType(g, si) {
-  const x = sets(g.key)[si], i = SET_TYPES.indexOf(x.t)
-  const nt = SET_TYPES[(i + 1) % SET_TYPES.length]
-  if (nt) x.t = /** @type {'w' | 'd' | 'f'} */ (nt); else delete x.t
-  touch()
-}
 const rest = useRest()
 function autoNext(ms) {
   clearTimeout(nextT)
@@ -372,136 +296,6 @@ function setRir(g, si, q) {
   touch()
   if (x.q != null) { const p = partner.value; if (p != null && hasOpen(p)) { clearTimeout(nextT); nextT = setTimeout(() => go(p), 600) } else autoNext(600) }
 }
-function step(g, si, dirn) {
-  const a = sets(g.key), x = a[si], u = UNITS[g.unit]
-  const base = x.w ?? [...a].slice(0, si).reverse().find(y => y.w != null)?.w ?? 0
-  x.w = Math.max(0, Math.min(u.max, Math.round((base + dirn * u.step) * 4) / 4)); touch()
-}
-function addSet(g) {
-  const a = sets(g.key), last = a[a.length - 1]
-  a.push(g.unit === 'kg' ? { w: last?.w ?? null, r: last?.r ?? DEF_REPS, d: false } : { w: last?.w ?? null, d: false }); touch()
-}
-function stepReps(g, si, d) { const x = sets(g.key)[si]; x.r = Math.max(1, Math.min(50, (x.r ?? DEF_REPS) + d)); touch() }
-function popSet(g) { sets(g.key).pop(); touch() }
-
-// value picker (ValuePicker.vue): which set and field, and the value it opens with
-const pickerOpen = ref(false), pickSet = ref(0), pickG = ref(null), pickField = ref('w'), pickInit = ref(0)
-function openPicker(g, si, field = 'w') {
-  const a = sets(g.key)
-  let v = field === 'r' ? a[si].r ?? DEF_REPS : a[si].w
-  if (v == null) v = [...a].slice(0, si).reverse().find(x => x.w != null)?.w ?? lastFor(g.key, s.value)?.ex[g.key]?.[0]?.w ?? (g.unit === 'reps' ? 3 : 20)
-  pickG.value = g; pickSet.value = si; pickField.value = field; pickInit.value = v
-  pickerOpen.value = true
-}
-
-// hang timer (HangTimer.vue): opens on the next set not done; the held seconds are saved and the set ticked
-const timer = ref(null) // { g, si, secs }
-const nextSet = g => { const a = sets(g.key); const i = a.findIndex(x => !x.d); return i < 0 ? a.length - 1 : i }
-function defaultSecs(g, si) {
-  const w = sets(g.key)[si]?.w
-  if (w) return Math.min(120, Math.max(5, w))
-  const r = String(g.target).match(/(\d+)-(\d+)\s*s/), m = String(g.target).match(/(\d+)\s*s/)
-  return r ? +r[2] : m ? +m[1] : 30
-}
-function openTimer(g) {
-  unlockAudio() // sound must be unlocked by this tap (iOS)
-  const si = nextSet(g)
-  timer.value = { g, si, secs: defaultSecs(g, si) }
-}
-function hangSaved(secs) {
-  const { g, si } = timer.value, x = sets(g.key)[si]
-  x.w = Math.min(UNITS.s.max, secs); touch()
-  if (!x.d) toggle(g, si)
-}
-
-// finishing shows the summary screen; "Zapisz trening" saves and returns to the main menu
-const summary = ref(false)
-const note = ref('') // short toast: what the quiet coach filled in
-watch(() => [s.value?.id, idx.value, summary.value], () => {
-  const sess = s.value
-  if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout') || (prefs.coach !== 'auto' && prefs.coach !== 'set')) return
-  const k = sess.id + ':' + idx.value
-  if (tipsShown.has(k)) return
-  tipsShown.add(k)
-  if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) return
-  // light week: the numbers are already set, so explain it once per workout (the chip stays on every exercise)
-  if (sess.deload && sugList().every(x => x.sug.kind === 'deload')) { if (tipsShown.has(sess.id + ':dl')) return; tipsShown.add(sess.id + ':dl') }
-  const list = sugList()
-  if (!list.length) return
-  if (prefs.coach === 'set') { autoSet(list); return }
-  setTimeout(() => { if (s.value?.id === sess.id && idx.value === +k.split(':')[1]) showTip(list) }, 450)
-}, { immediate: true })
-// quiet mode: put today's suggestion straight into the sets, a short note says what changed (the chip still explains why)
-function autoSet(list) {
-  const can = list.filter(x => x.sug.sets)
-  if (!can.length) { note.value = list[0].sug.title || ''; return } // light week / new stage: numbers are set already, just say so
-  can.forEach(x => applySuggestion(sets(x.g.key), x.sug, x.g.unit)); touch()
-  const main = can.find(x => x.sug.kind === 'up') || can.find(x => x.sug.kind === 'down') || can[0]
-  note.value = can.length > 1 ? 'Ustawiono podpowiedź na dziś' : 'Ustawiono: ' + main.sug.short
-}
-// ---------- notes ----------
-const exNote = computed(() => { void state.sessions; return s.value ? noteFor(exName.value, s.value) : { text: '', own: false, date: '' } })
-async function editNote() {
-  const { role, value } = await ask({ icon: createOutline, color: color.value, title: 'Notatka · ' + exName.value,
-    message: 'Np. ustawienie siedzenia, chwyt, na co uważać. Pokaże się przy następnych treningach.',
-    input: { value: exNote.value.text, placeholder: 'Np. siedzenie na 4, łokcie bliżej', multi: true },
-    buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, ...(exNote.value.text ? [{ text: 'Usuń notatkę', role: 'clear', kind: 'danger' }] : []), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role === 'ok') setNote(s.value, exName.value, value)
-  else if (role === 'clear') setNote(s.value, exName.value, '')
-}
-
-// ---------- plates on the bar (per side) ----------
-const plateSet = () => (prefs.plateSet?.length ? prefs.plateSet : PLATES)
-function platesTxt(g, si) {
-  if (!prefs.plates || g.unit !== 'kg' || g.label) return ''
-  const bar = barOf(g.name, prefs.barKg), a = sets(g.key), w = a[si]?.w
-  if (bar == null || !(w > bar) || (si > 0 && a[si - 1].w === w)) return ''
-  const pl = platesPerSide(w, bar, plateSet())
-  const rest = Math.round((w - bar - 2 * pl.reduce((x, y) => x + y, 0)) * 100) / 100
-  return 'Na stronę: ' + pl.map(fmtNum).join(' + ') + (rest > 0 ? ' (+' + fmtNum(rest) + ' kg)' : '') + ' · gryf ' + bar
-}
-
-// ---------- add an exercise during the workout ----------
-// the catalogue loads on first use; the sheet opens once it is there
-const addOpen = ref(false), addReady = ref(false)
-async function openAdd() {
-  if (!addReady.value) { addReady.value = true; await import('./ExercisePicker.vue'); await nextTick(); await new Promise(r => setTimeout(r, 50)) }
-  addOpen.value = true
-}
-const ownList = computed(() => Object.entries(custom.data?.own || {}).map(([id, o]) => ({ id, ...o })))
-async function addPicked(r) {
-  const sess = s.value
-  if (!addExtra(sess, r)) {
-    await ask({ icon: add, color: color.value, title: 'To ćwiczenie już jest w treningu', message: `„${r.name}” jest już w tym treningu. Wybierz inne albo zmień opcje.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
-    return
-  }
-  dir.value = 'next'; sess.cur = exList.value.length - 1
-  note.value = 'Dodano: ' + r.name
-}
-async function dropExtra() {
-  const name = exName.value
-  if (!removeExtra(s.value, idx.value)) {
-    await ask({ icon: trashOutline, color: color.value, title: 'Masz już zaliczone serie', message: `Żeby usunąć ${name} z treningu, najpierw odznacz jego serie.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
-    return
-  }
-  note.value = 'Usunięto: ' + name
-}
-
-// ---------- supersets ----------
-const partner = computed(() => (s.value ? partnerOf(s.value, idx.value) : null))
-const hasOpen = i => groupsOf(exList.value[i], s.value).some(g => (s.value.ex[g.key] || []).some(x => !x.d))
-const ssSide = i => { const p = s.value ? partnerOf(s.value, i) : null; return p == null ? '' : p > i ? 'l' : 'r' }
-async function ssAsk() {
-  const i = idx.value, sess = s.value
-  const free = exList.value.map((e, j) => j).filter(j => j !== i && (partnerOf(sess, j) == null || partnerOf(sess, j) === i))
-  const { role } = await ask({ icon: linkOutline, color: color.value, title: 'Superseria',
-    message: 'Dwa ćwiczenia na zmianę: seria jednego, od razu seria drugiego, potem przerwa. Apka sama przeskakuje między nimi.',
-    buttons: [...free.map(j => ({ text: (partner.value === j ? '✓ ' : '') + (j + 1) + '. ' + nameIn(exList.value[j], sess), role: 'j' + j, kind: partner.value === j ? 'soft' : 'primary' })),
-      ...(partner.value != null ? [{ text: 'Rozłącz superserię', role: 'off', kind: 'danger' }] : []), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
-  if (role === 'off') { setSuperset(sess, i, null); note.value = 'Superseria rozłączona' }
-  else if (role?.startsWith('j')) { const j = +role.slice(1); if (j !== partner.value) { setSuperset(sess, i, j); note.value = 'Superseria: ' + (Math.min(i, j) + 1) + ' + ' + (Math.max(i, j) + 1) } }
-}
-
 function finish() {
   if (s.value.finished) { if (s.value.manual) dropEmptyManual(); router.back(); return }
   summary.value = true

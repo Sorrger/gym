@@ -13,7 +13,7 @@ await p.goto('http://localhost:4173/#/settings/look'); await p.waitForTimeout(80
 await p.locator('.seg3 button', { hasText: 'Jak telefon' }).click(); await p.locator('.sw button[aria-label="Fiolet"]').click(); await p.waitForTimeout(300)
 console.log('back to system', await st())
 // weight subpage back
-await p.goto('http://localhost:4173/#/tabs/profile'); await p.waitForTimeout(900); await p.locator('.row', { hasText: 'Waga' }).click(); await p.waitForTimeout(1200); console.log('weight url', p.url().split('#')[1])
+await p.goto('http://localhost:4173/#/tabs/progress'); await p.waitForTimeout(900); await p.locator('.ptabs button', { hasText: 'Ciało' }).click(); await p.waitForTimeout(300); await p.locator('.wcard:visible').click(); await p.waitForTimeout(1200); console.log('weight url', p.url().split('#')[1])
 await p.locator('.back:visible').click(); await p.waitForTimeout(1200); console.log('back url', p.url().split('#')[1])
 // old links
 await p.goto('http://localhost:4173/#/tabs/settings'); await p.waitForTimeout(1200); console.log('settings →', p.url().split('#')[1])

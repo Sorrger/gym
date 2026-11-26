@@ -18,8 +18,14 @@ console.log('details:', (await p.locator('.det').innerText()).replace(/\s+/g, ' 
 console.log('weeks:', (await p.locator('.weeks').innerText()).replace(/\s+/g, ' ').slice(0, 160))
 await p.screenshot({ path: 'wq1.png', fullPage: false })
 await p.mouse.wheel(0, 900); await p.waitForTimeout(400); await p.screenshot({ path: 'wq2.png' })
-// profile → weight → back, invisible pages?
-await p.goto('http://localhost:4173/#/tabs/profile'); await p.reload(); await p.waitForTimeout(1300)
-await p.locator('.row:visible', { hasText: 'Waga' }).first().click(); await p.waitForTimeout(1500)
+// Postępy → Ciało → weight card (its one place besides the Start tile), invisible pages?
+await p.goto('http://localhost:4173/#/tabs/progress'); await p.reload(); await p.waitForTimeout(1300)
+await p.locator('.ptabs button:visible', { hasText: 'Ciało' }).click(); await p.waitForTimeout(500)
+await p.locator('.wcard:visible').click(); await p.waitForTimeout(1500)
+// Profil no longer repeats Waga / plan / history / numbers
+await p.evaluate(() => {})
 console.log('invisible pages:', await p.locator('.ion-page.ion-page-invisible').count(), 'h1', await p.locator('h1:visible').allInnerTexts())
+await p.goto('http://localhost:4173/#/tabs/profile'); await p.reload(); await p.waitForTimeout(1300)
+const dup = await p.locator('.row:visible', { hasText: /Waga|Mój plan|Historia treningów/ }).count()
+console.log('profile duplicates:', dup); if (dup) console.log('FAIL Profil still lists Waga / plan / history')
 console.log('errs', errs); await b.close()

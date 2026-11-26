@@ -1,10 +1,10 @@
 <template>
   <ion-page class="settings-page">
-    <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>{{ sec ? MENU.find(m => m.k === sec)?.t : 'Ustawienia' }}</span></div>
+    <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>{{ title }}</span></div>
     <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
       <header class="big-head sub-page">
-        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> {{ sec ? 'Ustawienia' : 'Profil' }}</button>
-        <h1 class="t-large">{{ sec ? MENU.find(m => m.k === sec)?.t : 'Ustawienia' }}</h1>
+        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> {{ sec === 'details' || sec === 'progress' ? 'Trening' : sec ? 'Ustawienia' : 'Profil' }}</button>
+        <h1 class="t-large">{{ title }}</h1>
       </header>
       <div class="page">
         <!-- menu: one row per section (each opens its own page) -->
@@ -38,7 +38,7 @@
 import { ref } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
-import { cloudUploadOutline, chevronForward, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, trendingUpOutline, scaleOutline, heartOutline, warningOutline } from 'ionicons/icons'
+import { cloudUploadOutline, chevronForward, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, scaleOutline, heartOutline, warningOutline } from 'ionicons/icons'
 import { t, lang, LANGS } from '../i18n'
 import { useScrolled } from '../useScrolled'
 import { prefs } from '../prefs'
@@ -47,21 +47,21 @@ import { ask } from '../dialog'
 import { look, ACCENTS } from '../theme'
 import { cloud } from '../cloud'
 import { status as stravaStatus } from '../strava'
-import { REST } from './settings/rules'
+import { REST, modeOf, PRESETS } from './settings/rules'
 import LookSection from './settings/LookSection.vue'
 import LangSection from './settings/LangSection.vue'
 import TrainingSection from './settings/TrainingSection.vue'
-import ProgressSection from './settings/ProgressSection.vue'
+import TrainingDetail from './settings/TrainingDetail.vue'
 import WeightSection from './settings/WeightSection.vue'
 import BackupSection from './settings/BackupSection.vue'
 import StravaSection from './settings/StravaSection.vue'
 
-const SECTIONS = { look: LookSection, lang: LangSection, training: TrainingSection, progress: ProgressSection, weight: WeightSection, backup: BackupSection, strava: StravaSection }
+const SECTIONS = { look: LookSection, lang: LangSection, training: TrainingSection, details: TrainingDetail, progress: TrainingDetail, weight: WeightSection, backup: BackupSection, strava: StravaSection }
 const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
 const route = useRoute()
 const sec = SECTIONS[route.params.sec] ? String(route.params.sec) : '' // fixed per page (Ionic keeps hidden pages alive)
-const goBack = () => (router.canGoBack() ? router.back() : router.navigate(sec ? '/settings' : '/tabs/profile', 'back', 'replace'))
+const goBack = () => (router.canGoBack() ? router.back() : router.navigate(sec === 'details' || sec === 'progress' ? '/settings/training' : sec ? '/settings' : '/tabs/profile', 'back', 'replace'))
 const msg = ref('')
 
 const errs = ref(readErrors())
@@ -75,11 +75,11 @@ async function copyErrors() {
 const MENU = [
   { k: 'look', t: 'Wygląd', i: colorPaletteOutline, c: '#af52de', sub: () => ({ system: 'Jak telefon', light: 'Jasny', dark: 'Ciemny' })[look.mode] + ' · ' + (ACCENTS.find(a => a.id === look.accent)?.name || '') },
   { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => LANGS[lang].name },
-  { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => ({ auto: 'Podpowiedzi same', chip: 'Podpowiedzi na dotyk', off: 'Bez podpowiedzi' })[prefs.coach] + (prefs.restTimer ? ' · przerwa ' + REST.fmt(prefs.restSec) : '') + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
-  { k: 'progress', t: 'Progresja', i: trendingUpOutline, c: '#34c759', sub: () => 'Zapas ' + prefs.rirUp + '+ · krok ' + String(prefs.stepKg).replace('.', ',') + ' kg' },
+  { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => (PRESETS.find(m => m.v === modeOf())?.t || 'Własny') + (prefs.restTimer ? ' · przerwa ' + REST.fmt(prefs.restSec) : '') + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
   { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => (prefs.weightOn ? ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] : 'Wyłączone') },
   { k: 'backup', t: 'Kopia zapasowa', i: cloudUploadOutline, c: '#0a84ff', sub: () => (cloud.token ? (cloud.error ? 'Błąd kopii' : 'GitHub · automatycznie') : 'Tylko w telefonie'), warn: () => cloud.token && cloud.error && cloud.error !== 'Brak połączenia' },
   { k: 'strava', t: 'Strava', i: heartOutline, c: '#fc4c02', sub: () => ({ on: 'Połączona', waiting: 'Czeka' })[stravaStatus()] || 'Niepołączona' }]
+const title = sec === 'details' || sec === 'progress' ? 'Szczegóły treningu' : sec ? MENU.find(m => m.k === sec)?.t : 'Ustawienia'
 </script>
 
 <style scoped>

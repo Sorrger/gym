@@ -17,7 +17,7 @@ for (const mode of ['light', 'dark']) {
   await p.locator('.row:visible', { hasText: 'Edytuj plan' }).click(); await log('Edytuj plan')
   await p.locator('.back:visible, ion-back-button:visible').first().click(); await log('back')
   await p.locator('#tab-button-profile').click(); await p.waitForTimeout(400)
-  await p.locator('.row:visible', { hasText: 'Waga' }).first().click(); await log('Waga')
+  await p.locator('.row:visible', { hasText: 'Ustawienia' }).first().click(); await log('Ustawienia')
   await p.locator('.back:visible').first().click(); await log('back')
   await p.locator('#tab-button-progress').click(); await p.waitForTimeout(400)
   await p.locator('.ptabs button', { hasText: 'Treningi' }).click(); await p.waitForTimeout(300)

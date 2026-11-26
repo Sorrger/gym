@@ -9,7 +9,7 @@ const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push
 const fail = m => console.log('FAIL ' + m)
 await load(p, seed())
 // plates are off by default: switch on, take the 25 kg plates away
-await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1400)
+await p.goto('http://localhost:4173/#/settings/details'); await p.reload(); await p.waitForTimeout(1400)
 if (await p.locator('.pp:visible').count()) fail('plate picker shown while plates are off')
 await p.locator('.row:visible', { hasText: 'Talerze na stronę' }).click(); await p.waitForTimeout(500)
 await p.locator('.pp-c:visible', { hasText: /^25$/ }).click(); await p.waitForTimeout(400)

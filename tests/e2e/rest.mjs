@@ -9,7 +9,7 @@ const startW = async () => { await p.goto('http://localhost:4173/#/plan/0'); awa
 await startW(); await p.locator('button.check:visible').first().click(); await p.waitForTimeout(700)
 console.log('default: rest bar', await p.locator('.rest-bar').count(), 'type btn', await p.locator('.idx.ty').count())
 await p.locator('.tb-trash:visible').click(); await p.waitForTimeout(500); await p.locator('.dlg-btn:has-text("Usuń"):visible').first().click(); await p.waitForTimeout(1000)
-await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1500)
+await p.goto('http://localhost:4173/#/settings/details'); await p.reload(); await p.waitForTimeout(1500)
 for (const t of ['Minutnik przerwy', 'Rodzaje serii']) await p.locator('.toggles button.row', { hasText: t }).click()
 await p.waitForTimeout(300)
 const rr = p.locator('.row.every', { hasText: 'Czas przerwy' }); await rr.locator('button[aria-label="Mniej"]').click(); await rr.locator('button[aria-label="Mniej"]').click()

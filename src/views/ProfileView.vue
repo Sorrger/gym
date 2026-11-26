@@ -12,37 +12,10 @@
           <span class="avatar"><template v-if="account.nick">{{ initials(account.nick) }}</template><ion-icon v-else :icon="person" /></span>
           <div class="grow">
             <b>{{ account.nick || 'Dodaj swój nick' }}</b>
-            <span>{{ since ? 'Trenujesz od ' + since : 'Pierwszy trening przed Tobą' }}</span>
+            <span>{{ since ? 'Trenujesz od ' + since + ' · ' + ov.workouts + ' ' + (ov.workouts === 1 ? 'trening' : ov.workouts % 10 >= 2 && ov.workouts % 10 <= 4 && (ov.workouts % 100 < 10 || ov.workouts % 100 >= 20) ? 'treningi' : 'treningów') : 'Pierwszy trening przed Tobą' }}</span>
           </div>
           <ion-icon :icon="createOutline" class="edit" />
         </button>
-
-        <!-- my numbers -->
-        <div class="nums">
-          <div><Ico name="dumbbell" /><b class="num">{{ ov.workouts }}</b><small>treningi</small></div>
-          <div><Ico name="flame" /><b class="num">{{ streak }}</b><small>{{ streak === 1 ? 'tydzień' : 'tyg.' }} z rzędu</small></div>
-          <div><Ico name="trophy" /><b class="num">{{ ov.prs }}</b><small>rekordy</small></div>
-          <div><Ico name="chart" /><b class="num">{{ fmtTon(ov.vol) }}</b><small>objętość</small></div>
-        </div>
-
-        <h3 class="section-title">Moje dane</h3>
-        <div class="ios-group">
-          <button v-if="prefs.weightOn" class="row press" @click="router.push('/weight')">
-            <span class="r-ico" style="--c: #30b0c7"><ion-icon :icon="scaleOutline" /></span>
-            <div class="grow"><b>Waga</b><span>{{ lastW ? 'Ostatnio ' + String(lastW.kg).replace('.', ',') + ' kg · ' + ago(lastW.date) : 'Zapisuj wagę i patrz na trend' }}</span></div>
-            <ion-icon :icon="chevronForward" class="chev" />
-          </button>
-          <button class="row press" @click="router.push('/plans')">
-            <span class="r-ico" style="--c: var(--accent)"><ion-icon :icon="barbellOutline" /></span>
-            <div class="grow"><b>Mój plan</b><span>{{ nPlans }} {{ nPlans === 1 ? 'trening' : nPlans < 5 ? 'treningi' : 'treningów' }} · {{ isCustom ? 'własny' : 'plan podstawowy' }}</span></div>
-            <ion-icon :icon="chevronForward" class="chev" />
-          </button>
-          <button class="row press" @click="router.push('/tabs/history')">
-            <span class="r-ico" style="--c: #ff9500"><ion-icon :icon="calendarOutline" /></span>
-            <div class="grow"><b>Historia treningów</b><span>{{ ov.sets }} serii łącznie</span></div>
-            <ion-icon :icon="chevronForward" class="chev" />
-          </button>
-        </div>
 
         <h3 class="section-title">Konto</h3>
         <div class="ios-group">
@@ -74,31 +47,22 @@
 </template>
 
 <script setup>
-import { prefs } from '../prefs'
 import { t } from '../i18n'
-import Ico from './Ico.vue'
 import { useScrolled } from '../useScrolled'
 import { ref, computed } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter } from '@ionic/vue'
-import { createOutline, scaleOutline, chevronForward, barbellOutline, calendarOutline, phonePortraitOutline, settingsOutline, person } from 'ionicons/icons'
-import { state, ago, doneSessions, fmtDate } from '../store'
-import { overview, weekStreak, fmtTon } from '../stats'
-import { weights } from '../weight'
-import { PLAN } from '../plan'
+import { createOutline, chevronForward, phonePortraitOutline, settingsOutline, person } from 'ionicons/icons'
+import { state, doneSessions, fmtDate } from '../store'
+import { overview } from '../stats'
 import { cloud } from '../cloud'
 import { account, setNick, initials, PROVIDERS, signIn } from '../account'
-import { custom } from '../customPlan'
 import { ask } from '../dialog'
 
 const { scrolled, onScroll } = useScrolled()
 const router = useIonRouter()
 const toast = ref('')
 const ov = computed(() => { void state.sessions; return overview(null) })
-const streak = computed(() => { void state.sessions; return weekStreak() })
 const since = computed(() => { const l = doneSessions(); return l.length ? fmtDate(l[l.length - 1].date) : '' })
-const lastW = computed(() => weights.value[weights.value.length - 1] || null)
-const nPlans = computed(() => PLAN.filter(p => !p.hidden).length)
-const isCustom = computed(() => !!custom.data)
 const backupWarn = computed(() => cloud.token && cloud.error && cloud.error !== 'Brak połączenia')
 
 async function editNick() {
@@ -122,10 +86,6 @@ async function login(id) { toast.value = (await signIn(id)).message }
 .me b { font-size: 24px; font-family: var(--num-font); font-weight: 700; letter-spacing: -.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .me span { font-size: 14px; color: var(--app-muted); margin-top: 2px; }
 .me .edit { font-size: 21px; color: var(--accent); flex: none; }
-.nums { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 0 16px 6px; }
-.nums > div { background: var(--app-card); border-radius: var(--r-lg); padding: 13px 14px; display: flex; flex-direction: column; font-size: 20px; }
-.nums b { font-size: 24px; font-weight: 700; letter-spacing: -.3px; margin-top: 6px; }
-.nums small { font-size: 13px; color: var(--app-muted); }
 .g-ico { background: #fff !important; box-shadow: inset 0 0 0 0.5px var(--app-line); }
 .g-ico svg { width: 18px; height: 18px; }
 .soon { flex: none; font-size: 12px; font-weight: 600; color: var(--app-muted); background: var(--app-field); padding: 4px 9px; border-radius: 999px; }

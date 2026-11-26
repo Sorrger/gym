@@ -15,7 +15,7 @@ const toast = await p.evaluate(() => [...document.querySelectorAll('ion-toast')]
 console.log('dialog on open:', dlg, 'toast:', toast, 'chip:', chip)
 if (dlg) console.log('FAIL pop-up shown in quiet mode')
 if (!toast.startsWith('Ustawiono')) console.log('FAIL no note about the filled-in suggestion')
-await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1400)
+await p.goto('http://localhost:4173/#/settings/details'); await p.reload(); await p.waitForTimeout(1400)
 const on = await p.locator('.seg3 button.on:visible').innerText()
 console.log('coach mode in settings:', on)
 if (on !== 'Ustawiaj') console.log('FAIL old auto not moved to quiet mode')

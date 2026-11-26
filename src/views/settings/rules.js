@@ -48,3 +48,17 @@ export function step(t, d) {
   if (t.opts) { const i = t.opts.indexOf(v); setPref(t.k, t.opts[i < 0 ? t.opts.indexOf(2.5) : i + d]); return }
   setPref(t.k, Math.round((v + d * t.step) * 100) / 100)
 }
+
+// ready-made sets of the training rules; anything else = 'custom' (set one by one on the details page)
+const BASE = () => Object.fromEntries(RULES.map(k => [k, DEFAULT_PREFS[k]]))
+export const PRESETS = [
+  { v: 'basic', t: 'Podstawowy', d: 'Proste minimum: apka sama wpisuje ciężary, liczy przerwę i co kilka tygodni daje lżejszy tydzień.',
+    p: () => ({ ...BASE(), coach: 'set', live: false, rir: false, warmup: true, plates: false, autoNext: true, deload: true, restTimer: true, setTypes: false }) },
+  { v: 'advanced', t: 'Zaawansowany', d: 'Wszystko włączone: rady w trakcie serii, zapas powtórzeń, talerze na stronę i rodzaje serii.',
+    p: () => ({ ...BASE(), coach: 'set', live: true, rir: true, warmup: true, plates: true, autoNext: true, deload: true, restTimer: true, setTypes: true }) }]
+export const FEATURES = [
+  { k: 'coach', t: 'Podpowiedzi ciężaru', on: v => v !== 'off' }, { k: 'restTimer', t: 'Minutnik przerwy' }, { k: 'deload', t: 'Lżejszy tydzień' },
+  { k: 'warmup', t: 'Rozgrzewka przy sztandze' }, { k: 'live', t: 'Rady w trakcie serii' }, { k: 'rir', t: 'Zapas powtórzeń' },
+  { k: 'plates', t: 'Talerze na stronę' }, { k: 'setTypes', t: 'Rodzaje serii' }]
+export const modeOf = () => PRESETS.find(m => { const p = m.p(); return RULES.every(k => prefs[k] === p[k]) })?.v || 'custom'
+export const applyPreset = v => { const p = PRESETS.find(m => m.v === v)?.p(); if (p) RULES.forEach(k => setPref(k, p[k])) }

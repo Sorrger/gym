@@ -14,7 +14,7 @@
           <div class="tb-nums">
             <div><b class="num">{{ monthSets }}</b><span>serie</span></div>
             <div><b class="num">{{ fmtTon(monthVol) }}</b><span>objętość</span></div>
-            <div><b class="num">{{ streak }} <Ico v-if="streak" name="flame" /></b><span>tyg. z rzędu</span></div>
+            <div><b class="num">{{ monthTime }}</b><span>na siłowni</span></div>
           </div>
         </div>
 
@@ -69,8 +69,7 @@
 
 <script setup>
 import { LOC } from '../i18n'
-import { weekStreak, volumeOf, fmtTon } from '../stats'
-import Ico from './Ico.vue'
+import { volumeOf, fmtTon } from '../stats'
 import { useScrolled } from '../useScrolled'
 import { ask as askDialog } from '../dialog'
 import { computed, ref } from 'vue'
@@ -104,8 +103,11 @@ const monthVol = computed(() => monthList.value.reduce((a, s) => a + volumeOf(s)
 const monthSets = computed(() => monthList.value.reduce((a, s) => a + counts(s).n, 0))
 const shown = computed(() => (selected.value ? monthList.value.filter(s => s.date === selected.value) : monthList.value))
 
-// consecutive weeks (Mon–Sun) with at least one workout, counting back from this week (or last week if none yet this week)
-const streak = computed(() => { void state.sessions; return weekStreak() }) // same as Start (marks without sets count too)
+// time at the gym this month (same rule as the workout summary: start → last change, sessions over 5 h left out)
+const monthTime = computed(() => {
+  const m = monthList.value.reduce((a, s) => { const d = s.started && s.updated ? (s.updated - s.started) / 60000 : 0; return a + (d > 0 && d < 300 ? d : 0) }, 0)
+  return m >= 60 ? Math.floor(m / 60) + ' h ' + String(Math.round(m % 60)).padStart(2, '0') : Math.round(m) + ' min'
+})
 
 function shift(k) { selected.value = null; view.value = new Date(view.value.getFullYear(), view.value.getMonth() + k, 1) }
 function pick(c) {

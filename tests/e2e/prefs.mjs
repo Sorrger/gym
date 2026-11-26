@@ -5,7 +5,7 @@ const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 await load(p, seed())
 await p.evaluate(async () => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); const W = {}; [[20,104.2],[14,103.6],[10,103.5],[6,103.1],[3,102.9],[1,102.6],[0,102.7]].forEach(([n,kg]) => W[new Date(Date.now()-n*864e5).toISOString().slice(0,10)] = { kg, t: 1 }); tx.objectStore('keyval').put(W, 'weights'); tx.oncomplete = res } }) })
-await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1500)
+await p.goto('http://localhost:4173/#/settings/details'); await p.reload(); await p.waitForTimeout(1500)
 await p.screenshot({ path: 'pr-set.png', fullPage: false })
 // default workout: popup + warmup
 const startW = async () => { await p.goto('http://localhost:4173/#/plan/0'); await p.reload(); await p.waitForTimeout(1500); await p.locator('.go:visible').click(); await p.waitForTimeout(1800) }
@@ -16,7 +16,7 @@ await p.locator('button.check:visible').first().click(); await p.waitForTimeout(
 console.log('default: rir', await p.locator('.rir:visible').count())
 await p.locator('.tb-trash:visible').click(); await p.waitForTimeout(500); await p.locator('.dlg-btn.danger:visible, .dlg-btn:has-text("Usuń"):visible').first().click(); await p.waitForTimeout(1200)
 // switch everything off
-await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1500)
+await p.goto('http://localhost:4173/#/settings/details'); await p.reload(); await p.waitForTimeout(1500)
 await p.locator('.seg3 button:has-text("Wyłączone")').click()
 for (const t of ['Rady w trakcie', 'Zapas powtórzeń', 'Rozgrzewka', 'Przejdź dalej', 'Lżejszy tydzień']) await p.locator('.toggles button.row', { hasText: t }).click()
 await p.waitForTimeout(400)

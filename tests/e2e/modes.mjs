@@ -1,0 +1,37 @@
+// Ustawienia → Trening: ready modes (Podstawowy / Zaawansowany) and Własny with the details page
+import { launch } from './lib.mjs'
+import { devices } from 'playwright-core'
+import { seed, load } from './seed.mjs'
+const b = await launch()
+const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitScript(() => localStorage.setItem('onboarded', '1'))
+const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
+const fail = m => console.log('FAIL ' + m)
+await load(p, seed())
+await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1500)
+const on = async () => (await p.locator('.modes button.on:visible').innerText()).trim()
+const feat = async t => (await p.locator('.feat:visible', { hasText: t }).locator('.fs').innerText()).trim()
+console.log('start mode:', await on())
+if (await on() !== 'Własny') fail('owner defaults should show Własny')
+await p.locator('.modes button:visible', { hasText: 'Podstawowy' }).click(); await p.waitForTimeout(400)
+await p.locator('.dlg-btn:has-text("Zmień")').click(); await p.waitForTimeout(500)
+console.log('basic:', await on(), '| rady:', await feat('Rady w trakcie serii'), '| przerwa:', await feat('Minutnik przerwy'))
+if (await on() !== 'Podstawowy' || await feat('Rady w trakcie serii') !== 'Wyłączone' || await feat('Minutnik przerwy') !== 'Włączone') fail('basic preset')
+await p.locator('.modes button:visible', { hasText: 'Zaawansowany' }).click(); await p.waitForTimeout(500)
+if (await p.locator('.dlg-btn:visible').count()) fail('no question when leaving a ready mode')
+console.log('advanced:', await on(), '| talerze:', await feat('Talerze na stronę'))
+if (await on() !== 'Zaawansowany' || await feat('Talerze na stronę') !== 'Włączone') fail('advanced preset')
+// details: change one thing → Własny
+await p.locator('.detail-row:visible').click(); await p.waitForTimeout(1200)
+await p.locator('h1.t-large:visible', { hasText: 'Szczegóły treningu' }).waitFor()
+if (!(await p.locator('.row.every:visible', { hasText: 'Krok ciężaru' }).count())) fail('progression numbers on the details page')
+await p.locator('.row:visible', { hasText: 'Rodzaje serii' }).click(); await p.waitForTimeout(400)
+await p.locator('.back:visible').click(); await p.waitForTimeout(1200)
+console.log('after a change:', await on())
+if (await on() !== 'Własny') fail('changing a detail should give Własny')
+// the menu row says the mode
+await p.goto('http://localhost:4173/#/settings'); await p.reload(); await p.waitForTimeout(1200)
+const sub = await p.locator('.menu .row:visible', { hasText: 'Trening' }).innerText(); console.log('menu:', sub.replace(/\n/g, ' | '))
+if (!sub.includes('Własny') || /undefined/.test(sub)) fail('menu row')
+if (await p.locator('.menu .row:visible', { hasText: 'Progresja' }).count()) fail('Progresja should be inside Trening now')
+console.log('errs', errs)
+await b.close()
