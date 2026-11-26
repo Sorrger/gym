@@ -611,8 +611,8 @@ const LIB = {
   },
   'battle-ropes': () => {
     // athletic half squat facing the anchor, arms whip up and down in turn; each rope makes its own wave
-    const b = { hx: -16, hy: -112, t: -70, fx: 24, gx: -10, gy: -7 }, S = shoulderOf(b), x = S.x + 64
-    const A = { ...b, ax: x, ay: S.y + 34, bx: x, by: S.y + 82, ab: -1, bb: -1 }, B = { ...b, ax: x, ay: S.y + 82, bx: x, by: S.y + 34, ab: -1, bb: -1 }
+    const b = { hx: -10, hy: -100, t: -48, fx: 20, fy: -7, gx: -12, gy: -7 }, S = shoulderOf(b), x = S.x + 56
+    const A = { ...b, ax: x + 6, ay: S.y + 26, bx: x, by: S.y + 78, ab: 1, bb: 1 }, B = { ...b, ax: x, ay: S.y + 78, bx: x + 6, by: S.y + 26, ab: 1, bb: 1 }
     return { frames: [{ ...A, wv: 0 }, { ...B, wv: Math.PI }, { ...A, wv: 2 * Math.PI }], props: [{ k: 'post', x: 300, y2: -26, w: 9 }], gear: [{ k: 'rope', from: { x: 296, y: -16 }, both: true }], ph: [[760, 'Faluj', 0, 1]] }
   },
   'kb-snatch': sel => ({ frames: [{ hx: -40, hy: -118, t: -30, fx: 6, a1: 110, a2: 120 }, st({ a1: 10, a2: -10 }), st({ a1: -88, a2: -88 })], gear: [{ k: sel.eq === 'db' ? 'db' : 'kb', up: true }], lab: ['Zamach nad głowę', 'Opuść'] }),
