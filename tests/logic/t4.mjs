@@ -127,7 +127,7 @@ ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,1
 // data shapes for the database: unique ids, version, training key, exercise ids
 {
   const ids = new Set(Array.from({ length: 500 }, () => schema.newId(1764000000000)))
-  ok(ids.size === 500 && [...ids].every(i => /^[0-9a-z]+-[0-9a-z]{5}$/.test(i)), 'schema: ids unique even in the same millisecond')
+  ok(ids.size === 500 && [...ids].every(i => /^[0-9a-z]+-[0-9a-z]{6}$/.test(i)), 'schema: ids unique even in the same millisecond')
   const old = { id: 'abc', date: '2026-01-02', day: 1, ex: { 'Wiosłowanie hantlem': [{ w: 30, r: 10, d: true }] }, started: 1, finished: true, updated: 1 }
   ok(schema.normSession(old) && old.plan === plan.PLAN[1].key && old.v === schema.V.session && old.xid?.['Wiosłowanie hantlem'], 'schema: old workout gets training key, version and exercise ids', old)
   ok(!schema.normSession(old), 'schema: upgrading twice changes nothing')

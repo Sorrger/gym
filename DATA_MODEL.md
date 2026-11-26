@@ -9,7 +9,7 @@ Today the cloud is the user's own secret GitHub Gist; next it is **Firebase (Fir
   and live in `src/schema.js` (`V`, `normSession`). Old app versions must keep working with newer records.
 - **Merge:** newer wins by the record's own time (`updated` / `t`). Deletions are tombstones (`del: true` / `deleted` map),
   never a missing row – otherwise another phone brings the record back.
-- **Ids:** workouts `newId()` = base36 start time + `-` + 5 random chars (old ones: time only, imports `imp-…`, off-app marks `off…`);
+- **Ids:** workouts `newId()` = base36 start time + `-` + 6 random chars (old ones: time only, imports `imp-…`, off-app marks `off…`);
   exercises `xid` (catalogue `c-…`, own `u-…`, others `x-<slug>`); trainings `plan` key (`push`, `pull`, `legs`, `chestback`, `p<i>`).
 
 ## Records (today → Firestore)

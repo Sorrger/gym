@@ -13,9 +13,10 @@ export const V = {
 
 // unique across phones and accounts: start time + random tail
 export function newId(t = Date.now()) {
-  let r
-  try { r = crypto.getRandomValues(new Uint32Array(1))[0].toString(36) } catch { r = Math.random().toString(36).slice(2) }
-  return t.toString(36) + '-' + r.slice(0, 5).padStart(5, '0')
+  const A = '0123456789abcdefghijklmnopqrstuvwxyz'
+  let b
+  try { b = crypto.getRandomValues(new Uint8Array(6)) } catch { b = Array.from({ length: 6 }, () => Math.floor(Math.random() * 256)) }
+  return t.toString(36) + '-' + Array.from(b, x => A[x % 36]).join('')
 }
 
 // upgrades a workout in place; returns true when something was added
