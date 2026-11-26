@@ -4,6 +4,11 @@ import { execSync } from 'child_process'
 const run = c => execSync(c, { stdio: 'inherit' })
 const out = c => execSync(c).toString().trim()
 
+// gate: nothing goes live with a leaked secret, a lint/type error or a failing logic test (a few seconds each).
+// The slower click-through tests (npm run e2e) run in CI on every push; run them locally before bigger releases.
+for (const c of ['node scripts/check-secrets.mjs', 'npm run lint --silent', 'npm run typecheck --silent', 'npm test --silent']) {
+  try { run(c) } catch { console.error('\nDeploy stopped: "' + c + '" failed. Fix it first – the live app was not changed.'); process.exit(1) }
+}
 run('npx vite build')
 run('git add -A')
 if (out('git status --porcelain')) {

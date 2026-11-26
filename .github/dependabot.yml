@@ -1,0 +1,14 @@
+# Weekly pull requests for outdated / vulnerable packages and GitHub Actions. CI (tests + e2e) runs on each one;
+# merge only when it is green.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule: { interval: weekly, day: monday }
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }

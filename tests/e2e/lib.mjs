@@ -7,6 +7,8 @@ export async function launch() {
   b.newContext = async ({ fresh, ...opts } = {}) => {
     const c = await newContext(opts)
     if (!fresh) await c.addInitScript(() => { if (!localStorage.getItem('onboarded')) localStorage.setItem('onboarded', '1') })
+    // every test also guards the Content-Security-Policy: anything it blocks fails the run
+    c.on('page', pg => pg.on('console', m => { if (/Content Security Policy|Refused to (load|connect|execute|apply)/i.test(m.text())) console.log('FAIL CSP: ' + m.text().slice(0, 200)) }))
     return c
   }
   return b

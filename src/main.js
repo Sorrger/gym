@@ -12,7 +12,7 @@ import { initWeights } from './weight'
 import { initMeasures } from './measures'
 import { initAccount, account } from './account'
 import { initI18n, addPhrases, lang, loadLang } from './i18n'
-import { initErrors } from './errors'
+import { initErrors, log as logError } from './errors'
 initErrors()
 import { initUpdater } from './updater'
 import { initPlan } from './customPlan'
@@ -100,7 +100,10 @@ initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => langR
   initMeasures()
   const app = createApp(App).use(IonicVue, { mode: 'ios', navAnimation: pageAnim }).use(router)
   router.isReady().then(() => {
+    // errors inside Vue (render, watchers, handlers) never reach window.onerror – keep them in the local error log
+    app.config.errorHandler = (e, _vm, info) => { console.error(e); logError((e && /** @type {any} */ (e).message || e) + ' [' + info + ']') }
     app.mount('#app')
+    window.__appReady = true // public/rescue.js: the app is on screen
     initI18n()
     // exercise catalogue names in English (only needed when the app is not in Polish)
     if (lang !== 'pl') import('./catalog').then(c => addPhrases(c.catalogEN(), n => { const r = c.byName(n); return r ? c.compose(r.base, r.sel).nameEn : undefined })).catch(() => {})

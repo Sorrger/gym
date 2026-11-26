@@ -3,7 +3,7 @@
 const KEY = 'errs'
 export const readErrors = () => { try { return JSON.parse(localStorage.getItem(KEY) || '[]') } catch { return [] } }
 export const clearErrors = () => { try { localStorage.removeItem(KEY) } catch {} }
-function log(msg) {
+export function log(msg) {
   msg = String(msg || '').slice(0, 300)
   if (!msg || /ionPageElement|ResizeObserver loop/.test(msg)) return // known harmless Ionic/browser noise
   const l = readErrors()

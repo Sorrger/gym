@@ -40,4 +40,4 @@ interface Session {
 /** Build stamp injected by vite.config.js */
 declare const __BUILD__: string
 
-interface Window { webkitAudioContext?: typeof AudioContext }
+interface Window { webkitAudioContext?: typeof AudioContext; __appReady?: boolean; __rescue?: any }

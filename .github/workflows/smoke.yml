@@ -1,0 +1,26 @@
+name: Live app check
+# after every GitHub Pages deploy and once a day: does the live app start (online and offline)?
+on:
+  workflow_run:
+    workflows: ['pages-build-deployment']
+    types: [completed]
+  schedule:
+    - cron: '41 5 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - run: npm ci
+      - run: npx playwright-core install --with-deps chromium
+      - name: Wait for the CDN to serve the new version
+        if: github.event_name == 'workflow_run'
+        run: sleep 60
+      - run: node tests/smoke/live.mjs
+        env: { URL: 'https://sorrger.github.io/gym/' }
