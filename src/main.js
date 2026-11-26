@@ -10,11 +10,12 @@ import { initCloud } from './cloud'
 import { initStrava } from './strava'
 import { initWeights } from './weight'
 import { initAccount, account } from './account'
-import { initI18n, addPhrases, lang } from './i18n'
+import { initI18n, addPhrases, lang, loadLang } from './i18n'
 import { initErrors } from './errors'
 initErrors()
 import { initUpdater } from './updater'
 import { initPlan } from './customPlan'
+import { enableStatsCache } from './stats'
 import { applyLook } from './theme'
 applyLook() // before anything is drawn, so there is no flash of the wrong colours
 
@@ -87,7 +88,9 @@ router.beforeEach(to => {
   if (to.path === '/welcome' && !needsWelcome()) return '/tabs/home'
 })
 
-initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => {
+enableStatsCache()
+const langReady = loadLang().catch(() => {}) // English dictionary only on English phones
+initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => langReady).then(() => {
   initCloud()
   initStrava()
   initWeights()

@@ -1,5 +1,5 @@
 // Fourth set: notes per exercise, exercises added during a workout, supersets, plates on the bar.
-const { store, plan, stats, muscles, prefsM } = await import('./b.mjs')
+const { store, plan, stats, muscles, prefsM, idb } = await import('./b.mjs')
 const { state } = store
 let fails = 0, n = 0
 const ok = (c, m, extra) => { n++; if (!c) { fails++; console.log('FAIL', m, extra ?? '') } else console.log('ok  ', m) }
@@ -71,5 +71,39 @@ let cloned = null; try { cloned = structuredClone(prefsM.prefsData()) } catch {}
 ok(cloned && cloned.plateSet.join() === '20,10,5', 'prefs: data with a plate list can be stored')
 prefsM.setPrefsLocal(null)
 ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,10,5,2.5,1.25' && prefsM.prefs.plateSet !== prefsM.DEFAULT_PREFS.plateSet, 'prefs: plates off by default, own copy of the default list')
+
+// saving: an open workout is written on every change, an untouched finished one is not even compared
+{
+  const tick = () => new Promise(r => setTimeout(r, 0))
+  state.ready = true
+  const o = state.sessions[store.startSession(2).id]; await tick()
+  const k = Object.keys(o.ex)[0]
+  o.ex[k][0].w = 77; await tick(); await tick()
+  ok((await idb.get('s:' + o.id))?.ex[k][0].w === 77, 'saving: a change in an open workout is written without touching updated')
+  const c0 = store.changes.value
+  o.cur = 1; await tick(); await tick()
+  ok(store.changes.value === c0 + 1, 'saving: each written change is counted once (the backup listens to it)')
+  await tick(); ok(store.changes.value === c0 + 1, 'saving: nothing new → no extra write')
+}
+// statistics cache: kept while only an open workout changes, recomputed once a finished one changes
+{
+  const tick = () => new Promise(r => setTimeout(r, 0))
+  state.ready = true
+  for (const k of Object.keys(state.sessions)) delete state.sessions[k]
+  await tick()
+  const f = store.startSession(0); f.finished = true; f.date = '2026-11-20'
+  plan.entriesOf(0).forEach(g => (f.ex[g.key] || []).forEach(x => { x.w = 50; x.r = 8; x.d = true }))
+  await tick()
+  stats.enableStatsCache(true)
+  const v1 = stats.overview(null).vol
+  const o = store.startSession(1); await tick()
+  const r0 = store.dataRev.value
+  plan.entriesOf(1).forEach(g => (o.ex[g.key] || []).forEach(x => { x.w = 40; x.r = 10; x.d = true }))
+  await tick()
+  ok(store.dataRev.value === r0 && stats.overview(null).vol === v1, 'stats cache: taps in an open workout keep the cached numbers')
+  store.finishSession(o.id); await tick()
+  ok(store.dataRev.value > r0 && stats.overview(null).vol > v1, 'stats cache: finishing a workout recomputes', [v1, stats.overview(null).vol])
+  stats.enableStatsCache(false)
+}
 
 globalThis.T4 = { n, fails }

@@ -24,6 +24,7 @@ ok(v1?.a && v1?.b, 'storage: the old single entry is kept as a safety copy (sess
 // a change writes only that workout
 const before = JSON.stringify(await idb.get('s:c'))
 state.sessions.a.ex['Wyciskanie sztangi na ławce płaskiej'][0].w = 62.5
+state.sessions.a.updated = Date.now() // edits of a finished workout always move `updated` (WorkoutView touch())
 await tick(); await tick()
 ok((await idb.get('s:a')).ex['Wyciskanie sztangi na ławce płaskiej'][0].w === 62.5, 'storage: a change is written to that workout right away')
 ok(JSON.stringify(await idb.get('s:c')) === before, 'storage: other workouts are not rewritten')

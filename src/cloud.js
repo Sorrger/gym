@@ -1,7 +1,7 @@
 // Automatic backup to a secret GitHub Gist. Token + gist id live only on this phone.
 import { reactive, watch, nextTick } from 'vue'
 import { get, set, del } from './db'
-import { state, mergeSessions } from './store'
+import { state, mergeSessions, changes } from './store'
 
 const FILE = 'gym-backup.json'
 const API = 'https://api.github.com'
@@ -141,10 +141,10 @@ export async function initCloud() {
   // any change to workouts marks the backup as out of date; sent a few seconds later when online
   // a workout just finished goes out at once, in one upload
   let done = finishedIds()
-  watch(() => [state.sessions, state.deleted], () => {
+  watch(changes, () => {
     const now = finishedIds(), fresh = [...now].some(id => !done.has(id)); done = now
     if (cloud.token) { rev++; if (!cloud.dirty) { cloud.dirty = true; persist() } schedule(fresh ? 1000 : nextDelay()) }
-  }, { deep: true })
+  }, { flush: 'sync' })
   window.addEventListener('online', () => schedule(Math.max(1000, nextDelay())))
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && cloud.dirty) { clearTimeout(timer); syncNow({ leaving: true }) } // leaving the app: try right away

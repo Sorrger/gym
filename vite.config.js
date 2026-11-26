@@ -9,7 +9,12 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   define: { __BUILD__: JSON.stringify(BUILD) },
   base: './',
-  build: { outDir: 'docs', emptyOutDir: true }, // GitHub Pages serves main:/docs
+  build: {
+    outDir: 'docs', emptyOutDir: true, // GitHub Pages serves main:/docs
+    // Ionic's component files register nothing at import time (components are defined only when a Vue wrapper is used),
+    // but the package doesn't say so – without this every Ionic component (date picker, select, range…) lands in the start bundle
+    rollupOptions: { treeshake: { moduleSideEffects: id => !/@ionic[\\/]core[\\/]components[\\/]/.test(id) } }
+  },
   plugins: [
     vue(),
     VitePWA({

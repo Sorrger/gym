@@ -154,6 +154,7 @@ ok(now.agoMin(T0 - 20e3, T0) === 'przed chwilą' && now.agoMin(T0 - 5 * 60e3, T0
 
 // ---------- English ----------
 i18n.setLang('en', false)
+await i18n.loadLang('en')
 const E = s => i18n.tr(s)
 ok(E('Postępy') === 'Progress' && E('  Zapisz trening ') === '  Save workout ', 'whole phrases, spaces kept')
 ok(E('Ćwiczenie 2 z 9') === 'Exercise 2 of 9' && E('1 trening') === '1 workout' && E('3 treningi') === '3 workouts', 'numbers inside + plural')

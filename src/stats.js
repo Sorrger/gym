@@ -1,7 +1,23 @@
 // Numbers for the Progress tab (overview + per plan)
 import { PLAN, isAssisted, entriesOf, rangeOf } from './plan'
-import { sorted, series } from './store'
+import { sorted, series, dataRev, iso } from './store'
 import { musclesOf } from './muscles'
+
+// results are kept until finished workouts change (store.dataRev) or the day changes; taps in an open workout don't
+// recompute the Progress tab. Off until enableStatsCache() (the logic tests change workouts directly, without saving).
+let cacheOn = false
+export const enableStatsCache = (on = true) => { cacheOn = on }
+function memo(fn) {
+  const c = new Map(); let at = ''
+  return (...a) => {
+    if (!cacheOn) return fn(...a)
+    const now = dataRev.value + '|' + iso(new Date())
+    if (now !== at) { c.clear(); at = now }
+    const k = JSON.stringify(a)
+    if (!c.has(k)) c.set(k, fn(...a))
+    return c.get(k)
+  }
+}
 
 const ticked = s => Object.values(s.ex || {}).some(a => a.some(x => x.d))
 const daysAgoIso = n => { const d = new Date(Date.now() - n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0') }
@@ -22,7 +38,7 @@ export function volumeOf(s) {
 export const setsOf = s => Object.values(s.ex || {}).reduce((a, arr) => a + arr.filter(x => x.d && x.t !== 'w').length, 0)
 
 // new records in a period (days = null → all time): every workout where an exercise beat all its earlier workouts
-export function prEvents(day = null, days = null) {
+function prEvents_(day = null, days = null) {
   const cut = days ? daysAgoIso(days) : ''
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
@@ -41,7 +57,7 @@ export function prEvents(day = null, days = null) {
   return n
 }
 // records of one plan in the last `days` (plan page): exercises whose best in the window beat everything before
-export function prCount(day = null, days = 30) {
+function prCount_(day = null, days = 30) {
   const cut = daysAgoIso(days)
   const plans = day == null ? PLAN.map((_, i) => i) : [day]
   let n = 0
@@ -69,7 +85,7 @@ function bestValue(g, arr) {
 }
 
 // strength index of a plan per workout: average of every exercise vs its first workout (100 = start)
-export function strength(day) {
+function strength_(day) {
   const groups = entriesOf(day, 'all')
   // deload weeks are lighter on purpose: they don't count for the strength index
   const list = sorted().filter(s => s.day === day && ticked(s) && !s.deload).reverse() // oldest first
@@ -97,7 +113,7 @@ export function strength(day) {
   return { index, gain: index.length ? Math.round(index[index.length - 1] - 100) : null, up, tracked }
 }
 
-export function planSummary(day) {
+function planSummary_(day) {
   const list = sorted().filter(s => s.day === day && ticked(s))
   const vols = list.slice(0, 8).map(volumeOf).reverse()
   const n = vols.length, hi = Math.max(1, ...vols)
@@ -111,7 +127,7 @@ export function planSummary(day) {
 }
 
 // newest records (all plans): [{ key, name, label, unit, w, r, prev, date, day, i }] – i = index in entriesOf(day, 'all')
-export function recentPRs(limit = 5, days = null) {
+function recentPRs_(limit = 5, days = null) {
   const cut = days ? daysAgoIso(days) : '', out = [], seen = new Set()
   PLAN.forEach((_, d) => entriesOf(d, 'all').forEach((g, i) => {
     if (seen.has(g.key)) return
@@ -127,7 +143,7 @@ export function recentPRs(limit = 5, days = null) {
   return out.sort((a, b) => b.date.localeCompare(a.date)).slice(0, limit)
 }
 // workouts per week (Mon–Sun), oldest first, last n weeks incl. this one; marks "done without the app" count too
-export function weekly(n = 8) {
+function weekly_(n = 8) {
   const now = new Date(), mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() - ((now.getDay() + 6) % 7))
   const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
   const all = sorted().filter(s => ticked(s) || s.offApp)
@@ -139,7 +155,7 @@ export function weekly(n = 8) {
   })
 }
 // overall strength trend: every workout (all plans) vs each exercise's first workout, averaged over the last 4 workouts
-export function strengthTrend(max = 16) {
+function strengthTrend_(max = 16) {
   const first = {}, per = []
   for (const s of sorted().filter(s => ticked(s) && !s.deload).reverse()) {
     const rel = []
@@ -156,14 +172,14 @@ export function strengthTrend(max = 16) {
 }
 
 // period stats, days = null → all time
-export function overview(days = null) {
+function overview_(days = null) {
   const cut = days ? daysAgoIso(days) : ''
   const list = sorted().filter(s => s.date >= cut && ticked(s))
   return { workouts: list.length, sets: list.reduce((a, s) => a + setsOf(s), 0), vol: list.reduce((a, s) => a + volumeOf(s), 0), prs: prEvents(null, days) }
 }
 
 // sets per muscle (main = 1, helping = ½): all time when days = null
-export function muscleSets(days = null) {
+function muscleSets_(days = null) {
   const cut = days ? daysAgoIso(days) : '', out = {}
   for (const s of sorted()) {
     if (s.date < cut) continue
@@ -184,7 +200,7 @@ export function muscleSets(days = null) {
 export const plansDone = (days = null) => { const cut = days ? daysAgoIso(days) : ''; return new Set(sorted().filter(s => s.date >= cut && ticked(s) && !PLAN[s.day]?.hidden).map(s => s.day)).size }
 
 // sets per muscle per week in a period (days = null → all time)
-export function muscleWeek(days = null) {
+function muscleWeek_(days = null) {
   const out = muscleSets(days)
   // average over the weeks actually trained (a new user with 2 weeks of data is not divided by 4)
   const first = sorted().filter(ticked).map(s => s.date).sort()[0]
@@ -211,10 +227,22 @@ export function planMuscleSets() {
   return out
 }
 // weeks in a row (Mon–Sun) with at least one training; the current week only adds once it has one (it never breaks the streak)
-export function weekStreak() {
+function weekStreak_() {
   const w = weekly(104)
   let n = 0, i = w.length - 1
   if (w[i].n) n++
   for (i--; i >= 0 && w[i].n; i--) n++
   return n
 }
+
+export const prEvents = memo(prEvents_)
+export const prCount = memo(prCount_)
+export const strength = memo(strength_)
+export const planSummary = memo(planSummary_)
+export const recentPRs = memo(recentPRs_)
+export const weekly = memo(weekly_)
+export const strengthTrend = memo(strengthTrend_)
+export const overview = memo(overview_)
+export const muscleSets = memo(muscleSets_)
+export const muscleWeek = memo(muscleWeek_)
+export const weekStreak = memo(weekStreak_)

@@ -1,5 +1,5 @@
 import { prefs } from './prefs'
-import { reactive, watch, computed } from 'vue'
+import { reactive, watch, computed, ref } from 'vue'
 import { get, set, keys, getMany, setMany, delMany } from './db'
 import { MUSCLES } from './muscles'
 import { PLAN, exOf, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, stampIds, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
@@ -64,43 +64,57 @@ export async function load() {
   ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0)))
   closeStale()
   state.ready = true
-  saveNow() // persist what closeStale / migration changed during loading
+  dataRev.value++
+  saveNow(true) // persist what closeStale / migration changed during loading
   if (navigator.storage?.persist) navigator.storage.persist().catch(() => {})
 }
 
 // Auto-save: every change is written to the phone right away (no delay), so swiping the app away
 // a moment after a tap loses nothing. Changes made in the same tick are written once.
 let queued = false
+// bumped when finished workouts change (not on every tap of an open workout): statistics are cached per value
+export const dataRev = ref(0)
+// bumped on every write (any workout or deletion changed) – the cloud backup listens to this instead of a deep watch
+export const changes = ref(0)
 const saved = new Map() // id → JSON last written, so only workouts that really changed are written
+const seen = new Map() // id → `updated|finished` at the last write: finished workouts that didn't change are not even serialized
 let savedDeleted = ''
-function saveNow() {
+// full = compare every workout (load, leaving the app); otherwise finished workouts are compared only when `updated` moved
+function saveNow(full = false) {
   if (state.loadError || !state.ready) return Promise.resolve()
   const put = [], gone = []
   for (const [id, s] of Object.entries(state.sessions)) {
+    const mark = s.updated + '|' + !!s.finished
+    if (!full && s.finished && seen.get(id) === mark && saved.has(id)) continue
     stampIds(s)
     const json = JSON.stringify(s)
+    seen.set(id, mark)
     if (saved.get(id) !== json) { put.push([SKEY(id), JSON.parse(json)]); saved.set(id, json) }
   }
-  for (const id of [...saved.keys()]) if (!state.sessions[id]) { gone.push(SKEY(id)); saved.delete(id) }
+  for (const id of [...saved.keys()]) if (!state.sessions[id]) { gone.push(SKEY(id)); saved.delete(id); seen.delete(id) }
   const del = JSON.stringify(state.deleted), jobs = []
+  if (put.length || gone.length || del !== savedDeleted) changes.value++
+  if (gone.length || del !== savedDeleted || put.some(([k]) => { const x = state.sessions[k.slice(2)]; return x?.finished || x?.offApp })) dataRev.value++
   if (put.length) jobs.push(setMany(put))
   if (gone.length) jobs.push(delMany(gone))
   if (del !== savedDeleted) { savedDeleted = del; jobs.push(set('deleted', JSON.parse(del))) }
-  return Promise.all(jobs).catch(e => { console.warn(e); saved.clear(); savedDeleted = '' }) // failed: write everything next time
+  return Promise.all(jobs).catch(e => { console.warn(e); saved.clear(); seen.clear(); savedDeleted = '' }) // failed: write everything next time
 }
 // remove a workout and remember that it was deleted (see state.deleted)
 function forget(id) { delete state.sessions[id]; state.deleted[id] = Date.now() }
-watch(() => [state.sessions, state.deleted], () => {
+// what can change: deletions, the list of workouts, everything inside open workouts, and `updated` of finished ones
+// (edits always move it) – watching every set of every old workout made each tap slower as the history grew
+watch(() => { const out = [state.deleted]; for (const s of Object.values(state.sessions)) out.push(s?.finished ? s.updated : s); return out }, () => {
   if (!state.ready || queued) return
   queued = true
   queueMicrotask(() => { queued = false; saveNow() })
 }, { deep: true, flush: 'sync' })
 // leaving the app: write once more, just in case
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'hidden' && state.ready) saveNow()
+  if (document.visibilityState === 'hidden' && state.ready) saveNow(true)
   if (document.visibilityState === 'visible' && state.ready) closeStale()
 })
-window.addEventListener('pagehide', () => { if (state.ready) saveNow() })
+window.addEventListener('pagehide', () => { if (state.ready) saveNow(true) })
 
 // newest first; cached (recomputed only when a workout is added/removed or its date changes) – a copy, so callers may reverse it
 const sortedC = computed(() => Object.values(state.sessions).sort((a, b) => b.date.localeCompare(a.date) || (b.started || 0) - (a.started || 0)))

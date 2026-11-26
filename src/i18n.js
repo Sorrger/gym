@@ -4,23 +4,29 @@
 // Code that puts text where the page can't see it (toasts, back-button labels, canvas) calls t() itself.
 // Data never changes: exercise and plan names stay Polish in storage (they are history keys) – only their display.
 // Another language = one more dictionary file like i18n-en.js, added to LANGS below.
-import * as en from './i18n-en'
-
-/** code → name shown in the picker, date/number locale, dictionary (null = Polish source) */
+/** code → name shown in the picker, date/number locale, dictionary loader (none = Polish source).
+ *  Dictionaries are separate files loaded only for that language, so Polish phones never download them. */
+/** @type {Record<string, { name: string, locale: string, load?: () => Promise<any>, dict?: any }>} */
 export const LANGS = {
-  pl: { name: 'Polski', locale: 'pl-PL', dict: null },
-  en: { name: 'English', locale: 'en-GB', dict: en },
+  pl: { name: 'Polski', locale: 'pl-PL' },
+  en: { name: 'English', locale: 'en-GB', load: () => import('./i18n-en') },
 }
 const read = () => { try { return localStorage.getItem('lang') } catch { return null } }
 export let lang = LANGS[read()] ? read() : 'pl'
 export const hasChosenLang = () => !!read()
 export const LOC = () => LANGS[lang].locale
-let DICT = LANGS[lang].dict
+let DICT = null
 export function setLang(l, reload = true) {
   try { localStorage.setItem('lang', l) } catch {}
   if (l !== lang && reload) location.reload()
   lang = l
   DICT = LANGS[l]?.dict || null; RX = build(); cache.clear()
+}
+/** loads the dictionary of a language (default: the current one); awaited before the app mounts */
+export async function loadLang(l = lang) {
+  const L = LANGS[l]
+  if (L?.load && !L.dict) L.dict = await L.load()
+  if (l === lang) { DICT = L?.dict || null; RX = build(); cache.clear() }
 }
 
 const build = () => (DICT?.PATTERNS || []).map(([src, out]) => [new RegExp('^' + src + '$'), out])
