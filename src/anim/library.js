@@ -121,7 +121,7 @@ const LIB = {
   pullover: sel => { const b = lie({}); return { frames: [{ ...b, a1: -88, a2: -88 }, { ...b, a1: -168, a2: -165 }], props: [FLAT_BENCH], gear: sel.eq === 'cb' || sel.eq === 'mc' ? [{ k: 'cable', from: { x: -110, y: -60 } }, { k: 'handle' }] : held(sel.eq), lab: ['Opuść', 'Przenieś'] } },
   'landmine-press': sel => {
     const b = sel.pos === 'kneel' ? { hx: 0, hy: -76, t: -86, l1: 90, l2: 180, fo: 180 } : st({ t: -80, fx: 30, gx: -40, gy: -7 })
-    return { frames: [{ ...hand(b, 16, 4), ab: 1 }, hand(b, 72, -54)], gear: [{ k: 'pole', from: { x: 250, y: -4 }, over: 6 }], props: [{ k: 'line', x1: 240, y1: -2, x2: 262, y2: -2, w: 8 }], lab: ['Wypchnij', 'Opuść'] }
+    return { frames: [{ ...hand(b, 16, 4), ab: 1 }, { ...hand(b, 72, -54), ab: 1 }], gear: [{ k: 'pole', from: { x: 250, y: -4 }, over: 6 }], props: [{ k: 'line', x1: 240, y1: -2, x2: 262, y2: -2, w: 8 }], lab: ['Wypchnij', 'Opuść'] }
   },
   'floor-press': sel => {
     const b = { hx: 40, hy: -13, t: 180, fx: 100, fy: -7 }
@@ -597,13 +597,15 @@ const LIB = {
       return [st1, sw1, st2, sw2, st1]
     }
     if (pull) return { frames: gait({ hx: 0, hy: -132, t: -100, a1: 30, a2: 30 }, -36, 26), props: [{ k: 'box', x: 210, w: 60, h: 34 }], gear: [{ k: 'cable', from: { x: 180, y: -30 } }], ph: [[1600, 'Krok', 0, 1]] }
-    return { frames: gait({ hx: 0, hy: -118, t: -40, ax: 108, ay: -150, ab: -1 }, 34, -72), props: [{ k: 'post', x: 112, y2: -150, w: 6 }, { k: 'box', x: 140, w: 70, h: 30 }], ph: [[1600, 'Pchnij', 0, 1]] }
+    return { frames: gait({ hx: 0, hy: -118, t: -38, ax: 146, ay: -150, ab: 1 }, 34, -72), props: [{ k: 'post', x: 150, y2: -158, w: 6 }, { k: 'box', x: 178, w: 70, h: 30 }], ph: [[1600, 'Pchnij', 0, 1]] }
   },
   burpee: () => {
-    const stand = st({}), squat = { hx: -20, hy: -60, t: -40, fx: 10, ax: 60, ay: -4, ab: -1 }
-    const plank = board(-122, -7, -23, { ax: shoulderX(-122, -23), ay: -4, ab: -1, lb: 1 })
+    // hands planted in front, feet jump back to a plank (legs fly back, not a kneel), back in, jump with the arms up
+    const plank = board(-122, -7, -23, { ax: shoulderX(-122, -23), ay: -4, ab: -1 }), hx = plank.ax
+    const stand = st({}), squat = { hx: -20, hy: -60, t: -20, fx: 10, fy: -7, ax: hx, ay: -4, ab: -1 }
+    const kick = { hx: -10, hy: -100, t: -38, fx: -118, fy: -30, ax: hx, ay: -4, ab: -1 }
     const jump = st({ hy: -184, fy: -46, fo: 30, a1: -90, a2: -90 })
-    return { frames: [stand, squat, plank, squat, jump, stand], ph: seq(['Przysiad', 'Wyskok nogami w tył', 'Nogi do rąk', 'Wyskocz', 'Wyląduj'], 600) }
+    return { frames: [stand, squat, kick, plank, kick, squat, jump, stand], ph: [[600, 'Przysiad', 0, 1 / 7], [700, 'Wyskok nogami w tył', 1 / 7, 3 / 7], [700, 'Nogi do rąk', 3 / 7, 5 / 7], [500, 'Wyskocz', 5 / 7, 6 / 7], [500, 'Wyląduj', 6 / 7, 1]] }
   },
   'battle-ropes': () => {
     // athletic half squat facing the anchor, arms whip up and down in turn; each rope makes its own wave
