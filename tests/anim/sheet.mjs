@@ -20,7 +20,7 @@ function svg(sc, k) {
 }
 const cells = []
 for (const b of BASES) {
-  if (only && (only.startsWith('=') ? b.id !== only.slice(1) : !b.id.includes(only))) continue
+  if (only && (only.includes(',') ? !only.split(',').includes(b.id) : only.startsWith('=') ? b.id !== only.slice(1) : !b.id.includes(only))) continue
   if (process.env.EQ) { // every position / variant of the bases that take one of these kinds of equipment
     const seen = new Set()
     for (const eq of process.env.EQ.split(',')) if ((b.o.eq || []).includes(eq)) for (const ax of ['', 'pos', 'v', 'angle']) for (const val of ax ? (ax === 'v' ? (b.v || []).map(x => x[0]) : b.o[ax] || []) : ['']) {

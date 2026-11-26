@@ -1,5 +1,5 @@
 // Fourth set: notes per exercise, exercises added during a workout, supersets, plates on the bar.
-const { store, plan, stats, muscles, prefsM, idb, measuresM, schema, units, coach, weight } = await import('./b.mjs')
+const { store, plan, stats, muscles, prefsM, idb, measuresM, schema, units, coach, weight, catalog, scenes, rig } = await import('./b.mjs')
 const { state } = store
 let fails = 0, n = 0
 const ok = (c, m, extra) => { n++; if (!c) { fails++; console.log('FAIL', m, extra ?? '') } else console.log('ok  ', m) }
@@ -176,6 +176,27 @@ ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,1
   add(day(-1, 0)); add(day(-1, 2)); add(day(-2, 1)); add(day(-3, 0)); add(day(-3, 3))
   ok(stats.weekStreak(1) === 3 && stats.weekStreak(2) === 1 && stats.weekStreak(3) === 0, 'streak: weeks count only with enough trainings', [stats.weekStreak(1), stats.weekStreak(2), stats.weekStreak(3)])
   for (const k of Object.keys(state.sessions)) delete state.sessions[k]
+}
+
+// anatomy of every animation (side view): knees never bend the wrong way, elbows never fold past 158°, and an
+// elbow bends the wrong way only where the shoulder is rotated (bar on the back, hands behind the head, elbows out)
+{
+  const ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI, norm = a => ((a + 540) % 360) - 180
+  const ROTATED = new Set(['squat', 'split-squat', 'lunge', 'calf-raise', 'good-morning', 'crunch', 'sit-up', 'goblet-squat', 'face-pull', 'upright-row', 'cuban-press', 'pendulum', 'snatch', 'kb-swing', 'kb-snatch', 'reverse-hyper'])
+  const bad = []
+  for (const b of catalog.BASES) for (const eq of b.o.eq || ['']) for (const ax of ['', 'pos', 'v']) for (const val of ax ? (ax === 'v' ? (b.v || []).map(x => x[0]) : b.o[ax] || []) : ['']) {
+    const sel = catalog.fullSel(b, { ...catalog.fullSel(b, eq ? { eq } : {}), ...(ax ? { [ax]: val } : {}) })
+    const sc = scenes.sceneFor(b.id, sel, catalog.compose(b, sel)); if (!sc || sc.view === 'f' || sc.top) continue
+    for (let i = 0; i <= 40; i++) {
+      const J = rig.joints(rig.poseAt(sc.frames, i / 40), sc.view)
+      for (const [r, m, e, knee] of [[J.S, J.E, J.W, 0], [J.H, J.K, J.A, 1], [J.H, J.K2, J.A2, 1]]) {
+        if (!m || !e || Math.hypot(e.x - m.x, e.y - m.y) < 5) continue
+        const rel = norm(ang(m, e) - ang(r, m)), flex = knee ? rel : -rel
+        if (flex > 159 || (flex < -8 && (knee || !ROTATED.has(b.id)))) bad.push(b.id + (knee ? ' knee ' : ' elbow ') + Math.round(flex) + '° @' + i)
+      }
+    }
+  }
+  ok(!bad.length, 'anim: no hyperextended or over-folded elbows / knees', [...new Set(bad.map(x => x.split(' @')[0]))].slice(0, 12))
 }
 
 globalThis.T4 = { n, fails }

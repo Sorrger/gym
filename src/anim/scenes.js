@@ -21,7 +21,7 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   if (baseId === 'bench-press' && (sel.eq === 'bb' || sel.eq === 'sm') && sel.angle === 'flat' && sel.width !== 'close') scene.cues = BENCH_CUES
   scene.box = frameBox(scene)
   // hands meant to press on the floor never float: slide an unreachable floor target towards the shoulder
-  const ARM = FIG.upperArm + FIG.foreArm - 1
+  const ARM = FIG.upperArm + FIG.foreArm - 0.4
   scene.frames = scene.frames.map(f => {
     if (f.hold || f.hp || f.af) return f
     const J = joints(f, scene.view); let g = f

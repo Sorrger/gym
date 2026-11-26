@@ -12,10 +12,13 @@ export const at = (p, deg, len) => ({ x: p.x + Math.cos(deg * R) * len, y: p.y +
 export const ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x) / R
 const add = (p, v, k = 1) => ({ x: p.x + v.x * k, y: p.y + v.y * k })
 
+// an elbow / knee folds at most to ~158° (forearm and upper arm, shin and thigh can't pass through each other)
+const FOLD = 158
 function chain(root, l1, l2, a1, a2, tx, ty, bend) {
   if (tx != null && ty != null) {
     const dx = tx - root.x, dy = ty - root.y, full = Math.hypot(dx, dy) || 1e-6
-    const d = Math.max(Math.abs(l1 - l2) + 0.5, Math.min(full, l1 + l2 - 0.3))
+    const dMin = Math.sqrt(l1 * l1 + l2 * l2 - 2 * l1 * l2 * Math.cos((180 - FOLD) * R))
+    const d = Math.max(dMin, Math.min(full, l1 + l2 - 0.3))
     const a = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))) / R
     const mid = at(root, Math.atan2(dy, dx) / R + a * Math.max(-1, Math.min(1, bend)), l1) // fractional bend = elbow passing through the line
     const T = { x: root.x + dx * d / full, y: root.y + dy * d / full }
@@ -23,8 +26,11 @@ function chain(root, l1, l2, a1, a2, tx, ty, bend) {
     return { mid, end: Math.abs(bend) < 1 ? T : at(mid, ang(mid, T), l2) }
   }
   const mid = at(root, a1, l1)
-  return { mid, end: at(mid, a2, l2) }
+  const rel = ((a2 - a1 + 540) % 360) - 180
+  return { mid, end: at(mid, Math.abs(rel) > FOLD ? a1 + Math.sign(rel) * FOLD : a2, l2) }
 }
+// the anatomical bend side; a fractional value (a limb passing through straight while blending) keeps its size
+const anat = (b, side) => (b == null ? side : side * Math.abs(b))
 const mirrorAng = (a, t) => 2 * t - a
 function mirrorPt(p, H, t) { // reflect across the torso line through H
   const d = { x: Math.cos(t * R), y: Math.sin(t * R) }, v = { x: p.x - H.x, y: p.y - H.y }, k = v.x * d.x + v.y * d.y
@@ -46,14 +52,18 @@ export function joints(p, view) {
   const a1 = p.ra1 != null ? t + p.ra1 : p.a1, a2 = p.ra2 != null ? t + p.ra2 : p.a2
   const tgt = P || (p.ax != null ? { x: p.ax, y: p.ay } : null)
   const UA = FIG.upperArm * (p.af ?? 1), FA = FIG.foreArm * (p.ff ?? p.af ?? 1), TH = FIG.thigh * (p.tf ?? 1), SH = FIG.shin * (p.sf ?? 1)
-  const arm = chain(SR, UA, FA, a1, a2, tgt?.x, tgt?.y, p.ab ?? 1)
+  // anatomy (side view): an elbow solved to a target only bends forward (+1), a knee only backward (−1) – the other
+  // solution is a hyperextension. Holds (bar on the back, hands behind the head…) and poses marked `eo` (elbow out to
+  // the side, where the side view can show it either way) keep the side the scene asked for.
+  const freeArm = front || P || p.eo
+  const arm = chain(SR, UA, FA, a1, a2, tgt?.x, tgt?.y, freeArm ? p.ab ?? 1 : anat(p.ab, 1))
   let far
-  if (p.b1 != null || p.rb1 != null || p.bx != null) far = chain(SL, UA, FA, p.rb1 != null ? t + p.rb1 : p.b1, p.rb2 != null ? t + p.rb2 : p.b2, p.bx, p.by, p.bb ?? p.ab ?? 1)
+  if (p.b1 != null || p.rb1 != null || p.bx != null) far = chain(SL, UA, FA, p.rb1 != null ? t + p.rb1 : p.b1, p.rb2 != null ? t + p.rb2 : p.b2, p.bx, p.by, front || p.eo ? p.bb ?? p.ab ?? 1 : anat(p.bb ?? p.ab, 1))
   else if (front) { const m = tgt && !P ? mirrorPt(tgt, H, t) : P; far = chain(SL, UA, FA, mirrorAng(a1, t), mirrorAng(a2, t), m?.x, m?.y, -(p.ab ?? 1)) }
   else far = arm
-  const leg = chain(HR, TH, SH, p.l1, p.l2, p.fx, p.fy, p.lb ?? -1)
+  const leg = chain(HR, TH, SH, p.l1, p.l2, p.fx, p.fy, front ? p.lb ?? -1 : anat(p.lb, -1))
   let leg2
-  if (p.m1 != null || p.gx != null) leg2 = chain(HL, TH, SH, p.m1, p.m2, p.gx, p.gy, p.gb ?? p.lb ?? -1)
+  if (p.m1 != null || p.gx != null) leg2 = chain(HL, TH, SH, p.m1, p.m2, p.gx, p.gy, front ? p.gb ?? p.lb ?? -1 : anat(p.gb ?? p.lb, -1))
   else if (front) { const m = p.fx != null ? mirrorPt({ x: p.fx, y: p.fy }, H, t) : null; leg2 = chain(HL, TH, SH, mirrorAng(p.l1, t), mirrorAng(p.l2, t), m?.x, m?.y, -(p.lb ?? -1)) }
   else leg2 = leg
   return { cu: p.cu || 0, H, S, C, P, SR, SL, HR, HL, E: arm.mid, W: arm.end, E2: far.mid, W2: far.end, K: leg.mid, A: leg.end, K2: leg2.mid, A2: leg2.end, d, L }
