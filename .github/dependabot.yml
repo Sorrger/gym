@@ -1,5 +1,5 @@
 # Weekly pull requests for outdated / vulnerable packages and GitHub Actions. CI (tests + e2e) runs on each one;
-# merge only when it is green.
+# merge only when it is green, then `npm run deploy` (the merge alone doesn't rebuild docs/).
 version: 2
 updates:
   - package-ecosystem: npm
@@ -9,6 +9,10 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # big version jumps change behaviour – done by hand in a session, with the full test run
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: monthly }
