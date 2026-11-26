@@ -4,8 +4,8 @@
     <button v-if="prefs.weightOn" class="card wcard press" @click="router.push('/weight')">
       <div class="wc-l">
         <small>Waga · średnia 7 dni</small>
-        <b class="num">{{ wNow == null ? 'Dodaj pomiar' : fmt(wNow) + ' kg' }}</b>
-        <span v-if="wTr != null" class="num" :class="weightTone(wTr)">{{ wTr > 0 ? '+' : '' }}{{ fmt(wTr, 2) }} kg / tydzień</span>
+        <b class="num">{{ wNow == null ? 'Dodaj pomiar' : fmt(wNow) + ' ' + wu() }}</b>
+        <span v-if="wTr != null" class="num" :class="weightTone(wTr)">{{ wTr > 0 ? '+' : '' }}{{ fmt(wTr, 2) }} {{ wu() }} / tydzień</span>
       </div>
       <svg v-if="wLine" class="wc-spark" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true"><path :d="wLine" /></svg>
       <ion-icon :icon="chevronForward" class="pc-chev" />
@@ -74,7 +74,8 @@ import { prefs, weightTone } from '../../prefs'
 import { state } from '../../store'
 import { muscleWeek, muscleSets, plansDone, planMuscleSets } from '../../stats'
 import { MUSCLE_NAMES } from '../../muscles'
-import { weights, smooth, trend as wTrendOf } from '../../weight'
+import { weightsU as weights, smooth, trend as wTrendOf } from '../../weight'
+import { wu } from '../../units'
 import { usePlans } from './plans'
 import { PARTS, byPart } from '../../measures'
 

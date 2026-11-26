@@ -1,3 +1,4 @@
+import { wu, stepU, uMax, uStep, fmtW } from './units.js'
 /** @type {Training[]} */
 export const PLAN = [
   { key: 'push', abbr: 'Pu', short: 'Pn', name: 'Push', note: 'Najpierw najcięższe wyciskanie. Rozpiętki z dołu do góry: wyciągi nisko, ręce łukiem do wysokości brody – góra klatki.', ex: [
@@ -100,7 +101,7 @@ export function ensurePlans(maxDay) { for (let i = PLAN.length; i <= maxDay; i++
 export const visiblePlans = () => PLAN.map((p, i) => i).filter(i => !PLAN[i].hidden)
 
 export const UNITS = {
-  kg: { step: 2.5, max: 300, frac: true, short: 'kg', best: 'Najcięższa seria (kg)' },
+  kg: { get step() { return uStep() }, get max() { return uMax() }, frac: true, get short() { return wu() }, get best() { return 'Najcięższa seria (' + wu() + ')' } },
   s: { step: 5, max: 300, frac: false, short: 's', best: 'Najdłuższe wiszenie (s)' },
   reps: { step: 1, max: 50, frac: false, short: 'powt.', best: 'Najwięcej powtórzeń' }
 }
@@ -122,7 +123,7 @@ export const INC = {
 // machines where the kg number is help (less = harder)
 export const ASSISTED = new Set(['Podciąganie nachwytem (wspomagane)', 'Nauka podciągania · Ze wspomaganiem'])
 export const isAssisted = g => ASSISTED.has(g.key) || ASSISTED.has(g.name) || ASSISTED.has(canon(g.key)) || ASSISTED.has(canon(g.name)) || /ze wspomaganiem/.test(g.key || '')
-export const incOf = (g, def = 2.5) => INC[g.key] || INC[g.name] || INC[canon(g.key)] || INC[canon(g.name)] || def
+export const incOf = (g, def = 2.5) => stepU(INC[g.key] || INC[g.name] || INC[canon(g.key)] || INC[canon(g.name)] || def)
 // what to do when a bodyweight/time exercise tops out
 export const HARDER = {
   'Unoszenie nóg w podporze na poręczach': 'proste nogi albo hantelek między stopami',
@@ -149,11 +150,12 @@ export function barOf(name, std = 20) {
   if (/łaman|\bez\b/.test(n)) return 10
   return /sztang|martwy ciąg|przysiad zerchera|hip thrust/.test(n) ? std : null
 }
-export function warmupSets(W, bar = 20, set = PLATES) {
+// all numbers in one unit (kg, or lb with rs = 5)
+export function warmupSets(W, bar = 20, set = PLATES, rs = 2.5) {
   if (!(W > bar)) return []
   const out = [{ w: bar, r: 10 }]
   for (const [p, r] of [[0.5, 8], [0.7, 5], [0.85, 2]]) {
-    const w = Math.round((W * p) / 2.5) * 2.5
+    const w = Math.round((W * p) / rs) * rs
     if (w > out[out.length - 1].w && w < W) out.push({ w, r })
   }
   return out.map(x => ({ ...x, plates: platesPerSide(x.w, bar, set) }))
@@ -205,7 +207,7 @@ export function setStageFn(f) { stageFn = f }
 export const currentStage = () => stageFn()
 
 export function fmtNum(v) { return v == null ? '–' : String(+(+v).toFixed(2)).replace('.', ',') }
-export function fmtVal(v, unit = 'kg') { return fmtNum(v) + ' ' + UNITS[unit].short }
+export function fmtVal(v, unit = 'kg') { return (unit === 'kg' ? fmtW(v) : fmtNum(v)) + ' ' + UNITS[unit].short }
 
 // An exercise may be made of parts with their own sets (e.g. Nauka podciągania = Wiszenie + Negatywy).
 // A plain exercise may name its unit instead of parts: [name, target, tag, 'reps'].

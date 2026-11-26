@@ -4,18 +4,21 @@ import { reactive, computed } from 'vue'
 import { get, set } from './db'
 import { canSync, readFile, writeFile, onConnected } from './sync'
 import { iso } from './store'
+import { toU, fromU, isLb } from './units'
 
 const FILE = 'gym-weights.json'
 export const wstate = reactive({ entries: {}, loaded: false, syncing: false, error: '' })
 
 export const weights = computed(() => Object.entries(wstate.entries)
   .filter(([, e]) => e && !e.del && e.kg > 0).map(([date, e]) => ({ date, kg: e.kg })).sort((a, b) => a.date.localeCompare(b.date)))
+// the same list in the shown unit (`kg` then holds lb when the user picked lb) – screens use this one
+export const weightsU = computed(() => weights.value.map(p => ({ date: p.date, kg: toU(p.kg) })))
 
 const save = () => set('weights', JSON.parse(JSON.stringify(wstate.entries))).catch(e => (wstate.error = e.message))
 let pushT = 0
 function schedulePush() { clearTimeout(pushT); pushT = setTimeout(push, 3000) }
 
-export function setWeight(date, kg) { wstate.entries[date] = { kg: Math.round(kg * 10) / 10, t: Date.now() }; save(); schedulePush() }
+export function setWeight(date, kg) { wstate.entries[date] = { kg: Math.round(kg * 100) / 100, t: Date.now() }; save(); schedulePush() }
 export function delWeight(date) { wstate.entries[date] = { del: true, t: Date.now() }; save(); schedulePush() }
 
 // "29.10 108; 31.10 108,0; 2.11 105.8" or one per line; year = this year (or last year if the date would be in the future)
@@ -27,8 +30,8 @@ export function parseList(text) {
     if (y < 100) y += 2000
     let d = new Date(y, +m[2] - 1, +m[1])
     if (!m[3] && d > now) d = new Date(y - 1, +m[2] - 1, +m[1])
-    const kg = +m[4].replace(',', '.')
-    if (kg >= 30 && kg <= 300 && !isNaN(d.getTime())) out.push({ date: iso(d), kg })
+    const v = +m[4].replace(',', '.'), lo = isLb() ? 66 : 30, hi = isLb() ? 660 : 300 // typed in the shown unit
+    if (v >= lo && v <= hi && !isNaN(d.getTime())) out.push({ date: iso(d), kg: fromU(v) })
   }
   return out
 }

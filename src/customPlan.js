@@ -27,7 +27,7 @@ export async function initPlan() {
 
 // save (null = default plan), push to the backup, then reload into the new plan
 export async function savePlan(c, go) {
-  const data = c ? { ...c, t: Date.now() } : { t: Date.now(), days: null }
+  const data = c ? { ...c, v: 2, t: Date.now() } : { v: 2, t: Date.now(), days: null }
   await set('plan', JSON.parse(JSON.stringify(data)))
   try { if (canSync()) await writeFile(FILE, data) } catch {}
   if (go) history.replaceState(history.state, '', go) // no hashchange: the router must not start navigating right before the reload

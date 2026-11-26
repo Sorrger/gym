@@ -1,6 +1,7 @@
 // What to train and when: today's suggestion, trainings marked as done outside the app, workouts added afterwards
 import { PLAN, entriesOf, WEEKDAY_TO_DAY, visiblePlans } from './plan'
 import { state, sorted, iso, hasData, prefill, saveNow, forget } from './store'
+import { newId, V } from './schema'
 
 export function lastDoneOf(day) { return sorted().find(s => s.day === day && hasData(s)) || null }
 // which plan to do now, from the plan's weekdays (week = Mon–Sun):
@@ -49,7 +50,7 @@ export function markDoneOff(day, date = null, now = new Date()) {
 // Opens in edit mode; the user ticks what was done. Left without any ticked set → removed (dropEmptyManual).
 export function addPastSession(day, date) {
   const now = Date.now(), started = new Date(date + 'T18:00:00').getTime()
-  const s = { id: now.toString(36), date, day, plan: PLAN[day]?.key, ex: {}, started, finished: true, updated: now, manual: true }
+  const s = { id: newId(now), v: V.session, date, day, plan: PLAN[day]?.key, ex: {}, started, finished: true, updated: now, manual: true }
   entriesOf(day).forEach(g => { s.ex[g.key] = prefill(g, g.sets || 1, false) })
   state.sessions[s.id] = s
   saveNow()

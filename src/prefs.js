@@ -1,6 +1,7 @@
 // Per-account training preferences (Profil → Ustawienia → Trening / Waga). Defaults = how the app always worked.
 // Stored with the account (account.js: IndexedDB `profile.prefs`, synced in gym-profile.json, newer `updated` wins).
 import { reactive } from 'vue'
+import { bindPrefs } from './units.js'
 export const DEFAULT_PREFS = {
   coach: 'set',     // weight/rep suggestions: 'set' (filled in quietly + chip) | 'auto' (pop up when an exercise opens + chip) | 'chip' (only the chip) | 'off'
   live: true,       // advice under a set that was clearly too heavy / too light
@@ -9,9 +10,13 @@ export const DEFAULT_PREFS = {
   plates: false,    // plates per side under barbell sets
   plateSet: [25, 20, 15, 10, 5, 2.5, 1.25], // plates the gym has (kg)
   barKg: 20,        // the gym's standard barbell
+  units: 'kg',      // shown weight unit: 'kg' | 'lb' (always stored in kg)
+  plateSetLb: [45, 35, 25, 10, 5, 2.5], // plates the gym has (lb), used when units = 'lb'
+  barLb: 45,        // standard barbell in lb
   autoNext: true,   // jump to the next exercise when one is done
   deload: true,     // automatic lighter week
   deloadEvery: 6,   // … every n weeks of training
+  streakWeek: 1,    // trainings a week needed to keep the streak; 0 = every training of the plan
   goal: 'cut',      // body weight goal: 'cut' | 'maintain' | 'bulk'
   // progression rules (Ustawienia → Progresja)
   rirUp: 3,         // every set with at least this many reps in reserve → too light, add weight now (also the top "Zapas" chip, "3+")
@@ -29,6 +34,7 @@ export const DEFAULT_PREFS = {
   setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }
 export const prefs = reactive({ ...DEFAULT_PREFS })
+bindPrefs(prefs)
 export const setPrefsLocal = p => Object.assign(prefs, JSON.parse(JSON.stringify(DEFAULT_PREFS)), p || {}, p && !p.quietCoach && p.coach === 'auto' ? { coach: 'set' } : {})
 export const prefsData = () => JSON.parse(JSON.stringify(prefs)) // plain copy: IndexedDB can't store reactive arrays
 // colour class for a weight change per week: 'dn' = good for the goal (green), 'upw' = against it (red)

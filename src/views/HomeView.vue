@@ -48,10 +48,10 @@
 
         <!-- quick numbers: streak, body weight, all trainings -->
         <div class="stats home-stats">
-          <div><span><Ico name="flame" /> Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b></div>
+          <div class="press s-tile" @click="pickStreak" aria-label="Ile treningów w tygodniu liczy się do serii"><span><Ico name="flame" /> Seria</span><b class="num">{{ streak }}<small>{{ streak === 1 ? 'tydz.' : 'tyg.' }}</small></b><em class="num">{{ streakNeed === 1 ? 'min. 1 trening/tydz.' : 'min. ' + streakNeed + (streakNeed < 5 ? ' treningi/tydz.' : ' treningów/tydz.') }}</em></div>
           <div v-if="prefs.weightOn" class="press w-tile" @click="quickWeight" aria-label="Zapisz dzisiejszą wagę"><span><Ico name="scale" /> Waga<i class="w-plus" :class="{ done: weighedToday }">{{ weighedToday ? '✓' : '+' }}</i></span>
-            <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>kg</small></b><b v-else class="add">Dodaj</b>
-            <em v-if="wTrend != null" class="num" :class="weightTone(wTrend)">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} kg/tydz.</em></div>
+            <b v-if="wNow" class="num">{{ fmt(wNow) }}<small>{{ wu() }}</small></b><b v-else class="add">Dodaj</b>
+            <em v-if="wTrend != null" class="num" :class="weightTone(wTrend)">{{ wTrend > 0 ? '+' : '' }}{{ fmt(wTrend, 2) }} {{ wu() }}/tydz.</em></div>
           <div v-else class="press" @click="router.push('/tabs/progress')"><span><Ico name="trophy" /> Rekordy</span><b class="num">{{ prTotal }}</b><em class="num">od startu</em></div>
           <div><span><Ico name="dumbbell" /> Treningi</span><b class="num">{{ totalDone }}</b><em class="num">{{ monthDone }} w tym mies.</em></div>
         </div>
@@ -88,10 +88,12 @@ import BodyMap from './BodyMap.vue'
 import { dayMuscles, MUSCLE_NAMES } from '../muscles'
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter, onIonViewWillEnter } from '@ionic/vue'
-import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown } from 'ionicons/icons'
-import { PLAN, COLORS, groupsOf, entriesOf } from '../plan'
+import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDown, flame } from 'ionicons/icons'
+import { PLAN, COLORS, groupsOf, entriesOf, visiblePlans } from '../plan'
+import { setPref } from '../account'
 import { cloud } from '../cloud'
-import { weights, smooth, trend } from '../weight'
+import { weights, weightsU, smooth, trend } from '../weight'
+import { wu } from '../units'
 import { askWeight } from '../weightQuick'
 import { weekStreak, overview, volumeOf, fmtTon } from '../stats'
 import { sessionRecords } from './workout/records'
@@ -124,13 +126,24 @@ async function dayTap(d) {
     buttons: [...d.offs.map(s => ({ text: 'Usuń: ' + PLAN[s.day].name, role: s.id, kind: 'danger' })), { text: 'Zostaw', role: 'cancel', kind: 'plain' }] })
   if (role !== 'cancel' && state.sessions[role]?.offApp) remove(role)
 }
-const streak = computed(() => { void state.sessions; return weekStreak() })
+// streak: how many trainings a week count (1 … the plan's count); 0 = the whole plan
+const streakNeed = computed(() => (prefs.streakWeek ? prefs.streakWeek : visiblePlans().length) || 1)
+const streak = computed(() => { void state.sessions; return weekStreak(streakNeed.value) })
+async function pickStreak() {
+  const n = Math.max(1, visiblePlans().length), opts = []
+  for (let k = 1; k <= Math.min(7, Math.max(n, 4)); k++) opts.push({ value: k === n ? 0 : k, label: String(k), sub: k === n ? 'cały plan' : '' })
+  if (n > 7) opts.push({ value: 0, label: String(n), sub: 'cały plan' })
+  const r = await ask({ icon: flame, title: 'Seria tygodni', message: 'Ile treningów w tygodniu ma się liczyć, żeby seria trwała dalej?',
+    choices: [{ key: 'n', label: 'Treningów w tygodniu', value: prefs.streakWeek === n ? 0 : prefs.streakWeek, options: opts }],
+    buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (r.role === 'ok' && r.picks) setPref('streakWeek', r.picks.n)
+}
 // the last finished workout: a quick look back + a way into its details
 const last = computed(() => { void state.sessions; return doneSessions().find(s => s.finished) || null })
 const lastPRs = computed(() => (last.value ? sessionRecords(last.value, entriesOf(last.value.day, last.value)).filter(r => r.pr).length : 0))
 const prTotal = computed(() => { void state.sessions; return overview(null).prs })
-const wNow = computed(() => { const l = weights.value; return l.length ? smooth(l).at(-1).avg : null })
-const wTrend = computed(() => trend(weights.value))
+const wNow = computed(() => { const l = weightsU.value; return l.length ? smooth(l).at(-1).avg : null })
+const wTrend = computed(() => trend(weightsU.value))
 // weight in one tap from Start: dialog right here (details → the Weight page)
 const weighedToday = computed(() => weights.value.some(p => p.date === iso(new Date())))
 async function quickWeight() {

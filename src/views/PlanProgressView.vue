@@ -38,7 +38,7 @@
             <div class="rc-main">
               <span class="rc-name"><small v-if="t.label || t.alt" class="rc-parent">{{ t.alt ? 'Zamiennik' : t.name }}</small>{{ t.label || t.name }}</span>
               <div class="rc-val num" v-if="t.pts.length">
-                <b>{{ fmtNum(t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
+                <b>{{ fmtNum(t.unit === 'kg' ? toU(t.last) : t.last) }}</b><small>{{ UNITS[t.unit].short }}<template v-if="t.lastR"> × {{ t.lastR }}</template></small>
                 <span v-if="t.pr" class="pr" title="Nowy rekord"><Ico name="trophy" /></span>
               </div>
               <div class="rc-val none" v-else>Jeszcze nie było</div>
@@ -49,7 +49,7 @@
             </div>
             <div class="rc-side">
               <span class="delta num" v-if="t.pts.length > 1" :class="t.diff > 0 ? 'up' : t.diff < 0 ? 'down' : 'flat'">
-                {{ t.diff > 0 ? '+' : t.diff < 0 ? '−' : '±' }}{{ fmtNum(Math.abs(t.diff)) }}
+                {{ t.diff > 0 ? '+' : t.diff < 0 ? '−' : '±' }}{{ fmtNum(Math.abs(t.unit === 'kg' ? toU(t.diff) : t.diff)) }}
               </span>
               <svg class="spark" viewBox="0 0 100 32" preserveAspectRatio="none" v-if="t.pts.length > 1" aria-hidden="true">
                 <path :d="t.area" class="area" /><path :d="t.line" class="line" />
@@ -72,6 +72,7 @@ import { computed } from 'vue'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonIcon, IonButtons, IonBackButton, useIonRouter } from '@ionic/vue'
 import { chevronForward } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, isAssisted, entriesOf, fmtNum, fmtVal } from '../plan'
+import { toU } from '../units'
 import { useRoute } from 'vue-router'
 import { state, series, fmtShort, ago } from '../store'
 import { planSummary } from '../stats'

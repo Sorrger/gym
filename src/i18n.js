@@ -3,6 +3,7 @@
 // Vue writes text nodes without reading them back, so changing them is safe. Switching language reloads the app.
 // Code that puts text where the page can't see it (toasts, back-button labels, canvas) calls t() itself.
 // Data never changes: exercise and plan names stay Polish in storage (they are history keys) – only their display.
+import { wu } from './units'
 // Another language = one more dictionary file like i18n-en.js, added to LANGS below.
 /** code → name shown in the picker, date/number locale, dictionary loader (none = Polish source).
  *  Dictionaries are separate files loaded only for that language, so Polish phones never download them. */
@@ -49,7 +50,7 @@ export function tr(s) {
       }
     }
     if (out === undefined) out = core
-    out = fixNum(out)
+    out = fixNum(out.replace(/%U/g, wu()))
     cache.set(core, out)
   }
   return m[1] + out + m[3]

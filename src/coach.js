@@ -5,9 +5,10 @@
 // Optional reps in reserve per set (x.q: 0, 1, 2, 3 = "3+") refine it:
 // • every set with prefs.rirUp+ left → too light: add weight now, even below the top of the range
 // • per set: 0 left → same reps next time, 1-2 left → +1, 3+ left → +2 (unknown → +1)
-import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, fmtNum, isAssisted, incOf, DEF_REPS, canon } from './plan'
+import { UNITS, HARDER, PULLUP, PULLUP_STAGES, rangeOf, isAssisted, incOf, DEF_REPS, canon } from './plan'
 import { sorted, deloadKg, deloadSets } from './store'
 import { prefs, rirLabel, deloadWords } from './prefs'
+import { fmtWU } from './units'
 
 const roundTo = (v, st) => Math.round(v / st) * st
 const gain = q => (q == null ? prefs.repsGain : q >= prefs.rirUp ? prefs.repsGain + 1 : q >= 1 ? prefs.repsGain : 0)
@@ -70,20 +71,20 @@ export function suggest(g, session) {
   const work = last.filter(x => x.w === W)
   // workouts saved before reps were tracked have no reps: don't guess (it could wrongly say "go lighter")
   if (work.every(x => x.r == null)) {
-    return { kind: 'same', title: 'Licz powtórzenia', short: `${fmtNum(W)} kg × ${lo}-${hi}`,
-      text: `Ostatnio ${fmtNum(W)} kg (bez zapisanych powtórzeń). Zostań na tym ciężarze i wpisz, ile powtórzeń zrobisz – od następnego razu podpowiem, kiedy dodać.`,
+    return { kind: 'same', title: 'Licz powtórzenia', short: `${fmtWU(W)} × ${lo}-${hi}`,
+      text: `Ostatnio ${fmtWU(W)} (bez zapisanych powtórzeń). Zostań na tym ciężarze i wpisz, ile powtórzeń zrobisz – od następnego razu podpowiem, kiedy dodać.`,
       sets: Array.from({ length: n }, () => ({ w: W, r: lo })) }
   }
   const reps = work.map(x => x.r ?? lo)
-  const lastTxt = `${fmtNum(W)} kg: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}${qTxt(work)}`
+  const lastTxt = `${fmtWU(W)}: ${reps.join(', ')} ${repsWord(reps[reps.length - 1])}${qTxt(work)}`
   const easy = work.length >= n && work.every(x => x.q != null && x.q >= prefs.rirUp && (x.r ?? 0) >= lo) // rirUp+ left in every set, at least the bottom of the range
   const top = work.length >= n && (reps.every(r => r >= hi) || easy)
   if (top) {
     // way above the range (every set 3+ reps over the top) → a double step, otherwise one step
     const step = reps.every(r => r >= hi + 3) ? 2 * inc : inc
     const w = Math.max(0, W + (assist ? -step : step))
-    return { kind: 'up', title: assist ? 'Mniej wspomagania' : 'Dodaj ciężar', short: `${fmtNum(w)} kg × ${lo}`,
-      text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? `za lekko, w każdej serii zostało ${prefs.rirUp}+ powtórzeń` : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtNum(w)} kg i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
+    return { kind: 'up', title: assist ? 'Mniej wspomagania' : 'Dodaj ciężar', short: `${fmtWU(w)} × ${lo}`,
+      text: `Ostatnio ${lastTxt} – ${!reps.every(r => r >= hi) ? `za lekko, w każdej serii zostało ${prefs.rirUp}+ powtórzeń` : `wszystkie serie na górze zakresu (${lo}-${hi})`}. Dziś ${fmtWU(w)} i celuj w ${lo}, potem z treningu na trening dochodź do ${hi}.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
   // stuck: prefs.failN workouts in a row at this weight with a set under the bottom of the range AND no more total reps
@@ -94,8 +95,8 @@ export function suggest(g, session) {
     runs.every((a, k) => !k || sum(runs[k - 1].map(x => x.r).slice(0, a.length)) <= sum(a.map(x => x.r).slice(0, runs[k - 1].length)))
   if (failed) {
     const w = assist ? W + 2 * inc : Math.max(0, Math.min(W - inc, roundTo(W * (1 - prefs.dropPct / 100), inc)))
-    return { kind: 'down', title: 'Lżej, żeby ruszyć dalej', short: `${fmtNum(w)} kg × ${lo}`,
-      text: `${prefs.failN === 1 ? 'Trening' : prefs.failN + ' treningi z rzędu'} poniżej ${lo} powtórzeń na ${fmtNum(W)} kg. Zejdź na ${fmtNum(w)} kg, zrób ${lo}-${hi} czysto i buduj od nowa.`,
+    return { kind: 'down', title: 'Lżej, żeby ruszyć dalej', short: `${fmtWU(w)} × ${lo}`,
+      text: `${prefs.failN === 1 ? 'Trening' : prefs.failN + ' treningi z rzędu'} poniżej ${lo} powtórzeń na ${fmtWU(W)}. Zejdź na ${fmtWU(w)}, zrób ${lo}-${hi} czysto i buduj od nowa.`,
       sets: Array.from({ length: n }, () => ({ w, r: lo })) }
   }
   const target = Array.from({ length: n }, (_, i) => {
@@ -103,9 +104,9 @@ export function suggest(g, session) {
     return Math.min(hi, Math.max(lo, (x.r ?? lo) + gain(x.q)))
   })
   const left = hi * n - target.reduce((a, b) => a + b, 0)
-  return { kind: 'same', title: 'Ten sam ciężar, więcej powtórzeń', short: `${fmtNum(W)} kg × ${target.join(', ')}`,
-    text: `Ostatnio ${lastTxt}. Zostań na ${fmtNum(W)} kg i zrób ${target.join(', ')}. ` +
-      (left > 0 ? `Gdy zrobisz ${n} × ${hi}, dodasz ${fmtNum(inc)} kg.` : `Jak się uda, następnym razem ${assist ? 'mniej wspomagania' : 'więcej kilogramów'}.`),
+  return { kind: 'same', title: 'Ten sam ciężar, więcej powtórzeń', short: `${fmtWU(W)} × ${target.join(', ')}`,
+    text: `Ostatnio ${lastTxt}. Zostań na ${fmtWU(W)} i zrób ${target.join(', ')}. ` +
+      (left > 0 ? `Gdy zrobisz ${n} × ${hi}, dodasz ${fmtWU(inc)}.` : `Jak się uda, następnym razem ${assist ? 'mniej wspomagania' : 'więcej kilogramów'}.`),
     sets: target.map(r => ({ w: W, r })) }
 }
 
@@ -124,7 +125,7 @@ export function live(g, session) {
   const last = arr[li], range = rangeOf(g.target)
   if (!last || last.w == null || !rest.length || !range) return null
   const { lo, hi } = range, r = last.r ?? DEF_REPS, q = last.q, inc = incOf(g, prefs.stepKg), assist = isAssisted(g)
-  const kg = v => fmtNum(v) + ' kg'
+  const kg = v => fmtWU(v)
   if (r < lo && (q == null || q === 0)) {
     const w = assist ? last.w + inc : Math.max(0, Math.min(last.w - inc, roundTo(last.w * (1 - prefs.dropPct / 100), inc)))
     if (rest.every(x => x.w != null && (assist ? x.w >= w : x.w <= w))) return null
@@ -152,8 +153,8 @@ function deload(g, session, hist, { lo }) {
   }
   const assist = isAssisted(g)
   const W = assist ? Math.min(...last.map(x => x.w)) : Math.max(...last.map(x => x.w)), w = deloadKg(W, g)
-  return { kind: 'deload', title: 'Tydzień lżejszy', short: `${fmtNum(w)} kg × ${lo}`,
-    note, text: `Dziś ${n} × ${lo} na ${fmtNum(w)} kg (zwykle ${fmtNum(W)} kg).`, sets: Array.from({ length: n }, () => ({ w, r: lo })) }
+  return { kind: 'deload', title: 'Tydzień lżejszy', short: `${fmtWU(w)} × ${lo}`,
+    note, text: `Dziś ${n} × ${lo} na ${fmtWU(w)} (zwykle ${fmtWU(W)}).`, sets: Array.from({ length: n }, () => ({ w, r: lo })) }
 }
 
 // put the suggested weight/reps into the sets not ticked yet (adds missing planned sets)

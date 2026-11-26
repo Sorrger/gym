@@ -1,5 +1,5 @@
 // Fourth set: notes per exercise, exercises added during a workout, supersets, plates on the bar.
-const { store, plan, stats, muscles, prefsM, idb, measuresM } = await import('./b.mjs')
+const { store, plan, stats, muscles, prefsM, idb, measuresM, schema, units, coach, weight } = await import('./b.mjs')
 const { state } = store
 let fails = 0, n = 0
 const ok = (c, m, extra) => { n++; if (!c) { fails++; console.log('FAIL', m, extra ?? '') } else console.log('ok  ', m) }
@@ -122,6 +122,60 @@ ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,1
   ok(M.importMeasures({ '2026-09-01': { v: { thigh: 60 }, t: 5 }, 'bad': { v: { waist: 1 }, t: 9 } }) === 1 && M.byPart.value.thigh?.last.cm === 60, 'measures: import adds new days, skips bad keys')
   M.setMeasures('2026-09-01', {})
   ok(M.mstate.entries['2026-09-01'].del, 'measures: saving an empty day deletes it')
+}
+
+// data shapes for the database: unique ids, version, training key, exercise ids
+{
+  const ids = new Set(Array.from({ length: 500 }, () => schema.newId(1764000000000)))
+  ok(ids.size === 500 && [...ids].every(i => /^[0-9a-z]+-[0-9a-z]{5}$/.test(i)), 'schema: ids unique even in the same millisecond')
+  const old = { id: 'abc', date: '2026-01-02', day: 1, ex: { 'Wiosłowanie hantlem': [{ w: 30, r: 10, d: true }] }, started: 1, finished: true, updated: 1 }
+  ok(schema.normSession(old) && old.plan === plan.PLAN[1].key && old.v === schema.V.session && old.xid?.['Wiosłowanie hantlem'], 'schema: old workout gets training key, version and exercise ids', old)
+  ok(!schema.normSession(old), 'schema: upgrading twice changes nothing')
+  const off = { id: 'off1', date: '2026-01-03', day: 0, offApp: true, ex: {}, started: 0, finished: true, updated: 1 }
+  schema.normSession(off); ok(off.v === schema.V.session && off.plan == null, 'schema: done-outside-app marks keep no training key')
+  const s = store.startSession(2)
+  ok(/-/.test(s.id) && s.v === schema.V.session && s.plan === plan.PLAN[2].key, 'schema: new workouts are born in the new shape', s)
+  store.remove(s.id)
+  const n0 = store.mergeSessions({ 'old-1': { date: '2026-02-01', day: 0, ex: {}, started: 5, finished: true, updated: 5 } })
+  ok(n0 === 1 && state.sessions['old-1'].plan === plan.PLAN[0].key && state.sessions['old-1'].v === schema.V.session, 'schema: merged old backups are upgraded too')
+}
+
+// kg / lb: stored in kg, shown and stepped in lb
+{
+  const P = prefsM.prefs, U = units
+  P.units = 'lb'
+  ok(U.fmtWU(61.23496) === '135 lb' && U.fmtW(U.fromU(135)) === '135', 'units: 135 lb round-trips through kg', U.fromU(135))
+  ok(plan.fmtVal(100, 'kg') === '220,5 lb' && plan.UNITS.kg.short === 'lb' && plan.UNITS.kg.step === 5, 'units: labels and the ± step follow the unit')
+  const g = plan.entriesOf(0).find(x => x.unit === 'kg' && !x.label)
+  const inc = plan.incOf(g, P.stepKg)
+  ok(Math.abs(inc * U.LB - 5) < 1e-9 || Math.abs(inc * U.LB - 10) < 1e-9 || Math.abs(inc * U.LB - 2.5) < 1e-9, 'units: plan steps become lb steps', inc * U.LB)
+  for (const k of Object.keys(state.sessions)) delete state.sessions[k]
+  const W = U.fromU(135), prev = store.startSession(0)
+  const lo = plan.rangeOf(g.target).hi
+  prev.ex[g.key] = Array.from({ length: g.sets }, () => ({ w: W, r: lo, d: true })); prev.date = '2026-11-01'; store.finishSession(prev.id)
+  const cur = store.startSession(0), sug = coach.suggest(g, cur)
+  const up = sug?.sets?.[0]?.w
+  ok(sug?.kind === 'up' && Math.abs(U.toU(up) - Math.round(U.toU(up) / 2.5) * 2.5) < 1e-6 && U.toU(up) > 135, 'units: weight jump lands on a lb plate step', [sug?.kind, U.toU(up)])
+  ok(/lb/.test(sug.short) && !/kg/.test(sug.short), 'units: coach text in lb', sug.short)
+  ok(/^2\D?205 lb$/.test(U.fmtVol(1000)) && U.fmtVol(10000) === '22k lb', 'units: volume in lb', U.fmtVol(1000))
+  ok(U.barU(20) === 45 && U.barU(10) === 25 && U.barU(null) == null, 'units: bars in lb')
+  ok(JSON.stringify(plan.platesPerSide(135, 45, [45, 35, 25, 10, 5, 2.5])) === '[45]' && JSON.stringify(plan.warmupSets(225, 45, [45, 25, 10, 5, 2.5], 5).map(x => x.w)) === '[45,115,160,190]', 'units: plates and warm-up in lb', plan.warmupSets(225, 45, [45, 25, 10, 5, 2.5], 5).map(x => x.w))
+  const wl = weight.parseList('2.11 181,6')
+  ok(wl.length === 1 && Math.abs(wl[0].kg - 82.37) < 0.01, 'units: pasted body weights in lb are stored in kg', wl)
+  P.units = 'kg'
+  ok(U.fmtWU(61.25) === '61,25 kg' && plan.UNITS.kg.step === 2.5 && plan.incOf(g, 2.5) === (plan.INC[g.key] || 2.5), 'units: kg unchanged')
+  for (const k of Object.keys(state.sessions)) delete state.sessions[k]
+}
+
+// week streak: how many trainings a week count
+{
+  for (const k of Object.keys(state.sessions)) delete state.sessions[k]
+  const mon = new Date(); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7)); mon.setHours(12)
+  const day = (wk, d) => store.iso(new Date(mon.getTime() + (wk * 7 + d) * 864e5))
+  const add = date => { const x = store.startSession(0); const g = plan.entriesOf(0)[0]; x.ex[g.key][0].d = true; x.ex[g.key][0].w = 50; x.date = date; store.finishSession(x.id) }
+  add(day(-1, 0)); add(day(-1, 2)); add(day(-2, 1)); add(day(-3, 0)); add(day(-3, 3))
+  ok(stats.weekStreak(1) === 3 && stats.weekStreak(2) === 1 && stats.weekStreak(3) === 0, 'streak: weeks count only with enough trainings', [stats.weekStreak(1), stats.weekStreak(2), stats.weekStreak(3)])
+  for (const k of Object.keys(state.sessions)) delete state.sessions[k]
 }
 
 globalThis.T4 = { n, fails }

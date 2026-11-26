@@ -71,6 +71,7 @@
 </template>
 
 <script setup>
+import { fmtW } from '../units'
 import { rirLabel } from '../prefs'
 import { LOC } from '../i18n'
 import Ico from './Ico.vue'
@@ -147,7 +148,7 @@ const muscles = computed(() => {
   return { main: [...main], help: [...help] }
 })
 const TYPE_TXT = { w: 'rozgrzewka · ', d: 'drop set · ', f: 'do upadku · ' }
-const setText = (x, unit) => (TYPE_TXT[x.t] || '') + (x.w == null ? '✓' : unit === 'kg' ? fmtNum(x.w) + ' × ' + (x.r ?? '–') : fmtNum(x.w) + ' ' + UNITS[unit].short) +
+const setText = (x, unit) => (TYPE_TXT[x.t] || '') + (x.w == null ? '✓' : unit === 'kg' ? fmtW(x.w) + ' × ' + (x.r ?? '–') : fmtNum(x.w) + ' ' + UNITS[unit].short) +
   (x.q != null ? ' · zapas ' + rirLabel(x.q) : '')
 
 function edit() { router.push('/workout/' + s.value.id) }

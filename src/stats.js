@@ -1,3 +1,4 @@
+import { fmtVol } from './units'
 // Numbers for the Progress tab (overview + per plan)
 import { PLAN, isAssisted, entriesOf, rangeOf } from './plan'
 import { sorted, series, dataRev, iso } from './store'
@@ -209,7 +210,7 @@ function muscleWeek_(days = null) {
   return Object.fromEntries(Object.entries(out).map(([k, v]) => [k, Math.round(v / weeks * 10) / 10]))
 }
 
-export const fmtTon = v => (v >= 10000 ? (Math.round(v / 100) / 10).toFixed(1).replace('.', ',') + ' t' : Math.round(v).toLocaleString('pl-PL') + ' kg')
+export const fmtTon = v => fmtVol(v) // kg × reps: tonnes in kg, thousands of lb in lb
 
 // sets per muscle in one week of the plan (same weighting as muscleSets: main 1, helping ½)
 export function planMuscleSets() {
@@ -227,11 +228,12 @@ export function planMuscleSets() {
   return out
 }
 // weeks in a row (Mon–Sun) with at least one training; the current week only adds once it has one (it never breaks the streak)
-function weekStreak_() {
-  const w = weekly(104)
+// weeks in a row with at least `need` trainings; the current week adds once it gets there, never breaks the streak
+function weekStreak_(need = 1) {
+  const w = weekly(104), k = Math.max(1, need || 1)
   let n = 0, i = w.length - 1
-  if (w[i].n) n++
-  for (i--; i >= 0 && w[i].n; i--) n++
+  if (w[i].n >= k) n++
+  for (i--; i >= 0 && w[i].n >= k; i--) n++
   return n
 }
 

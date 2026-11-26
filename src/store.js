@@ -1,7 +1,8 @@
 import { prefs } from './prefs'
 import { reactive, watch, computed, ref } from 'vue'
 import { get, set, keys, getMany, setMany, delMany } from './db'
-import { PLAN, entriesOf, DEF_REPS, rangeOf, migrateNames, stampIds, ensurePlans, isAssisted, incOf } from './plan'
+import { PLAN, entriesOf, DEF_REPS, rangeOf, migrateNames, ensurePlans, isAssisted, incOf } from './plan'
+import { newId, normSession, V } from './schema'
 import { deloadState } from './cycle'
 import { extraMuscles } from './sessionEdit'
 // the store is split by topic; everything stays importable from here
@@ -63,10 +64,10 @@ export async function load() {
     if (!s.started) s.started = new Date(s.date + 'T12:00:00').getTime()
     if (s.finished == null) s.finished = s.date < iso(new Date())
     migrateNames(s)
-    stampIds(s)
     extraMuscles(s)
   })
   ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0)))
+  Object.values(state.sessions).forEach(s => normSession(s)) // after ensurePlans: every `day` has a training
   closeStale()
   state.ready = true
   dataRev.value++
@@ -91,7 +92,7 @@ export function saveNow(full = false) {
   for (const [id, s] of Object.entries(state.sessions)) {
     const mark = s.updated + '|' + !!s.finished
     if (!full && s.finished && seen.get(id) === mark && saved.has(id)) continue
-    stampIds(s)
+    normSession(s)
     const json = JSON.stringify(s)
     seen.set(id, mark)
     if (saved.get(id) !== json) { put.push([SKEY(id), JSON.parse(json)]); saved.set(id, json) }
@@ -179,7 +180,7 @@ export function startSession(day) {
   const now = Date.now()
   const dl = deloadState()
   const deload = dl.active || dl.due
-  const s = { id: now.toString(36), date: iso(new Date()), day, plan: PLAN[day]?.key, ex: {}, started: now, finished: false, updated: now }
+  const s = { id: newId(now), v: V.session, date: iso(new Date()), day, plan: PLAN[day]?.key, ex: {}, started: now, finished: false, updated: now }
   if (deload) s.deload = true
   // always the planned number of sets (half of it in a light week); extra sets can still be added
   entriesOf(day).forEach(g => { const n = g.sets || 1; s.ex[g.key] = prefill(g, deload ? deloadSets(n) : n, deload) })
@@ -223,7 +224,11 @@ export function mergeSessions(src, deleted = {}) {
       n++
     }
   })
-  if (n || gone) { ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0))); saveNow() }
+  if (n || gone) {
+    ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0)))
+    Object.values(state.sessions).forEach(s => normSession(s))
+    saveNow()
+  }
   return n
 }
 

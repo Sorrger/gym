@@ -16,6 +16,9 @@
         <section v-else-if="step === 1" class="st">
           <h1>Co Cię interesuje?</h1>
           <p class="lead">Zaznacz, czego chcesz używać. Resztę schowam – zmienisz to później w Ustawieniach.</p>
+          <div class="fld"><span>Jednostki ciężaru</span>
+            <div class="seg3 units"><button v-for="u in ['kg', 'lb']" :key="u" class="press" :class="{ on: prefs.units === u }" @click="setPref('units', u)">{{ u }}</button></div>
+          </div>
           <div class="ints">
             <template v-for="f in FEATS" :key="f.k">
               <button class="int press" role="switch" :aria-checked="want[f.k]" @click="want[f.k] = !want[f.k]">
@@ -36,7 +39,7 @@
           <div class="fld"><span>Cel</span>
             <div class="seg3"><button v-for="g in GOALS" :key="g.v" class="press" :class="{ on: goal === g.v }" @click="goal = g.v">{{ g.t }}</button></div>
           </div>
-          <label class="fld"><span>Waga dziś (kg, opcjonalnie)</span><input v-model="kg" inputmode="decimal" placeholder="np. 82,5" /></label>
+          <label class="fld"><span>Waga dziś ({{ wu() }}, opcjonalnie)</span><input v-model="kg" inputmode="decimal" placeholder="np. 82,5" /></label>
           </template>
           <div class="or"><span>albo</span></div>
           <button class="soc press" @click="soon('Google')"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="#4285f4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.8h5.4a4.6 4.6 0 0 1-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.3z"/><path fill="#34a853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6A10 10 0 0 0 12 22z"/><path fill="#fbbc05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1a10 10 0 0 0 0 9.2z"/><path fill="#ea4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.8-2.8A10 10 0 0 0 3.1 7.4L6.4 10C7.2 7.7 9.4 5.9 12 5.9z"/></svg>Kontynuuj z Google<small>wkrótce</small></button>
@@ -52,6 +55,8 @@
             <p><b>Ustawienia</b> – Profil → Ustawienia: zasady progresji, lżejszy tydzień, motyw, język.</p>
             <p><b>Bez internetu</b> – wszystko działa na siłowni bez zasięgu.</p>
           </div>
+          <p class="legal-note">Apka nie zastępuje lekarza ani trenera – przy bólu przerwij ćwiczenie. Zaczynając, akceptujesz
+            <a href="#/legal/terms">Regulamin</a> i <a href="#/legal/privacy">Politykę prywatności</a>.</p>
         </section>
 
         <div class="foot">
@@ -73,6 +78,9 @@ import { iso } from '../store'
 import { PLAN } from '../plan'
 import PlatesPick from './settings/PlatesPick.vue'
 import { ask } from '../dialog'
+import { prefs } from '../prefs'
+import { wu, fromU } from '../units'
+import { parseKg } from '../weightQuick'
 
 const router = useIonRouter()
 const step = ref((() => { try { return +sessionStorage.getItem('welStep') || 0 } catch { return 0 } })())
@@ -110,8 +118,8 @@ function next() {
     if (nick.value.trim()) setNick(nick.value)
     if (want.weightOn) {
       setPref('goal', goal.value)
-      const w = parseFloat(String(kg.value).replace(',', '.'))
-      if (w > 20 && w < 400) setWeight(iso(new Date()), w)
+      const w = parseKg(kg.value)
+      if (w != null) setWeight(iso(new Date()), fromU(w))
     }
     step.value = 3; return
   }
@@ -135,6 +143,9 @@ h1 { font-size: 32px; font-weight: 800; letter-spacing: -.5px; margin: 8px 0 6px
 .fld { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
 .fld > span { font-size: 14px; color: var(--app-muted); font-weight: 600; }
 .fld input { font: inherit; font-size: 17px; padding: 13px 14px; border-radius: 12px; border: 0; background: var(--app-card); color: var(--ion-text-color); }
+.legal-note { margin-top: 18px; font-size: 13px; line-height: 1.4; color: var(--app-muted); }
+.legal-note a { color: var(--accent); }
+.seg3.units { grid-template-columns: repeat(2, 1fr); }
 .seg3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; padding: 3px; border-radius: 12px; background: var(--app-field); }
 .seg3 button { border: 0; padding: 10px 4px; border-radius: 9px; font: inherit; font-size: 15px; font-weight: 600; background: none; color: var(--ion-text-color); }
 .seg3 button.on { background: var(--app-card); color: var(--accent); box-shadow: 0 1px 4px rgba(0,0,0,.12); }

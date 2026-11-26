@@ -17,6 +17,13 @@
           </button>
         </div>
         <template v-if="!sec">
+          <div class="ios-group legal-links">
+            <button v-for="d in LEGAL_ROWS" :key="d.k" class="row press" @click="router.push('/legal/' + d.k)">
+              <span class="sq" :style="{ '--c': '#8e8e93' }"><ion-icon :icon="d.i" /></span>
+              <div class="grow"><b>{{ d.t }}</b></div>
+              <ion-icon :icon="chevronForward" class="chev" />
+            </button>
+          </div>
           <p class="section-foot ver">Inch Up · wersja {{ VERSION }}</p>
           <div v-if="errs.length" class="ios-group">
             <button class="row press" @click="copyErrors">
@@ -38,7 +45,7 @@
 import { ref } from 'vue'
 import { IonPage, IonContent, IonIcon, IonToast, useIonRouter } from '@ionic/vue'
 import { useRoute } from 'vue-router'
-import { cloudUploadOutline, chevronForward, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, scaleOutline, heartOutline, warningOutline } from 'ionicons/icons'
+import { cloudUploadOutline, chevronForward, chevronBack, colorPaletteOutline, languageOutline, barbellOutline, scaleOutline, heartOutline, warningOutline, shieldCheckmarkOutline, documentTextOutline, medkitOutline } from 'ionicons/icons'
 import { t, lang, LANGS } from '../i18n'
 import { useScrolled } from '../useScrolled'
 import { prefs } from '../prefs'
@@ -74,11 +81,12 @@ async function copyErrors() {
 
 const MENU = [
   { k: 'look', t: 'Wygląd', i: colorPaletteOutline, c: '#af52de', sub: () => ({ system: 'Jak telefon', light: 'Jasny', dark: 'Ciemny' })[look.mode] + ' · ' + (ACCENTS.find(a => a.id === look.accent)?.name || '') },
-  { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => LANGS[lang].name },
+  { k: 'lang', t: 'Język · Language', i: languageOutline, c: '#5856d6', sub: () => LANGS[lang].name + ' · ' + prefs.units },
   { k: 'training', t: 'Trening', i: barbellOutline, c: '#ff3b30', sub: () => (PRESETS.find(m => m.v === modeOf())?.t || 'Własny') + (prefs.restTimer ? ' · przerwa ' + REST.fmt(prefs.restSec) : '') + (prefs.deload ? ' · lżejszy tydzień co ' + prefs.deloadEvery + ' tyg.' : '') },
   { k: 'weight', t: 'Waga ciała', i: scaleOutline, c: '#30b0c7', sub: () => (prefs.weightOn ? ({ cut: 'Redukcja', maintain: 'Utrzymanie', bulk: 'Masa' })[prefs.goal] : 'Wyłączone') },
   { k: 'backup', t: 'Kopia zapasowa', i: cloudUploadOutline, c: '#0a84ff', sub: () => (cloud.token ? (cloud.error ? 'Błąd kopii' : 'GitHub · automatycznie') : 'Tylko w telefonie'), warn: () => cloud.token && cloud.error && cloud.error !== 'Brak połączenia' },
   { k: 'strava', t: 'Strava', i: heartOutline, c: '#fc4c02', sub: () => ({ on: 'Połączona', waiting: 'Czeka' })[stravaStatus()] || 'Niepołączona' }]
+const LEGAL_ROWS = [{ k: 'privacy', t: 'Polityka prywatności', i: shieldCheckmarkOutline }, { k: 'terms', t: 'Regulamin', i: documentTextOutline }, { k: 'health', t: 'Zdrowie i bezpieczeństwo', i: medkitOutline }]
 const title = sec === 'details' || sec === 'progress' ? 'Szczegóły treningu' : sec ? MENU.find(m => m.k === sec)?.t : 'Ustawienia'
 </script>
 
@@ -92,6 +100,7 @@ const title = sec === 'details' || sec === 'progress' ? 'Szczegóły treningu' :
 .menu { margin-top: 4px; }
 .dot-warn { width: 9px; height: 9px; border-radius: 50%; background: var(--app-bad); flex: none; }
 .ver { text-align: center; margin-top: 18px; }
+.legal-links { margin-top: 18px; }
 </style>
 
 <style>

@@ -42,6 +42,7 @@ const router = createRouter({
     { path: '/plans', component: () => import('./views/PlansView.vue') },
     { path: '/weight', component: () => import('./views/WeightView.vue') },
     { path: '/measures', component: () => import('./views/MeasuresView.vue') },
+    { path: '/legal/:doc', component: () => import('./views/LegalView.vue') },
     { path: '/settings', component: () => import('./views/SettingsView.vue') },
     { path: '/settings/:sec', component: () => import('./views/SettingsView.vue') },
     { path: '/welcome', component: () => import('./views/WelcomeView.vue') },
@@ -86,7 +87,7 @@ router.afterEach(() => setTimeout(() => {
   })
 }, 900))
 router.beforeEach(to => {
-  if (to.path !== '/welcome' && needsWelcome()) return '/welcome'
+  if (to.path !== '/welcome' && !to.path.startsWith('/legal/') && needsWelcome()) return '/welcome'
   if (to.path === '/welcome' && !needsWelcome()) return '/tabs/home'
 })
 

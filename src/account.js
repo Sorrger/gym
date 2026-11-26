@@ -43,7 +43,7 @@ export async function initAccount() {
   onConnected(syncAccount)
   setTimeout(syncAccount, 3500)
 }
-export const accountData = () => ({ uid: account.uid, nick: account.nick, created: account.created, updated: account.updated, provider: account.provider, prefs: prefsData(), ...(account.email ? { email: account.email } : {}) })
+export const accountData = () => ({ v: 1, uid: account.uid, nick: account.nick, created: account.created, updated: account.updated, provider: account.provider, prefs: prefsData(), ...(account.email ? { email: account.email } : {}) })
 
 export function setNick(nick) {
   account.nick = String(nick || '').trim().replace(/\s+/g, ' ').slice(0, 24)

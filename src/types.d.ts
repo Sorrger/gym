@@ -26,6 +26,7 @@ interface Session {
   finished: boolean
   updated?: number
   cur?: number
+  tipped?: (number | string)[] // exercises whose suggestion was already shown / filled in
   deload?: boolean
   noDeload?: boolean
   offApp?: boolean

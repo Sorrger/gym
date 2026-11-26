@@ -56,6 +56,7 @@
 </template>
 
 <script setup>
+import { fmtW, fmtWU } from '../units'
 import { deloadWords } from '../prefs'
 const cap = t => t.charAt(0).toUpperCase() + t.slice(1)
 import { computed, ref, watch } from 'vue'
@@ -88,7 +89,7 @@ function lastOf(g) {
   if (done.every(x => x.w == null)) return done.length + ' serie'
   if (g.unit !== 'kg') return done.map(x => fmtNum(x.w)).join(' · ') + ' ' + UNITS[g.unit].short
   const ws = new Set(done.map(x => x.w))
-  return ws.size === 1 ? `${fmtNum(done[0].w)} kg × ${done.map(x => x.r ?? '–').join(', ')}` : done.map(x => `${fmtNum(x.w)}×${x.r ?? '–'}`).join(' · ')
+  return ws.size === 1 ? `${fmtWU(done[0].w)} × ${done.map(x => x.r ?? '–').join(', ')}` : done.map(x => `${fmtW(x.w)}×${x.r ?? '–'}`).join(' · ')
 }
 const how = ref('')
 const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], note: noteFor(e[0], null).text, alt: altOf(e[0]), stage: e[3] === 'stages' ? stageText() : null, groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })

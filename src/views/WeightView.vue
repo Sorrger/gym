@@ -10,7 +10,7 @@
       <div class="page">
 
         <div class="card stats4 num">
-          <div><small>Teraz</small><b>{{ last ? fmtKg(last.kg) : '–' }}<i v-if="last"> kg</i></b></div>
+          <div><small>Teraz</small><b>{{ last ? fmtKg(last.kg) : '–' }}<i v-if="last"> {{ wu() }}</i></b></div>
           <div><small>Śr. 7 dni</small><b>{{ avg7 == null ? '–' : fmtKg(avg7.toFixed(1)) }}</b></div>
           <div><small>Od startu</small><b :class="tone(total)">{{ list.length > 1 ? sign(total) : '–' }}</b></div>
           <div><small>Na tydzień</small><b :class="wk == null ? '' : tone(wk)">{{ wk == null ? '–' : sign(wk) }}</b></div>
@@ -30,7 +30,7 @@
         <!-- target weight: progress + when, at the current pace -->
         <button v-if="list.length" class="card target press" @click="setTarget">
           <template v-if="prefs.goalKg">
-            <div class="t-top"><b>Cel {{ fmtKg(prefs.goalKg) }} kg</b><span class="num">{{ target.left > 0.05 ? 'zostało ' + fmtKg(r1(target.left)) + ' kg' : 'cel osiągnięty!' }}</span></div>
+            <div class="t-top"><b>Cel {{ fmtKg(r1(toU(prefs.goalKg))) }} {{ wu() }}</b><span class="num">{{ target.left > 0.05 ? 'zostało ' + fmtKg(r1(target.left)) + ' ' + wu() : 'cel osiągnięty!' }}</span></div>
             <div class="bar"><i :style="{ width: target.pct + '%' }"></i></div>
             <small>{{ target.eta }}</small>
           </template>
@@ -51,8 +51,8 @@
 
         <!-- details for the chosen period -->
         <div v-if="shown.length > 1" class="card det num">
-          <div><small>Najniżej</small><b>{{ fmtKg(det.min) }}</b></div>
-          <div><small>Najwyżej</small><b>{{ fmtKg(det.max) }}</b></div>
+          <div><small>Najniżej</small><b>{{ fmtKg(r1(det.min)) }}</b></div>
+          <div><small>Najwyżej</small><b>{{ fmtKg(r1(det.max)) }}</b></div>
           <div><small>Średnio</small><b>{{ fmtKg(r1(det.avg)) }}</b></div>
           <div><small>30 dni</small><b :class="det.m30 == null ? '' : tone(det.m30)">{{ det.m30 == null ? '–' : sign(det.m30) }}</b></div>
           <div><small>Pomiarów</small><b>{{ shown.length }}</b></div>
@@ -68,7 +68,7 @@
           <div class="card-title">Tygodnie <span class="leg">średnia · zmiana</span></div>
           <div v-for="w in weeksList" :key="w.from" class="wk-row num">
             <span>{{ w.label }}</span>
-            <b>{{ fmtKg(r1(w.avg)) }} kg</b>
+            <b>{{ fmtKg(r1(w.avg)) }} {{ wu() }}</b>
             <small :class="w.d == null ? '' : tone(w.d)">{{ w.d == null ? '' : sign(w.d) }}</small>
           </div>
         </div>
@@ -79,7 +79,7 @@
             <div class="r-left"><b class="num">{{ fmtDate(r.date) }}</b><span>{{ dayName(r.date) }}</span></div>
             <div class="r-right num">
               <small v-if="r.d" :class="{ ok: r.d < 0, bad: r.d > 0 }">{{ sign(r.d) }}</small>
-              <b>{{ fmtKg(r.kg) }}</b><small>kg</small>
+              <b>{{ fmtKg(r1(r.kg)) }}</b><small>{{ wu() }}</small>
             </div>
           </button>
         </div>
@@ -104,7 +104,8 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, 
 import { add as add_, clipboardOutline, scale } from 'ionicons/icons'
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
 import { cloud } from '../cloud'
-import { weights, setWeight, delWeight, parseList, smooth, trend } from '../weight'
+import { weightsU as weights, setWeight, delWeight, parseList, smooth, trend } from '../weight'
+import { wu, toU, fromU } from '../units'
 import { askWeight, parseKg } from '../weightQuick'
 import { ask } from '../dialog'
 
@@ -153,7 +154,7 @@ const weeksList = computed(() => {
 })
 // target weight progress + ETA at the current pace
 const target = computed(() => {
-  const g = prefs.goalKg, now = avg7.value ?? last.value?.kg
+  const g = toU(prefs.goalKg), now = avg7.value ?? last.value?.kg
   if (!g || now == null) return { left: 0, pct: 0, eta: '' }
   const start = list.value[0].kg, left = Math.abs(now - g)
   const pct = Math.max(0, Math.min(100, Math.round(start === g ? 100 : (start - now) / (start - g) * 100)))
@@ -165,10 +166,11 @@ const target = computed(() => {
   return { left, pct, eta }
 })
 async function setTarget() {
-  const r = await ask({ icon: scale, title: 'Cel wagi', message: 'Ile chcesz ważyć? Zostaw puste, żeby usunąć cel.', input: { mode: 'decimal', value: prefs.goalKg ? fmtKg(prefs.goalKg) : '', placeholder: 'np. 80' },
+  const r = await ask({ icon: scale, title: 'Cel wagi', message: 'Ile chcesz ważyć? Zostaw puste, żeby usunąć cel.', input: { mode: 'decimal', value: prefs.goalKg ? fmtKg(r1(toU(prefs.goalKg))) : '', placeholder: 'np. 80' },
     buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
   if (r.role !== 'ok') return
-  setPref('goalKg', String(r.value || '').trim() ? parseKg(r.value) : null)
+  const v = String(r.value || '').trim() ? parseKg(r.value) : null
+  setPref('goalKg', v == null ? null : fromU(v))
 }
 const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
 const tone = v => { const g = prefs.goal; if (g === 'maintain' || Math.abs(v) < 0.05) return ''; return (g === 'bulk' ? v > 0 : v < 0) ? 'ok' : 'bad' }
@@ -202,7 +204,7 @@ async function edit(p) {
   if (r.role === 'del') return delWeight(p.date)
   if (r.role !== 'ok') return
   const kg = parseKg(r.value)
-  if (kg != null) setWeight(p.date, kg)
+  if (kg != null) setWeight(p.date, fromU(kg))
 }
 async function paste() {
   const r = await ask({ icon: clipboardOutline, title: 'Wklej stare pomiary', message: 'Data i waga, np. „29.10 108,0”. Każdy pomiar w nowej linii albo po średniku. Ten sam dzień nadpisze stary pomiar.',
@@ -235,7 +237,7 @@ function draw() {
     },
     options: {
       responsive: true, maintainAspectRatio: false, animation: { duration: 450 }, interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: x => dstr(x[0].parsed.x), label: x => x.dataset.label + ': ' + fmtKg(x.parsed.y.toFixed(1)) + ' kg' } } },
+      plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: x => dstr(x[0].parsed.x), label: x => x.dataset.label + ': ' + fmtKg(x.parsed.y.toFixed(1)) + ' ' + wu() } } },
       scales: {
         x: { type: 'linear', grid: { display: false }, ticks: { color: muted, maxTicksLimit: 5, maxRotation: 0, callback: v => (Number.isInteger(v) ? dstr(v) : '') }, min: dnum(pts[0].date) - (pts.length === 1 ? 3 : 0), max: dnum(pts[pts.length - 1].date) + (pts.length === 1 ? 3 : 0) },
         y: { grid: { color: line }, border: { display: false }, ticks: { color: muted, maxTicksLimit: 5, callback: v => fmtKg(v) }, grace: '15%' }

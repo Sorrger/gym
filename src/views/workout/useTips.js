@@ -1,4 +1,5 @@
 // Coach on the Workout screen: today's suggestion (chip, pop-up or filled in quietly), live advice under a set,
+import { fmtW, wu } from '../../units'
 // the "Ostatnio…" line and the light-week explanation
 import { computed, watch } from 'vue'
 import { trendingUp, trendingDown, bulbOutline, trophyOutline } from 'ionicons/icons'
@@ -51,7 +52,7 @@ export function useTips(ctx) {
     if (!p) return g.unit === 'kg' ? (rg ? `Pierwszy raz. Dobierz ciężar na ${rg.lo}-${rg.hi} powtórzeń.` : 'Pierwszy raz. Ustaw ciężar dla serii.') : 'Pierwszy raz. Ustaw wartość dla serii.'
     const done = p.ex[g.key].filter(x => x.d && x.w != null)
     const txt = g.unit === 'kg' && done.some(x => x.r)
-      ? done.map(x => fmtNum(x.w) + (x.r ? '×' + x.r : '')).join(' · ') + ' kg'
+      ? done.map(x => fmtW(x.w) + (x.r ? '×' + x.r : '')).join(' · ') + ' ' + wu()
       : done.map(x => fmtNum(x.w)).join(' · ') + ' ' + UNITS[g.unit].short
     return 'Ostatnio ' + fmtShort(p.date) + ' (' + ago(p.date) + '): ' + txt
   }
@@ -59,11 +60,14 @@ export function useTips(ctx) {
     const sess = s.value
     if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout') || (prefs.coach !== 'auto' && prefs.coach !== 'set')) return
     const k = sess.id + ':' + idx.value
-    if (tipsShown.has(k)) return
-    tipsShown.add(k)
+    // remembered in the workout itself, so leaving the app (or a reload) doesn't show it again
+    const seen = (sess.tipped ||= [])
+    const mark = key => { if (!seen.includes(key)) seen.push(key) }
+    if (tipsShown.has(k) || seen.includes(idx.value)) return
+    tipsShown.add(k); mark(idx.value)
     if (groups.value.some(g => (sess.ex[g.key] || []).some(x => x.d))) return
     // light week: the numbers are already set, so explain it once per workout (the chip stays on every exercise)
-    if (sess.deload && sugList().every(x => x.sug.kind === 'deload')) { if (tipsShown.has(sess.id + ':dl')) return; tipsShown.add(sess.id + ':dl') }
+    if (sess.deload && sugList().every(x => x.sug.kind === 'deload')) { if (seen.includes('dl')) return; mark('dl') }
     const list = sugList()
     if (!list.length) return
     if (prefs.coach === 'set') { autoSet(list); return }

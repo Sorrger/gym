@@ -1,3 +1,4 @@
+import { isLb, stepU, LB } from '../../units'
 // option lists and number steppers shared by the Settings sections
 import { prefs, DEFAULT_PREFS } from '../../prefs'
 import { setPref } from '../../account'
@@ -20,7 +21,7 @@ export const TOGGLES = [
 export const NUMS = [
   { k: 'rirUp', t: 'Zapas do dodania ciężaru', d: 'W każdej serii zostaje tyle powtórzeń → od razu więcej kg', min: 1, max: 5, step: 1, fmt: v => v + '+' },
   { k: 'repsGain', t: 'Powtórzeń więcej co trening', d: 'Ile dokładać na serię, aż dojdziesz do góry zakresu', min: 1, max: 3, step: 1, fmt: v => '+' + v },
-  { k: 'stepKg', t: 'Krok ciężaru', d: 'Ile kg dodać (hantle i maszyny z własnym krokiem mają swój)', opts: [1, 1.25, 2, 2.5, 5], fmt: v => num(v) + ' kg' },
+  { k: 'stepKg', t: 'Krok ciężaru', d: 'Ile kg dodać (hantle i maszyny z własnym krokiem mają swój)', opts: [1, 1.25, 2, 2.5, 5], fmt: v => (isLb() ? num(Math.round(stepU(v) * LB * 100) / 100) + ' lb' : num(v) + ' kg') },
   { k: 'failN', t: 'Zejdź z ciężaru po', d: 'Tylu treningach z rzędu poniżej zakresu', min: 1, max: 3, step: 1, fmt: v => v + ' tr.' },
   { k: 'dropPct', t: 'Zejdź o', d: 'O ile lżej, gdy utkniesz albo seria była za ciężka', min: 5, max: 20, step: 5, fmt: v => v + '%' }]
 export const DELOAD_NUMS = [

@@ -78,7 +78,7 @@
                       <div class="line">
                         <button class="step num" @click="step(g, si, -1)" :aria-label="'Minus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="removeIcon" /></button>
                         <button class="weight num" @click="openPicker(g, si)">
-                          <b>{{ x.w == null ? '—' : fmtNum(x.w) }}</b><small>{{ UNITS[g.unit].short }}</small>
+                          <b>{{ x.w == null ? '—' : (g.unit === 'kg' ? fmtW(x.w) : fmtNum(x.w)) }}</b><small>{{ UNITS[g.unit].short }}</small>
                         </button>
                         <button class="step num" @click="step(g, si, 1)" :aria-label="'Plus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="add" /></button>
                       </div>
@@ -112,7 +112,7 @@
                 <div class="ex-foot">
                   <button class="link" @click="addSet(g)"><ion-icon :icon="add" /> Seria</button>
                   <button class="link muted" v-if="sets(g.key).length > 1" @click="popSet(g)"><ion-icon :icon="removeIcon" /> Seria</button>
-                  <span class="step-note num">krok {{ fmtVal(UNITS[g.unit].step, g.unit) }}</span>
+                  <span class="step-note num">krok {{ fmtNum(UNITS[g.unit].step) }} {{ UNITS[g.unit].short }}</span>
                 </div>
               </div>
             </div>
@@ -161,6 +161,7 @@
 </template>
 
 <script setup>
+import { fmtW } from '../units'
 import Ico from './Ico.vue'
 import WarmupCard from './workout/WarmupCard.vue'
 import ValuePicker from './workout/ValuePicker.vue'

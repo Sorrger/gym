@@ -3,10 +3,10 @@
   <div class="warm">
     <div class="warm-h"><ion-icon :icon="flameOutline" /><b>Rozgrzewka</b><span>nie liczy się do statystyk</span></div>
     <div class="warm-row num" v-for="(w, wi) in info.sets" :key="wi">
-      <b>{{ wi === 0 ? 'Gryf ' + fmtNum(w.w) : fmtNum(w.w) }} kg × {{ w.r }}</b>
+      <b>{{ wi === 0 ? 'Gryf ' + fmtNum(w.w) : fmtNum(w.w) }} {{ wu() }} × {{ w.r }}</b>
       <span>{{ w.plates.length ? 'na stronę: ' + w.plates.map(fmtNum).join(' + ') : 'pusty gryf' }}</span>
     </div>
-    <div class="warm-row work num"><b>Robocze {{ fmtNum(info.W) }} kg</b><span>{{ info.plates.length ? 'na stronę: ' + info.plates.map(fmtNum).join(' + ') : '' }}</span></div>
+    <div class="warm-row work num"><b>Robocze {{ fmtNum(info.W) }} {{ wu() }}</b><span>{{ info.plates.length ? 'na stronę: ' + info.plates.map(fmtNum).join(' + ') : '' }}</span></div>
     <p>Spokojnie, bez zmęczenia, ok. 1 min przerwy między seriami.</p>
   </div>
 </template>
@@ -15,6 +15,7 @@
 import { IonIcon } from '@ionic/vue'
 import { flameOutline } from 'ionicons/icons'
 import { fmtNum } from '../../plan'
+import { wu } from '../../units'
 defineProps({ info: { type: Object, required: true } }) // { W, sets: [{ w, r, plates }], plates }
 </script>
 

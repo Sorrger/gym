@@ -5,7 +5,7 @@
     <div class="sheet" v-if="g">
       <div class="sheet-head">
         <span>{{ g.label ? g.label + ' · ' : '' }}Seria {{ si + 1 }}{{ field === 'r' ? ' · powt.' : '' }}</span>
-        <b class="num">{{ fmtVal(val, unit) }}</b>
+        <b class="num">{{ shownTxt }}</b>
         <ion-button fill="clear" :strong="true" :style="{ '--color': color }" @click="apply(false)">Gotowe</ion-button>
       </div>
       <ion-picker>
@@ -22,7 +22,7 @@
       <div class="quick">
         <button v-for="q in quick" :key="q" @click="set(val + q)" class="num">{{ q > 0 ? '+' : '−' }}{{ fmtNum(Math.abs(q)) }}</button>
       </div>
-      <button class="apply-all" v-if="arr.length - si > 1" @click="apply(true)">Ustaw {{ fmtVal(val, unit) }} dla tej i kolejnych serii</button>
+      <button class="apply-all" v-if="arr.length - si > 1" @click="apply(true)">Ustaw {{ shownTxt }} dla tej i kolejnych serii</button>
     </div>
   </ion-modal>
 </template>
@@ -30,7 +30,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue'
 import { IonModal, IonButton, IonPicker, IonPickerColumn, IonPickerColumnOption } from '@ionic/vue'
-import { UNITS, fmtNum, fmtVal } from '../../plan'
+import { UNITS, fmtNum } from '../../plan'
+import { toU, fromU } from '../../units'
 
 const props = defineProps({
   open: Boolean, color: String,
@@ -49,9 +50,12 @@ function set(v) {
   v = Math.max(0, Math.min(u.max, u.frac ? Math.round(v * 4) / 4 : Math.round(v)))
   int.value = Math.floor(v); frac.value = Math.round((v - Math.floor(v)) * 4) / 4
 }
-watch(() => [props.open, props.g, props.si, props.field], () => { if (props.open) set(props.initial) }, { immediate: true })
+// kg values are shown and picked in the user's unit (kg or lb) and stored in kg
+const isKg = () => unit.value === 'kg'
+const shownTxt = computed(() => fmtNum(val.value) + ' ' + UNITS[unit.value].short) // val is already in the shown unit
+watch(() => [props.open, props.g, props.si, props.field], () => { if (props.open) set(isKg() ? toU(props.initial) : props.initial) }, { immediate: true })
 function apply(all) {
-  const v = val.value, f = props.field
+  const f = props.field, v = isKg() ? fromU(val.value) : val.value
   props.arr.forEach((x, i) => { if (i === props.si || (all && i > props.si)) x[f] = f === 'r' ? Math.max(1, v) : v })
   emit('done'); emit('close')
 }

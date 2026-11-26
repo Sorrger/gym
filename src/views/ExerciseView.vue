@@ -51,6 +51,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonBackButton, onIonViewDidEnter } from '@ionic/vue'
 import { Chart, LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip } from 'chart.js'
 import { PLAN, COLORS, UNITS, entriesOf, fmtNum, isAssisted } from '../plan'
+import { toU } from '../units'
 import { state, sorted, fmtDate, fmtShort } from '../store'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryScale, Filler, Tooltip)
@@ -72,10 +73,11 @@ const as = computed(() => !!entry.value && isAssisted(entry.value)) // assisted:
 const pts = computed(() => {
   void state.sessions
   const out = []
+  const cv = v => (unit.value === 'kg' ? toU(v) : v) // kg exercises in the shown unit (kg or lb)
   sorted().slice().reverse().forEach(s => {
     const done = (s.ex?.[name.value] || []).filter(x => x.d && x.w != null)
     if (!done.length) return
-    out.push({ id: s.id, date: s.date, w: as.value ? Math.min(...done.map(x => x.w)) : Math.max(...done.map(x => x.w)), sets: done.map(x => fmtNum(x.w) + (x.r ? ' × ' + x.r : '')).join(' · ') })
+    out.push({ id: s.id, date: s.date, w: cv(as.value ? Math.min(...done.map(x => x.w)) : Math.max(...done.map(x => x.w))), sets: done.map(x => fmtNum(cv(x.w)) + (x.r ? ' × ' + x.r : '')).join(' · ') })
   })
   let max = null
   out.forEach((p, k) => { p.pr = k > 0 && (as.value ? p.w < max : p.w > max); max = max == null ? p.w : as.value ? Math.min(max, p.w) : Math.max(max, p.w) })
