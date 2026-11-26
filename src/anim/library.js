@@ -184,7 +184,12 @@ const LIB = {
   shrug: sel => ({ frames: [st({ sg: 0, a1: 90, a2: 90 }), st({ sg: 16, a1: 90, a2: 90 })], gear: sel.eq === 'mc' ? [{ k: 'lever', pivot: { x: -64, y: -70 } }, { k: 'handle' }] : sel.eq === 'cb' ? [{ k: 'cable', from: { x: 48, y: -12 } }, { k: 'handle' }] : held(sel.eq), props: sel.eq === 'cb' ? [tower(54, -50, -12)] : [], lab: UP }),
   'face-pull': sel => { const b = sel.pos === 'seat' ? seat({}) : sel.pos === 'kneel' ? { hx: 0, hy: -76, t: -90, l1: 90, l2: 180, fo: 180 } : st({ t: -86, fx: 24, gx: -30, gy: -7 }); return { frames: [hand(b, 86, -8), { ...hand(b, 14, -36), ab: -1 }], props: [tower(190, -300, shoulderOf(b).y - 10), ...(sel.pos === 'seat' ? [SEAT_PROP] : [])], gear: [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: 190, y: shoulderOf(b).y - 10 } }], lab: PULL } },
   'reverse-fly': sel => {
-    if (sel.eq === 'mc') { const b = { ...FSEAT, a2: null }; return { view: 'f', frames: [{ ...b, a1: 4, a2: 4, af: 0.22, ff: 0.22 }, { ...b, a1: 2, a2: 2, af: 1, ff: 1 }], props: [...FSEAT_PROPS, { k: 'pad', x1: 0, y1: -110, x2: 0, y2: -200, w: 30 }], gear: [{ k: 'deck', y: -262 }, { k: 'handle', both: true }], lab: ['Rozciągnij', 'Wróć'] } }
+    if (sel.eq === 'mc') { // side view, chest on the pad: handles start in front and swing out and back behind the shoulders
+      const b = seat({ t: -88 }), S = shoulderOf(b), R = Math.PI / 180
+      const arm = (a, k) => ({ ...b, a1: a, a2: a, af: k, ff: k })
+      const frames = [0, 30, 55, 75].map(d => arm(-4, Math.cos(d * R))).concat([arm(-4, 0.06), arm(184, 0.06), arm(184, 0.24)])
+      return { frames, props: [SEAT_PROP, { k: 'pad', x1: S.x + 27, y1: S.y + 2, x2: S.x + 27, y2: S.y + 62, w: 17 }, { k: 'post', x: S.x + 27, y2: S.y + 62 }], gear: [{ k: 'lever', pivot: { x: S.x + 2, y: S.y - 84 }, flex: true }, { k: 'handle' }], lab: ['Rozciągnij', 'Wróć'] }
+    }
     if (sel.pos === 'chest') { const b = seat({ t: -84 }); return { frames: [{ ...b, a1: 4, a2: 4, af: 1, ff: 1 }, { ...b, a1: 24, a2: 24, af: 0.3, ff: 0.3 }], props: [SEAT_PROP, { k: 'pad', x1: 30, y1: -110, x2: 30, y2: -170, w: 12 }], gear: [{ k: 'handle' }], lab: ['Rozciągnij', 'Wróć'] } }
     const b = st({ hx: -34, hy: -124, t: -18 })
     return { frames: [{ ...b, a1: 92, a2: 96, af: 1, ff: 1 }, { ...b, a1: 118, a2: 122, af: 0.4, ff: 0.4 }], gear: held(sel.eq === 'cb' ? 'db' : sel.eq), lab: ['Rozciągnij', 'Wróć'] }
