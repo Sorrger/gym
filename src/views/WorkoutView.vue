@@ -184,7 +184,7 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, IonToast, useIonRouter } from '@ionic/vue'
 import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal, linkOutline } from 'ionicons/icons'
 import { prefs, rirTop, rirLabel, deloadWords, SET_TYPES, SET_TYPE_LABEL } from '../prefs'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon, exOf, barOf } from '../plan'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon, exOf, barOf, PLATES } from '../plan'
 import { cloud } from '../cloud'
 import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, cancelDeload, swapExercise, dropEmptyManual, addExtra, removeExtra, noteFor, setNote, partnerOf, setSuperset } from '../store'
 
@@ -285,13 +285,15 @@ async function showTip(list) {
 
 function warm(g) {
   if (!prefs.warmup) return null
-  const bar = WARMUP[g.name] ?? WARMUP[canon(g.name)]
+  if (WARMUP[g.name] == null && WARMUP[canon(g.name)] == null) return null
+  const bar = barOf(g.name, prefs.barKg)
   if (bar == null || g.label) return null
   const arr = sets(g.key)
   if (arr.some(x => x.d)) return null // hidden once the first working set is done
   const W = arr.find(x => x.w != null)?.w
-  const list = warmupSets(W, bar)
-  return list.length ? { W, sets: list, plates: platesPerSide(W, bar) } : null
+  const set = plateSet()
+  const list = warmupSets(W, bar, set)
+  return list.length ? { W, sets: list, plates: platesPerSide(W, bar, set) } : null
 }
 const lastDone = g => sets(g.key).reduce((k, x, i) => (x.d ? i : k), -1)
 const liveOf = g => (s.value && prefs.live ? live(g, s.value) : null)
@@ -449,11 +451,12 @@ async function editNote() {
 }
 
 // ---------- plates on the bar (per side) ----------
+const plateSet = () => (prefs.plateSet?.length ? prefs.plateSet : PLATES)
 function platesTxt(g, si) {
   if (!prefs.plates || g.unit !== 'kg' || g.label) return ''
-  const bar = barOf(g.name), a = sets(g.key), w = a[si]?.w
+  const bar = barOf(g.name, prefs.barKg), a = sets(g.key), w = a[si]?.w
   if (bar == null || !(w > bar) || (si > 0 && a[si - 1].w === w)) return ''
-  const pl = platesPerSide(w, bar)
+  const pl = platesPerSide(w, bar, plateSet())
   const rest = Math.round((w - bar - 2 * pl.reduce((x, y) => x + y, 0)) * 100) / 100
   return 'Na stronę: ' + pl.map(fmtNum).join(' + ') + (rest > 0 ? ' (+' + fmtNum(rest) + ' kg)' : '') + ' · gryf ' + bar
 }

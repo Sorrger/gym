@@ -136,29 +136,33 @@ export const HARDER = {
 
 // warm-up sets before heavy barbell lifts (only shown on screen, never saved – so they never count in stats)
 export const WARMUP = { 'Wyciskanie sztangi na ławce płaskiej': 20, 'Przysiad Zerchera': 20, 'Wyciskanie sztangi siedząc z oparciem': 20, 'Martwy ciąg rumuński': 20 }
-const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25]
-// bar weight of a barbell exercise (null = not loaded with plates on a bar): own warm-up table first, then the name
-export function barOf(name) {
+// plate sizes a gym can have (kg); the user ticks the ones their gym has (prefs.plateSet)
+export const ALL_PLATES = [25, 20, 15, 10, 5, 2.5, 2, 1.25, 1, 0.5]
+export const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25]
+// bar weight of a barbell exercise (null = not loaded with plates on a bar): own warm-up table first, then the name.
+// `std` = the gym's standard bar (EZ bars stay 10 kg)
+export function barOf(name, std = 20) {
   const w = WARMUP[name] ?? WARMUP[canon(name)]
-  if (w != null) return w
+  if (w != null) return w === 20 ? std : w
   const n = String(name).toLowerCase()
   if (/smith|hantl|wyciąg|maszyn|linkach|kettl|talerz/.test(n)) return null
   if (/łaman|\bez\b/.test(n)) return 10
-  return /sztang|martwy ciąg|przysiad zerchera|hip thrust/.test(n) ? 20 : null
+  return /sztang|martwy ciąg|przysiad zerchera|hip thrust/.test(n) ? std : null
 }
-export function warmupSets(W, bar = 20) {
+export function warmupSets(W, bar = 20, set = PLATES) {
   if (!(W > bar)) return []
   const out = [{ w: bar, r: 10 }]
   for (const [p, r] of [[0.5, 8], [0.7, 5], [0.85, 2]]) {
     const w = Math.round((W * p) / 2.5) * 2.5
     if (w > out[out.length - 1].w && w < W) out.push({ w, r })
   }
-  return out.map(x => ({ ...x, plates: platesPerSide(x.w, bar) }))
+  return out.map(x => ({ ...x, plates: platesPerSide(x.w, bar, set) }))
 }
-export function platesPerSide(w, bar = 20) {
+// heaviest plates first; whatever the gym's plates can't make is left over (see platesLeft)
+export function platesPerSide(w, bar = 20, set = PLATES) {
   let side = Math.round(((w - bar) / 2) * 100) / 100
   const out = []
-  for (const p of PLATES) while (side >= p - 1e-9) { out.push(p); side = Math.round((side - p) * 100) / 100 }
+  for (const p of [...set].sort((a, b) => b - a)) while (side >= p - 1e-9) { out.push(p); side = Math.round((side - p) * 100) / 100 }
   return out
 }
 

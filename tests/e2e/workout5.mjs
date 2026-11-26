@@ -8,6 +8,11 @@ const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitSc
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 const fail = m => console.log('FAIL ' + m)
 await load(p, seed())
+// plates are off by default: switch on, take the 25 kg plates away
+await p.goto('http://localhost:4173/#/settings/training'); await p.reload(); await p.waitForTimeout(1400)
+if (await p.locator('.pp:visible').count()) fail('plate picker shown while plates are off')
+await p.locator('.row:visible', { hasText: 'Talerze na stronę' }).click(); await p.waitForTimeout(500)
+await p.locator('.pp-c:visible', { hasText: /^25$/ }).click(); await p.waitForTimeout(400)
 await p.goto('http://localhost:4173/#/plan/0'); await p.reload(); await p.waitForTimeout(1500)
 
 // how-to straight from the plan preview
@@ -20,7 +25,7 @@ const wid = p.url().split('/workout/')[1]
 // plates under the barbell bench sets
 const pl = await p.locator('.plates:visible').first().innerText().catch(() => '')
 console.log('plates:', pl)
-if (!/^Na stronę: .+ · gryf 20$/.test(pl)) fail('no plates line on the bench press')
+if (pl !== 'Na stronę: 20 + 10 · gryf 20') fail('plates line wrong (80 kg without 25 kg plates should be 20 + 10)')
 
 // note
 await p.locator('.xchip:visible', { hasText: 'Notatka' }).click(); await p.waitForTimeout(500)

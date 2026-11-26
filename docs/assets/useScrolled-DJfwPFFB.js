@@ -1,0 +1,1 @@
+import{B as e}from"./muscles-PUDysAEN.js";function t(t=40){let n=e(!1);return{scrolled:n,onScroll:e=>{let r=e.detail.scrollTop>t;r!==n.value&&(n.value=r)}}}export{t};

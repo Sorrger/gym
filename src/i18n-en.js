@@ -5,12 +5,14 @@
 const pl = (n, one, many) => (+n === 1 ? one : many)
 
 export const EN = {
+  "Apka liczy talerze tylko z zaznaczonych. Jeśli czegoś nie da się złożyć, pokaże ile zostaje.": "The app only uses the ticked plates. If something can't be made, it shows what's left over.",
   "Apka sama wpisuje dziś sugerowany ciężar i powtórzenia – bez okienka. Dlaczego tak: pod „Ostatnio…”.": "The app fills in today's suggested weight and reps – no pop-up. Why: under “Last time…”.",
   "Arkusz (CSV)": "Spreadsheet (CSV)",
   "Dodaj notatkę": "Add a note",
   "Dodane dziś": "Added today",
   "Drążek": "Straight bar",
   "Dwa ćwiczenia na zmianę: seria jednego, od razu seria drugiego, potem przerwa. Apka sama przeskakuje między nimi.": "Two exercises in turns: a set of one, right away a set of the other, then rest. The app switches between them by itself.",
+  "Gryf (sztanga prosta)": "Bar (straight barbell)",
   "Gryf heksagonalny": "Trap bar",
   "Gryf łamany": "EZ bar",
   "Guma": "Band",
@@ -51,6 +53,7 @@ export const EN = {
   "Sztanga": "Barbell",
   "T-gryf": "T-bar",
   "Talerze na stronę": "Plates per side",
+  "Talerze na Twojej siłowni": "Plates at your gym",
   "To ćwiczenie już jest w treningu": "This exercise is already in the workout",
   "Treningi zostaną dopisane do historii. Te, które już masz, nie zmienią się.": "The workouts are added to your history. The ones you already have stay as they are.",
   "Treningi, waga, plan i ustawienia z tego telefonu": "Workouts, weight, plan and settings on this phone",

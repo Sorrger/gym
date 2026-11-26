@@ -15,6 +15,7 @@
         <SwitchRow k="deloadHalf" t="Połowa serii w lżejszym tygodniu" d="Wyłączone = tyle serii co zwykle" />
       </template>
     </div>
+    <div v-if="prefs.plates" class="card look plates-card"><PlatesPick /></div>
   </div>
 </template>
 
@@ -24,4 +25,5 @@ import { setPref } from '../../account'
 import { COACH, TOGGLES, REST, DELOAD_NUMS } from './rules'
 import StepRow from './StepRow.vue'
 import SwitchRow from './SwitchRow.vue'
+import PlatesPick from './PlatesPick.vue'
 </script>

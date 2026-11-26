@@ -17,10 +17,13 @@
           <h1>Co Cię interesuje?</h1>
           <p class="lead">Zaznacz, czego chcesz używać. Resztę schowam – zmienisz to później w Ustawieniach.</p>
           <div class="ints">
-            <button v-for="f in FEATS" :key="f.k" class="int press" role="switch" :aria-checked="want[f.k]" @click="want[f.k] = !want[f.k]">
-              <div class="grow"><b>{{ f.t }}</b><span>{{ f.d }}</span></div>
-              <span class="sw-t" :class="{ on: want[f.k] }"><i></i></span>
-            </button>
+            <template v-for="f in FEATS" :key="f.k">
+              <button class="int press" role="switch" :aria-checked="want[f.k]" @click="want[f.k] = !want[f.k]">
+                <div class="grow"><b>{{ f.t }}</b><span>{{ f.d }}</span></div>
+                <span class="sw-t" :class="{ on: want[f.k] }"><i></i></span>
+              </button>
+              <div v-if="f.k === 'plates' && want.plates" class="int-sub"><PlatesPick /></div>
+            </template>
           </div>
         </section>
 
@@ -68,6 +71,7 @@ import { setNick, setPref } from '../account'
 import { setWeight } from '../weight'
 import { iso } from '../store'
 import { PLAN } from '../plan'
+import PlatesPick from './settings/PlatesPick.vue'
 import { ask } from '../dialog'
 
 const router = useIonRouter()
@@ -80,10 +84,11 @@ const FEATS = [
   { k: 'coach', t: 'Podpowiedzi trenera', d: 'Ile dźwignąć dziś, kiedy dodać ciężar' },
   { k: 'restTimer', t: 'Minutnik przerwy', d: 'Odlicza przerwę po każdej serii' },
   { k: 'warmup', t: 'Rozgrzewka', d: 'Serie rozgrzewkowe przy sztandze' },
+  { k: 'plates', t: 'Talerze na stronę', d: 'Przy sztandze: co założyć na każdą stronę gryfu' },
   { k: 'rir', t: 'Zapas powtórzeń', d: 'Ile zostało do upadku – dla dokładniejszych podpowiedzi' },
   { k: 'deload', t: 'Lżejszy tydzień', d: 'Co kilka tygodni lżej, żeby odpocząć' },
   { k: 'setTypes', t: 'Rodzaje serii', d: 'Rozgrzewkowa, drop set, do upadku' }]
-const want = reactive({ weightOn: true, coach: true, restTimer: true, warmup: true, rir: false, deload: true, setTypes: false })
+const want = reactive({ weightOn: true, coach: true, restTimer: true, warmup: true, plates: false, rir: false, deload: true, setTypes: false })
 const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
 const planNames = computed(() => PLAN.filter(p => !p.hidden).map(p => p.name).join(', '))
 
@@ -98,7 +103,7 @@ function next() {
   if (step.value === 0) { pick(cur.value); return }
   if (step.value === 1) {
     setPref('weightOn', want.weightOn); setPref('coach', want.coach ? 'set' : 'off'); setPref('live', want.coach)
-    for (const k of ['rir', 'warmup', 'restTimer', 'deload', 'setTypes']) setPref(k, want[k])
+    for (const k of ['rir', 'warmup', 'plates', 'restTimer', 'deload', 'setTypes']) setPref(k, want[k])
     step.value = 2; return
   }
   if (step.value === 2) {
@@ -146,7 +151,7 @@ h1 { font-size: 32px; font-weight: 800; letter-spacing: -.5px; margin: 8px 0 6px
 .back { background: var(--app-card); color: var(--accent); }
 .ints { display: flex; flex-direction: column; background: var(--app-card); border-radius: 16px; overflow: hidden; }
 .int { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border: 0; background: none; font: inherit; color: inherit; text-align: left; }
-.int + .int { border-top: 0.5px solid var(--app-line); }
+.int + .int, .int-sub + .int { border-top: 0.5px solid var(--app-line); }
 .int .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .int b { font-size: 16px; font-weight: 600; }
 .int span { font-size: 13px; color: var(--app-muted); }
@@ -154,4 +159,5 @@ h1 { font-size: 32px; font-weight: 800; letter-spacing: -.5px; margin: 8px 0 6px
 .sw-t i { position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,.2); transition: transform .2s; }
 .sw-t.on { background: #34c759; }
 .sw-t.on i { transform: translateX(20px); }
+.int-sub { padding: 4px 14px 14px; }
 </style>

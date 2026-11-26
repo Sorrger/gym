@@ -6,7 +6,9 @@ export const DEFAULT_PREFS = {
   live: true,       // advice under a set that was clearly too heavy / too light
   rir: true,        // "Zapas" chips (reps in reserve) after ticking a set
   warmup: true,     // warm-up note for barbell lifts
-  plates: true,     // plates per side under barbell sets
+  plates: false,    // plates per side under barbell sets
+  plateSet: [25, 20, 15, 10, 5, 2.5, 1.25], // plates the gym has (kg)
+  barKg: 20,        // the gym's standard barbell
   autoNext: true,   // jump to the next exercise when one is done
   deload: true,     // automatic lighter week
   deloadEvery: 6,   // … every n weeks of training
@@ -27,8 +29,8 @@ export const DEFAULT_PREFS = {
   setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }
 export const prefs = reactive({ ...DEFAULT_PREFS })
-export const setPrefsLocal = p => Object.assign(prefs, DEFAULT_PREFS, p || {}, p && !p.quietCoach && p.coach === 'auto' ? { coach: 'set' } : {})
-export const prefsData = () => ({ ...prefs })
+export const setPrefsLocal = p => Object.assign(prefs, JSON.parse(JSON.stringify(DEFAULT_PREFS)), p || {}, p && !p.quietCoach && p.coach === 'auto' ? { coach: 'set' } : {})
+export const prefsData = () => JSON.parse(JSON.stringify(prefs)) // plain copy: IndexedDB can't store reactive arrays
 // colour class for a weight change per week: 'dn' = good for the goal (green), 'upw' = against it (red)
 export const weightTone = v => { if (v == null || Math.abs(v) < 0.05 || prefs.goal === 'maintain') return ''; return (prefs.goal === 'bulk' ? v > 0 : v < 0) ? 'dn' : 'upw' }
 // "Zapas" chips: 0 … top, the last one means "top or more"

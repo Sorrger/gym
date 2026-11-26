@@ -304,7 +304,7 @@ plan.PLAN.length = 4; plan.applyPlan(null)
   // deload knobs
   prefs.deloadPct = 20; ok(store.deloadKg(100, g) === 80, 'deload 20 % lighter'); prefs.deloadHalf = false; ok(store.deloadSets(4) === 4, 'deload keeps all sets when half is off')
   prefs.deloadHalf = true; ok(store.deloadSets(4) === 2 && (prefs.deloadPct = 10, store.deloadKg(100, g) === 90), 'defaults back')
-  ok(Object.keys(DEFAULT_PREFS).every(k => prefs[k] === DEFAULT_PREFS[k]), 'all prefs back to defaults') }
+  ok(Object.keys(DEFAULT_PREFS).every(k => JSON.stringify(prefs[k]) === JSON.stringify(DEFAULT_PREFS[k])), 'all prefs back to defaults') }
 globalThis.T1 = { n, fails }
 // ---------- edge cases round (Nov 24) ----------
 reset()
@@ -355,5 +355,5 @@ plan.applyPlan(null)
   // deload knobs
   prefs.deloadPct = 20; ok(store.deloadKg(100, g) === 80, 'deload 20 % lighter'); prefs.deloadHalf = false; ok(store.deloadSets(4) === 4, 'deload keeps all sets when half is off')
   prefs.deloadHalf = true; ok(store.deloadSets(4) === 2 && (prefs.deloadPct = 10, store.deloadKg(100, g) === 90), 'defaults back')
-  ok(Object.keys(DEFAULT_PREFS).every(k => prefs[k] === DEFAULT_PREFS[k]), 'all prefs back to defaults') }
+  ok(Object.keys(DEFAULT_PREFS).every(k => JSON.stringify(prefs[k]) === JSON.stringify(DEFAULT_PREFS[k])), 'all prefs back to defaults') }
 globalThis.T1 = { n, fails }

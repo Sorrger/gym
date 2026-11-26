@@ -1,5 +1,5 @@
 // Fourth set: notes per exercise, exercises added during a workout, supersets, plates on the bar.
-const { store, plan, stats, muscles } = await import('./b.mjs')
+const { store, plan, stats, muscles, prefsM } = await import('./b.mjs')
 const { state } = store
 let fails = 0, n = 0
 const ok = (c, m, extra) => { n++; if (!c) { fails++; console.log('FAIL', m, extra ?? '') } else console.log('ok  ', m) }
@@ -11,6 +11,10 @@ const withBar = kgNames.filter(nm => plan.barOf(nm) != null)
 ok(withBar.includes('Wyciskanie sztangi na ławce płaskiej') && withBar.includes('Martwy ciąg rumuński'), 'plates: bench and RDL have a bar', withBar)
 ok(!withBar.some(nm => /hantl|wyciąg|maszyn|Smith/i.test(nm)), 'plates: no dumbbell / cable / machine / Smith exercise', withBar)
 ok(plan.barOf('Uginanie ramion ze sztangą łamaną') === 10 && plan.barOf('Wiosłowanie sztangą w opadzie') === 20, 'plates: EZ bar 10 kg, barbell 20 kg')
+ok(plan.barOf('Wyciskanie sztangi na ławce płaskiej', 15) === 15 && plan.barOf('Uginanie ramion ze sztangą łamaną', 15) === 10, 'plates: the gym\'s own standard bar, EZ stays 10')
+ok(plan.platesPerSide(80, 20).join() === '25,5' && plan.platesPerSide(80, 20, [20, 10, 5, 2.5]).join() === '20,10', 'plates: only the plates the gym has')
+ok(plan.platesPerSide(61, 20, [20, 10, 5, 2.5]).join() === '20', 'plates: what can\'t be made is left over')
+ok(plan.warmupSets(80, 20, [20, 10, 5]).every(x => x.plates.every(p => [20, 10, 5].includes(p))), 'plates: warm-up uses the same plates')
 
 // notes: the newest note shows in later workouts, an empty one clears it
 const a = store.startSession(0); a.date = '2026-11-10'; a.started = 1; a.finished = true
@@ -60,5 +64,12 @@ const u = store.startSession(2)
 ok(store.partnerOf(u, 0) === 1, 'superset: next workout of the same training keeps it')
 const v = store.startSession(0)
 ok(!v.ss, 'superset: other trainings are not affected')
+
+// prefs with lists must still be storable (IndexedDB can't clone reactive arrays)
+prefsM.prefs.plateSet = [20, 10, 5]
+let cloned = null; try { cloned = structuredClone(prefsM.prefsData()) } catch {}
+ok(cloned && cloned.plateSet.join() === '20,10,5', 'prefs: data with a plate list can be stored')
+prefsM.setPrefsLocal(null)
+ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,10,5,2.5,1.25' && prefsM.prefs.plateSet !== prefsM.DEFAULT_PREFS.plateSet, 'prefs: plates off by default, own copy of the default list')
 
 globalThis.T4 = { n, fails }
