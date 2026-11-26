@@ -604,7 +604,7 @@ const LIB = {
     const plank = board(-122, -7, -23, { ax: shoulderX(-122, -23), ay: -4, ab: -1 }), hx = plank.ax
     const stand = st({}), squat = { hx: -20, hy: -60, t: -20, fx: 10, fy: -7, ax: hx, ay: -4, ab: -1 }
     const kick = { hx: -10, hy: -100, t: -38, fx: -118, fy: -30, ax: hx, ay: -4, ab: -1 }
-    const jump = st({ hy: -184, fy: -46, fo: 30, a1: -90, a2: -90 })
+    const jump = st({ hy: -184, fy: -46, fo: 30, a1: -90, a2: -90, ab: -1 })
     return { frames: [stand, squat, kick, plank, kick, squat, jump, stand], ph: [[600, 'Przysiad', 0, 1 / 7], [700, 'Wyskok nogami w tył', 1 / 7, 3 / 7], [700, 'Nogi do rąk', 3 / 7, 5 / 7], [500, 'Wyskocz', 5 / 7, 6 / 7], [500, 'Wyląduj', 6 / 7, 1]] }
   },
   'battle-ropes': () => {
