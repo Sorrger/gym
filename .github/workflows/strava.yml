@@ -23,7 +23,7 @@ jobs:
             gh workflow disable strava.yml -R "$GITHUB_REPOSITORY"
             echo "stop=1" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.end.outputs.stop != '1'
         with:
           sparse-checkout: |
