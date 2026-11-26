@@ -69,7 +69,7 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   }
   // a machine arm or a landmine bar is rigid: the hands move on a circle round its pivot, at one length
   for (const g of scene.gear || []) {
-    const P = g.k === 'lever' && !g.flex && typeof g.pivot === 'object' && (!g.to || g.to === 'hands') ? g.pivot : g.k === 'pole' ? g.from : null // flex: arm turning towards the viewer looks shorter
+    const P = g.k === 'lever' && !g.flex && typeof g.pivot === 'object' && (!g.to || g.to === 'hands') ? g.pivot : g.k === 'pole' && !g.flex ? g.from : null // flex: arm turning towards the viewer looks shorter
     if (!P) continue
     // in-between frames on the arc, so the blend doesn't cut across the circle
     const fr = scene.frames, dense = [fr[0]]
