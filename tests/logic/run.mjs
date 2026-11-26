@@ -8,7 +8,8 @@ const r = p => path.join(here, p)
 execSync(`npx esbuild ${r('entry.mjs')} --bundle --format=esm --platform=node --inject:${r('shim.mjs')} --alias:idb-keyval=${r('idb.mjs')} --alias:vue=${r('vue.mjs')} --outfile=${r('b.mjs')} --log-level=error`, { stdio: 'inherit' })
 await import('./t.mjs')
 await import('./t2.mjs')
-const { T1, T2 } = globalThis
-const n = T1.n + T2.n, fails = T1.fails + T2.fails
+await import('./t3.mjs')
+const { T1, T2, T3 } = globalThis
+const n = T1.n + T2.n + T3.n, fails = T1.fails + T2.fails + T3.fails
 console.log(`\n${n - fails}/${n} passed`)
 process.exitCode = fails ? 1 : 0

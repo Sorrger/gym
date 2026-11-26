@@ -63,6 +63,25 @@ export function applyPlan(c) {
   for (const k of Object.keys(ORIGIN)) delete ORIGIN[k]
   const targets = new Set(Object.values(OWN_RENAMED))
   for (const o of Object.keys(OWN_RENAMED)) if (!targets.has(o)) ORIGIN[resolveName(o)] = o
+  for (const k of Object.keys(EX_IDS)) delete EX_IDS[k]
+  Object.assign(EX_IDS, c?.ids || {})
+  for (const [id, o] of Object.entries(c?.own || {})) if (o?.name && !EX_IDS[o.name]) EX_IDS[o.name] = id
+}
+// stable exercise ids (name → id): from the user's plan data; other names get one made from their first name,
+// so renaming an exercise never changes its id. Workouts store them next to the names (session.xid).
+export const EX_IDS = {}
+export const slug = n => String(n).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/Ł/g, 'L').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+export function exId(key) {
+  const [b, ...part] = String(key).split(' · ')
+  const id = EX_IDS[b] || EX_IDS[ORIGIN[b]] || 'x-' + slug(ORIGIN[b] || b)
+  return part.length ? id + '/' + slug(part.join(' ')) : id
+}
+// give every exercise of a workout its id (kept when the name changes later)
+export function stampIds(s) {
+  let changed = false
+  for (const key of Object.keys(s?.ex || {})) if (!s.xid?.[key]) { (s.xid ||= {})[key] = exId(key); changed = true }
+  for (const key of Object.keys(s?.xid || {})) if (!s.ex?.[key]) { delete s.xid[key]; changed = true }
+  return changed
 }
 // the user's own renames (old → new): their history follows (migrateNames)
 export const OWN_RENAMED = {}
@@ -260,8 +279,9 @@ export function migrateNames(s) {
     if (to === base) continue
     const nk = [to, ...part].join(' · ')
     if (s.ex[nk]?.length && s.ex[key]?.length) continue // both names in one workout: keep both, never drop sets
-    if (!s.ex[nk]?.length) s.ex[nk] = s.ex[key]
+    if (!s.ex[nk]?.length) { s.ex[nk] = s.ex[key]; if (s.xid?.[key]) s.xid[nk] = s.xid[key] } // the id moves with the history
     delete s.ex[key]
+    if (s.xid) delete s.xid[key]
     changed = true
   }
   return changed

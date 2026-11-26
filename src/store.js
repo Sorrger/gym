@@ -1,7 +1,7 @@
 import { prefs } from './prefs'
 import { reactive, watch, computed } from 'vue'
-import { get, set } from './db'
-import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
+import { get, set, keys, getMany, setMany, delMany } from './db'
+import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, stampIds, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -19,11 +19,36 @@ export function ago(date) {
 export const state = reactive({ sessions: {}, deleted: {}, ready: false, flash: '', loadError: false })
 export const ui = reactive({ progressDay: 0, period: null, ptab: 'all' }) // period: days for the Progress tab, null = all time
 
+// Storage: one IndexedDB entry per workout (`s:<id>`), so a change writes only that workout.
+// Older versions kept everything in one entry `sessions`: it is read, merged and copied to the new
+// entries once, then kept untouched as `sessions-v1` (a safety copy, never written again).
+const SKEY = id => 's:' + id
+const newer = (a, b) => (!a ? b : !b ? a : (b.updated || 0) > (a.updated || 0) ? b : a)
+async function readAll() {
+  const ks = (await keys()).filter(k => typeof k === 'string' && k.startsWith('s:'))
+  const out = {}
+  ;(await getMany(ks)).forEach(s => { if (s?.id) out[s.id] = s })
+  const legacy = await get('sessions')
+  if (legacy) {
+    Object.entries(legacy).forEach(([id, s]) => { if (s) out[id] = newer(out[id], { ...s, id: s.id || id }) })
+    await setMany(Object.entries(out).map(([id, s]) => [SKEY(id), s]))
+    // keep the old single entry as a copy, but never read it again as the live list
+    const prev = await get('sessions-v1')
+    await set('sessions-v1', { ...(prev || {}), ...legacy })
+    await delMany(['sessions'])
+  }
+  return out
+}
+
 export async function load() {
   // if storage can't be read, do NOT continue with an empty list: the first save would wipe the real data
   for (let k = 0; k < 3; k++) {
-    try { const s = await get('sessions'); if (s) state.sessions = s; state.deleted = (await get('deleted')) || {}; state.loadError = false; break }
-    catch (e) { console.warn(e); state.loadError = true; await new Promise(r => setTimeout(r, 300)) }
+    try {
+      state.sessions = await readAll(); state.deleted = (await get('deleted')) || {}; state.loadError = false
+      saved.clear(); for (const [id, s] of Object.entries(state.sessions)) saved.set(id, JSON.stringify(s))
+      savedDeleted = JSON.stringify(state.deleted)
+      break
+    } catch (e) { console.warn(e); state.loadError = true; await new Promise(r => setTimeout(r, 300)) }
   }
   // older versions keyed sessions by "date_day" and had no id/started/finished
   Object.entries(state.sessions).forEach(([k, s]) => {
@@ -32,6 +57,7 @@ export async function load() {
     if (!s.started) s.started = new Date(s.date + 'T12:00:00').getTime()
     if (s.finished == null) s.finished = s.date < iso(new Date())
     migrateNames(s)
+    stampIds(s)
   })
   ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0)))
   closeStale()
@@ -43,9 +69,22 @@ export async function load() {
 // Auto-save: every change is written to the phone right away (no delay), so swiping the app away
 // a moment after a tap loses nothing. Changes made in the same tick are written once.
 let queued = false
+const saved = new Map() // id → JSON last written, so only workouts that really changed are written
+let savedDeleted = ''
 function saveNow() {
-  if (state.loadError) return Promise.resolve()
-  return Promise.all([set('sessions', JSON.parse(JSON.stringify(state.sessions))), set('deleted', { ...state.deleted })]).catch(console.warn)
+  if (state.loadError || !state.ready) return Promise.resolve()
+  const put = [], gone = []
+  for (const [id, s] of Object.entries(state.sessions)) {
+    stampIds(s)
+    const json = JSON.stringify(s)
+    if (saved.get(id) !== json) { put.push([SKEY(id), JSON.parse(json)]); saved.set(id, json) }
+  }
+  for (const id of [...saved.keys()]) if (!state.sessions[id]) { gone.push(SKEY(id)); saved.delete(id) }
+  const del = JSON.stringify(state.deleted), jobs = []
+  if (put.length) jobs.push(setMany(put))
+  if (gone.length) jobs.push(delMany(gone))
+  if (del !== savedDeleted) { savedDeleted = del; jobs.push(set('deleted', JSON.parse(del))) }
+  return Promise.all(jobs).catch(e => { console.warn(e); saved.clear(); savedDeleted = '' }) // failed: write everything next time
 }
 // remove a workout and remember that it was deleted (see state.deleted)
 function forget(id) { delete state.sessions[id]; state.deleted[id] = Date.now() }

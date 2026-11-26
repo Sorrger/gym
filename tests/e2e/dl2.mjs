@@ -1,3 +1,4 @@
+import { putSessions } from './seed.mjs'
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
 const plan = await import('../../src/plan.js')
@@ -21,7 +22,7 @@ const ctx = await b.newContext({ ...devices['iPhone 15'], colorScheme: 'dark' })
 const p = await ctx.newPage()
 const errs = []; p.on('pageerror', e => errs.push(e.message)); p.on('console', m => m.type() === 'error' && errs.push(m.text()))
 await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1200)
-await p.evaluate(async (S) => { await new Promise((res) => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); tx.objectStore('keyval').put(S, 'sessions'); tx.oncomplete = res } }) }, S)
+await putSessions(p, S)
 await p.reload(); await p.waitForTimeout(1500)
 const txt = async sel => (await p.locator(sel).first().textContent())?.trim()
 console.log('deload card:', await txt('.dl-card:visible'))

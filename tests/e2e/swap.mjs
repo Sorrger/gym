@@ -1,3 +1,4 @@
+import { putSessions } from './seed.mjs'
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
 const S = {}
@@ -7,7 +8,7 @@ mk('b', '2026-11-16', 0, { 'Rozpiętki na bramie z dołu do góry': [10, 10, 10]
 const b = await launch()
 const p = await (await b.newContext({ ...devices['iPhone 15'] })).newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message))
 await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1200)
-await p.evaluate(async S => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); tx.objectStore('keyval').put(S, 'sessions'); tx.oncomplete = res } }) }, S)
+await putSessions(p, S)
 await p.goto('http://localhost:4173/#/plan/0'); await p.reload(); await p.waitForTimeout(1300)
 console.log('plan alt:', await p.locator('.alt:visible').allTextContents())
 await p.locator('.go:visible').click(); await p.waitForTimeout(1300)

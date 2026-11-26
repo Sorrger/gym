@@ -1,9 +1,10 @@
+import { getSessions } from './seed.mjs'
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
 const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] }); await ctx.addInitScript(() => localStorage.setItem('onboarded', '1')); const p = await ctx.newPage(); const errs = []
 p.on('pageerror', e => errs.push(e.message))
-const IDB = () => p.evaluate(() => new Promise(r => { const q = indexedDB.open('keyval-store'); q.onsuccess = () => { const g = q.result.transaction('keyval').objectStore('keyval').get('sessions'); g.onsuccess = () => r(g.result || {}) } }))
+const IDB = () => getSessions(p)
 await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1500)
 const BENCH = 'Wyciskanie sztangi na ławce płaskiej'
 async function dlgClose(choice = 'Zostaw') { const z = p.locator('.dlg-btn', { hasText: choice }); if (await z.first().isVisible().catch(() => false)) { await z.first().click(); await p.waitForTimeout(400); return true } return false }

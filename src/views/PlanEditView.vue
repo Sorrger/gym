@@ -94,7 +94,7 @@ import { close, chevronUp, chevronDown, trashOutline, add, libraryOutline } from
 import ExercisePicker from './ExercisePicker.vue'
 import { byName, compose } from '../catalog'
 import { lang } from '../i18n'
-import { PLAN, COLORS, PALETTE, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans } from '../plan'
+import { PLAN, COLORS, PALETTE, DEFAULT_PLAN, rangeOf, nSets, ALT, altOf, WEEKDAY_TO_DAY, visiblePlans, EX_IDS } from '../plan'
 import { MUSCLES, MUSCLE_NAMES } from '../muscles'
 import { custom, savePlan } from '../customPlan'
 import { activeSession, state } from '../store'
@@ -124,7 +124,9 @@ const usedNames = computed(() => [...new Set([...PLAN.flatMap((p, i) => (i === d
 // stable id per exercise: kept when the exercise is renamed (history moves with it)
 const ids = { ...(custom.data?.ids || {}) }
 const slug = n => n.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/ł/g, 'l').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-function idOf(n) { if (!n) return ''; if (ids[n]) return ids[n]; const o = ownOf(n); if (o) return o.id; const c = catOf(n); return c ? 'c-' + slug(c.name) : 'x-' + slug(n) }
+// an exercise already in the history keeps the id its workouts carry
+const usedId = n => EX_IDS[n] || Object.values(state.sessions).find(s => s.xid?.[n])?.xid[n]
+function idOf(n) { if (!n) return ''; if (ids[n]) return ids[n]; const o = ownOf(n); if (o) return o.id; const u = usedId(n); if (u) return u; const c = catOf(n); return c ? 'c-' + slug(c.name) : 'x-' + slug(n) }
 const openHere = activeSession()?.day === day
 const isCustom = !!custom.data?.days?.[day]
 

@@ -2,13 +2,13 @@
 // trainings) or starts from zero; creating an own exercise in the catalogue, using it, and it stays listed.
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
-import { seed, load } from './seed.mjs'
+import { getSessions, load, seed } from './seed.mjs'
 const b = await launch()
 const ctx = await b.newContext({ ...devices['iPhone 15'] })
 const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push(e.message + ' @ ' + p.url()))
 const res = []; const ok = (c, m) => res.push((c ? 'ok   ' : 'FAIL ') + m)
 await load(p, seed())
-const sessions = () => p.evaluate(() => new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const q = r.result.transaction('keyval').objectStore('keyval').get('sessions'); q.onsuccess = () => res(q.result) } }))
+const sessions = () => getSessions(p)
 const keys = async () => Object.values(await sessions()).flatMap(s => Object.keys(s.ex || {}))
 const dlg = t => p.locator('.dlg-wrap button', { hasText: t })
 const RDL = 'Martwy ciąg rumuński', NEW = 'Martwy ciąg rumuński ze sztangą'

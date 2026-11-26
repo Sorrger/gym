@@ -55,19 +55,37 @@
       </button>
     </div>
 
+    <h3 class="section-title">Arkusz (CSV)</h3>
+    <div class="ios-group">
+      <button class="row" @click="exportCSV">
+        <span class="sq" style="--c: #0a84ff"><ion-icon :icon="gridOutline" /></span>
+        <div class="grow"><b>Zapisz serie jako CSV</b><span>Każda seria w osobnym wierszu – Excel, Numbers, Arkusze</span></div>
+        <ion-icon :icon="chevronForward" class="chev" />
+      </button>
+      <button class="row" @click="csvInput.click()">
+        <span class="sq" style="--c: #5e5ce6"><ion-icon :icon="downloadOutline" /></span>
+        <div class="grow"><b>Wczytaj CSV</b><span>Z tej apki, ze Strong albo z Hevy – niczego nie kasuje</span></div>
+        <ion-icon :icon="chevronForward" class="chev" />
+      </button>
+    </div>
+
     <template v-if="cloud.token">
       <div class="ios-group gap">
         <button class="row danger" @click="askDisconnect"><div class="grow"><b>Odłącz GitHub</b></div></button>
       </div>
     </template>
+    <div class="ios-group gap">
+      <button class="row danger" @click="askWipe"><div class="grow"><b>Usuń wszystkie moje dane</b><span>Treningi, waga, plan i ustawienia z tego telefonu</span></div></button>
+    </div>
     <input ref="fileInput" type="file" accept=".json,application/json" hidden @change="importData" />
+    <input ref="csvInput" type="file" accept=".csv,text/csv,text/plain" hidden @change="importCSV" />
   </div>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue'
 import { IonIcon } from '@ionic/vue'
-import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward } from 'ionicons/icons'
+import { logoGithub, shareOutline, downloadOutline, cloudUploadOutline, cloudDoneOutline, cloudOfflineOutline, arrowUpOutline, arrowDownOutline, chevronForward, gridOutline, trashOutline } from 'ionicons/icons'
 import { ask } from '../../dialog'
 import { accountData, importAccount } from '../../account'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../../store'
@@ -79,7 +97,7 @@ import { useNow, agoMin } from './now'
 const emit = defineEmits(['msg'])
 const say = m => emit('msg', m)
 const now = useNow()
-const fileInput = ref(null)
+const fileInput = ref(null), csvInput = ref(null)
 const count = computed(() => { void state.sessions; return doneSessions().length })
 const firstDate = computed(() => { const l = doneSessions(); return l.length ? fmtDate(l[l.length - 1].date).slice(0, 5) : '–' })
 const lastBackup = ref((() => { try { return localStorage.getItem('lastBackup') } catch { return null } })())
@@ -118,6 +136,57 @@ function importData(e) {
     e.target.value = ''
   }
   r.readAsText(file)
+}
+
+// save a file: share sheet on the phone (Files / AirDrop), plain download elsewhere
+async function saveFile(text, name, type) {
+  try {
+    const f = new File([text], name, { type })
+    if (navigator.canShare?.({ files: [f] })) { await navigator.share({ files: [f] }); return 'shared' }
+  } catch (e) { if (e?.name === 'AbortError') return 'cancel' }
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([text], { type }))
+  a.download = name; document.body.appendChild(a); a.click(); a.remove()
+  return 'downloaded'
+}
+async function exportCSV() {
+  const { toCSV } = await import('../../csv')
+  const r = await saveFile('\uFEFF' + toCSV(state.sessions), 'inch-up-serie-' + iso(new Date()) + '.csv', 'text/csv')
+  if (r !== 'cancel') say('Serie zapisane jako CSV')
+}
+function importCSV(e) {
+  const file = e.target.files[0]; if (!file) return
+  const r = new FileReader()
+  r.onload = async () => {
+    try {
+      const [{ fromCSV }, { enIndex }] = await Promise.all([import('../../csv'), import('../../catalog')])
+      const { kind, sessions } = fromCSV(String(r.result), enIndex())
+      if (!kind) throw 0
+      const total = Object.keys(sessions).length
+      const { role } = await ask({ icon: downloadOutline, title: 'Wczytać ' + total + ' treningów?',
+        message: 'Treningi zostaną dopisane do historii. Te, które już masz, nie zmienią się.',
+        buttons: [{ text: 'Wczytaj', role: 'ok', kind: 'primary' }, { text: 'Anuluj', role: 'cancel' }] })
+      if (role === 'ok') say('Wczytano ' + mergeSessions(sessions) + ' treningów')
+    } catch { say('Nie rozpoznano pliku CSV') }
+    e.target.value = ''
+  }
+  r.readAsText(file)
+}
+
+// everything off this phone; offers a backup file first, then asks once more
+async function askWipe() {
+  const { role } = await ask({ icon: trashOutline, color: '#ff3b30', title: 'Usunąć wszystkie dane?',
+    message: 'Z tego telefonu znikną treningi, pomiary wagi, Twój plan i ustawienia. Zapisz najpierw kopię, jeśli chcesz je kiedyś wczytać.' + (cloud.token ? ' Kopia na GitHubie zostanie – apka tylko się od niej odłączy.' : ''),
+    buttons: [{ text: 'Zapisz kopię do pliku', role: 'backup', kind: 'primary' }, { text: 'Usuń bez kopii', role: 'go', kind: 'danger' }, { text: 'Anuluj', role: 'cancel' }] })
+  if (role === 'cancel' || !role) return
+  if (role === 'backup') { await exportData(); return }
+  const { role: sure } = await ask({ icon: trashOutline, color: '#ff3b30', title: 'Na pewno?', message: 'Tego nie da się cofnąć.',
+    buttons: [{ text: 'Usuń wszystko', role: 'go', kind: 'danger' }, { text: 'Anuluj', role: 'cancel' }] })
+  if (sure !== 'go') return
+  const { wipeAll } = await import('../../wipe')
+  await wipeAll()
+  location.replace(location.pathname + '#/welcome')
+  setTimeout(() => location.reload(), 50)
 }
 
 async function askToken() {

@@ -81,7 +81,7 @@ if (dl) {
   const path = '/tmp/gym-exp.json'; await dl.saveAs(path)
   const ctx3 = await b.newContext({ ...devices['iPhone 15'] }).then(async c => { await c.addInitScript(() => localStorage.setItem('onboarded', '1')); return c }); await ctx3.clock.install({ time: new Date('2026-11-21T12:00:00') }); const z = await ctx3.newPage(); z.on('pageerror', e => errs.push('phone3: ' + e.message))
   await z.goto('http://localhost:4173/#/settings/backup'); await z.waitForTimeout(1500)
-  await z.locator('input[type=file]').setInputFiles(path); await z.waitForTimeout(1500)
+  await z.locator('input[type=file][accept*=json]').setInputFiles(path); await z.waitForTimeout(1500)
   await z.locator('.dlg-btn:visible').first().click().catch(() => {}); await z.waitForTimeout(800)
   await z.goto('http://localhost:4173/#/tabs/home'); await z.reload(); await z.waitForTimeout(1500)
   ok(/2 treningi/.test(await z.locator('.t-foot:visible').first().textContent()), 'import from file on new phone: 2 treningi')

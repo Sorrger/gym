@@ -1,3 +1,4 @@
+import { putSessions, getSessions } from './seed.mjs'
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
 const S = {}
@@ -7,9 +8,9 @@ const b = await launch()
 const cx = await b.newContext({ ...devices['iPhone 15'] }); await cx.clock.install({ time: new Date('2026-11-21T12:00:00') }); await cx.addInitScript(() => localStorage.setItem('onboarded', '1')); const p = await cx.newPage(); const errs = []
 p.on('pageerror', e => errs.push(e.message))
 await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1200)
-await p.evaluate(async S => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); tx.objectStore('keyval').put(S, 'sessions'); tx.oncomplete = res } }) }, S)
+await putSessions(p, S)
 await p.reload(); await p.waitForTimeout(1500)
-const n = () => p.evaluate(() => new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const q = r.result.transaction('keyval').objectStore('keyval').get('sessions'); q.onsuccess = () => res(Object.values(q.result).map(s => s.date + ':' + s.day + (s.manual ? 'M' : '') + (s.offApp ? 'O' : '') + ':' + Object.values(s.ex).flat().filter(x => x.d).length)) } }))
+const n = () => getSessions(p).then(R => (Object.values(R).map(s => s.date + ':' + s.day + (s.manual ? 'M' : '') + (s.offApp ? 'O' : '') + ':' + Object.values(s.ex).flat().filter(x => x.d).length)))
 
 await p.goto('http://localhost:4173/#/tabs/train'); await p.waitForTimeout(1200); await p.locator('.row:visible', { hasText: 'Dodaj zrobiony trening' }).click(); await p.waitForTimeout(600); await p.screenshot({ path: 'add-dlg.png' })
 console.log('date chips:', await p.locator('.dlg-chip').allInnerTexts())

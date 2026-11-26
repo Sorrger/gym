@@ -1,3 +1,4 @@
+import { getSessions } from './seed.mjs'
 import { launch } from './lib.mjs'
 import { devices } from 'playwright-core'
 const b = await launch()
@@ -39,7 +40,7 @@ ok((await p.locator('.row .grow b:visible').allTextContents()).join() === 'Treni
 await p.locator('.row').first().click(); await p.waitForTimeout(1100); await p.locator('.reset', { hasText: 'Usuń ten trening' }).click(); await p.waitForTimeout(400)
 ok(/jedyny/.test(await dlg()), 'last training cannot be deleted'); await close()
 await go('#/tabs/home'); ok((await p.locator('.banner:visible').count()) === 1, 'home: one training, suggested (rotation)')
-await go('#/tabs/progress'); await go('#/tabs/history'); await go('#/session/' + (await p.evaluate(async () => { const r = await new Promise(res => { const q = indexedDB.open('keyval-store'); q.onsuccess = () => { const g = q.result.transaction('keyval').objectStore('keyval').get('sessions'); g.onsuccess = () => res(g.result) } }); return Object.keys(r || {})[0] || 'x' })))
+await go('#/tabs/progress'); await go('#/tabs/history'); await go('#/session/' + (await getSessions(p).then(r => Object.keys(r || {})[0] || 'x')))
 ok(true, 'progress/history/session render with hidden trainings')
 // 4. reset all
 await go('#/plans'); await p.locator('.reset:visible').click(); await p.waitForTimeout(400); await p.locator('.dlg-btn', { hasText: 'Przywróć' }).click(); await p.waitForTimeout(2500)

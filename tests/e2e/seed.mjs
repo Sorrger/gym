@@ -15,6 +15,30 @@ export function seed() {
 }
 export async function load(p, S) {
   await p.goto('http://localhost:4173/#/tabs/home'); await p.waitForTimeout(1200)
-  await p.evaluate(async (S) => { await new Promise((res) => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); tx.objectStore('keyval').put(S, 'sessions'); tx.oncomplete = res } }) }, S)
+  await putSessions(p, S)
   await p.reload(); await p.waitForTimeout(1500)
 }
+// replace every stored workout with S (written the old way, as one 'sessions' entry – the app moves it to per-workout entries)
+export const putSessions = (p, S) => p.evaluate(S => new Promise(res => {
+  const r = indexedDB.open('keyval-store')
+  r.onsuccess = () => {
+    const tx = r.result.transaction('keyval', 'readwrite'), st = tx.objectStore('keyval')
+    const k = st.getAllKeys(); k.onsuccess = () => { k.result.filter(x => String(x).startsWith('s:')).forEach(x => st.delete(x)); st.put(S, 'sessions') }
+    tx.oncomplete = res
+  }
+}), S)
+// all stored workouts as { id: workout } (per-workout entries + an old 'sessions' entry not moved yet)
+export const getSessions = p => p.evaluate(() => new Promise(res => {
+  const r = indexedDB.open('keyval-store')
+  r.onsuccess = () => {
+    const st = r.result.transaction('keyval').objectStore('keyval'), out = {}
+    const c = st.openCursor()
+    c.onsuccess = () => {
+      const cur = c.result
+      if (!cur) return res(out)
+      if (String(cur.key).startsWith('s:')) out[cur.value.id] = cur.value
+      else if (cur.key === 'sessions') Object.assign(out, cur.value)
+      cur.continue()
+    }
+  }
+}))

@@ -500,3 +500,20 @@ export function catalogEN() {
   }
   return out
 }
+
+/** English names of the catalogue (every option one at a time, letters only) → the Polish name: for imports from other apps */
+export function enIndex() {
+  const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '')
+  const out = {}
+  for (const b of BASES) {
+    const add = sel => { const c = compose(b, fullSel(b, sel)); if (!out[norm(c.nameEn)]) out[norm(c.nameEn)] = c.name }
+    add({})
+    for (const eq of b.o.eq || []) {
+      add({ eq })
+      for (const ax of Object.keys(b.o)) if (ax !== 'eq') for (const v of b.o[ax]) add({ eq, [ax]: v })
+      for (const v of b.v || []) add({ eq, v: v[0] })
+    }
+    for (const en of String(b.akaEn || '').split(',').map(x => x.trim()).filter(Boolean)) if (!out[norm(en)]) out[norm(en)] = compose(b, fullSel(b)).name
+  }
+  return out
+}

@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 
 const here = path.dirname(fileURLToPath(import.meta.url))
-const ALL = ['e2e_on', 'full', 'nav', 'add', 'swap', 'edit2', 'plans', 'edge', 'dl2', 'prefs', 'prog2', 'rec', 'rest', 'ban2', 'weight-quick', 'theme', 'en', 'catalog', 'own', 'howto', 'coachset']
+const ALL = ['e2e_on', 'full', 'nav', 'add', 'swap', 'edit2', 'plans', 'edge', 'dl2', 'prefs', 'prog2', 'rec', 'rest', 'ban2', 'weight-quick', 'theme', 'en', 'catalog', 'own', 'howto', 'coachset', 'data']
 const only = process.argv.slice(2)
 const list = only.length ? only : ALL
 
