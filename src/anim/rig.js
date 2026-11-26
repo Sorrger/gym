@@ -17,7 +17,7 @@ function chain(root, l1, l2, a1, a2, tx, ty, bend) {
     const dx = tx - root.x, dy = ty - root.y, full = Math.hypot(dx, dy) || 1e-6
     const d = Math.max(Math.abs(l1 - l2) + 0.5, Math.min(full, l1 + l2 - 0.3))
     const a = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))) / R
-    const mid = at(root, Math.atan2(dy, dx) / R + (bend >= 0 ? a : -a), l1)
+    const mid = at(root, Math.atan2(dy, dx) / R + a * Math.max(-1, Math.min(1, bend)), l1) // fractional bend = elbow passing through the line
     return { mid, end: at(mid, ang(mid, { x: root.x + dx * d / full, y: root.y + dy * d / full }), l2) }
   }
   const mid = at(root, a1, l1)
@@ -38,7 +38,7 @@ export function joints(p, view) {
   const C = at(S, t + (p.hd || 0), FIG.neck + FIG.head)
   const HOLD = { back: add(add(S, L, 13), d, -6), rack: add(add(S, L, -13), d, -3), chest: add(add(H, d, 58), L, -25), up: add(add(S, d, FIG.upperArm + FIG.foreArm - 6), L, -6),
     head: add(C, L, 8), hip: add(add(H, L, -15), d, 4) }
-  const P = p.hold ? { x: HOLD[p.hold].x + (p.hox || 0), y: HOLD[p.hold].y + (p.hoy || 0) } : null
+  const P = p.hold ? { x: HOLD[p.hold].x + (p.hox || 0), y: HOLD[p.hold].y + (p.hoy || 0) } : p.hp || null
   const front = view === 'f'
   const SR = front ? add(S, Rt, 19) : S, SL = front ? add(S, Rt, -19) : S, HR = front ? add(H, Rt, 11) : H, HL = front ? add(H, Rt, -11) : H
   const a1 = p.ra1 != null ? t + p.ra1 : p.a1, a2 = p.ra2 != null ? t + p.ra2 : p.a2
@@ -60,14 +60,60 @@ export function joints(p, view) {
 // blend poses; angles take the short way round; many frames = k runs through them in order
 const ANG = new Set(['t', 'hd', 'a1', 'a2', 'b1', 'b2', 'ra1', 'ra2', 'rb1', 'rb2', 'l1', 'l2', 'm1', 'm2', 'fo', 'rot'])
 const BEND = new Set(['ab', 'bb', 'lb', 'gb']) // bend sides switch, they don't blend
-function mix2(a, b, k) {
+// a bend side flips where that limb is straightest in the move, so the elbow / knee never jumps across
+const LIMB = { ab: ['S', 'W'], bb: ['S', 'W2'], lb: ['H', 'A'], gb: ['H', 'A2'] }
+const bendOf = (p, key) => (key === 'ab' ? p.ab ?? 1 : key === 'bb' ? p.bb ?? p.ab ?? 1 : key === 'lb' ? p.lb ?? -1 : p.gb ?? p.lb ?? -1)
+const flipAt = new WeakMap()
+function flipPoint(a, b, key) {
+  let m = flipAt.get(a); if (!m) flipAt.set(a, (m = new Map()))
+  const memo = m.get(b)?.[key]
+  if (memo != null) return memo
+  const [r, e] = LIMB[key]; let best = 0.5, far = -1
+  for (let i = 0; i <= 20; i++) {
+    const J = joints(mix2(a, b, i / 20, true))
+    const dd = J[r] && J[e] ? Math.hypot(J[e].x - J[r].x, J[e].y - J[r].y) : 0
+    if (dd > far + 0.5) { far = dd; best = i / 20 }
+  }
+  // never straight in this move: swing the joint through the line over a short stretch instead of snapping
+  const full = key === 'ab' || key === 'bb' ? FIG.upperArm + FIG.foreArm : FIG.thigh + FIG.shin
+  const res = { at: best, soft: far < full * 0.95 }
+  m.set(b, { ...m.get(b), [key]: res })
+  return res
+}
+// one frame places a hand / foot by a target, the other by angles: give both a target so the limb moves smoothly
+const TGT = [['ax', 'ay', 'W'], ['bx', 'by', 'W2'], ['fx', 'fy', 'A'], ['gx', 'gy', 'A2']]
+function fillTargets(a, b) {
+  let A = a, B = b
+  for (const [x, y, j] of TGT) {
+    if ((a[x] == null) === (b[x] == null)) continue
+    if (a[x] == null) { const p = joints(a)[j]; A = { ...A, [x]: p.x, [y]: p.y } } else { const p = joints(b)[j]; B = { ...B, [x]: p.x, [y]: p.y } }
+  }
+  return [A, B]
+}
+const filled = new WeakMap()
+function mix2(a0, b0, k, raw) {
+  let m = filled.get(a0); if (!m) filled.set(a0, (m = new Map()))
+  let ab = m.get(b0); if (!ab) m.set(b0, (ab = fillTargets(a0, b0)))
+  const [a, b] = ab
   const o = {}
+  for (const key of BEND) {
+    const x = bendOf(a, key), y = bendOf(b, key)
+    if (x === y || raw) { o[key] = x; continue }
+    const f = flipPoint(a, b, key), w = 0.2, u = f.soft ? Math.max(0, Math.min(1, (k - (f.at - w)) / (2 * w))) : k < f.at ? 0 : 1
+    o[key] = x + (y - x) * u
+  }
   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+    if (BEND.has(key)) continue
     const x = a[key] ?? b[key], y = b[key] ?? a[key]
     if (typeof x !== 'number' || typeof y !== 'number' || BEND.has(key)) { o[key] = k < 0.5 ? x : y; continue }
     let dd = y - x
     if (ANG.has(key)) dd = ((dd % 360) + 540) % 360 - 180
     o[key] = x + dd * k
+  }
+  // hands moving between a hold point (rack, back…) and a free target travel in a straight line instead of jumping
+  if ((a.hold || b.hold) && a.hold !== b.hold) {
+    const ja = joints(a), jb = joints(b), pa = ja.P || ja.W, pb = jb.P || jb.W
+    delete o.hold; o.hp = lerpPt(pa, pb, k)
   }
   return o
 }
@@ -106,15 +152,18 @@ function paint(J, list, cls, front, only) {
       // muscle belly as a filled lens just inside the drawn outline, on the side where the muscle sits
       const wid = seg === 'torso' ? (front ? 22 : 11) : seg === 'neck' ? 8 : w * 0.62
       const n = at({ x: 0, y: 0 }, ang(A, B) - 90, side * (seg === 'torso' ? 9 : w / 2 - wid / 2 + 1))
-      out.push(lens(add(lerpPt(A, B, f0), n), add(lerpPt(A, B, f1), n), wid, cls))
+      // the torso bows with a rounded back (cu): the muscle follows the drawn outline
+      const bow = f => (seg === 'torso' && !front && J.cu ? at({ x: 0, y: 0 }, ang(A, B) - 90, J.cu * 16 * Math.sin(Math.PI * f)) : { x: 0, y: 0 })
+      const p0 = add(add(lerpPt(A, B, f0), n), bow(f0)), p1 = add(add(lerpPt(A, B, f1), n), bow(f1)), fm = (f0 + f1) / 2
+      out.push(lens(p0, p1, wid, cls, add(add(lerpPt(A, B, fm), n), bow(fm))))
     }
   }
   return out
 }
 
 // pointed-ended muscle shape
-function lens(A, B, w, cls) {
-  const d = ang(A, B), M = lerpPt(A, B, 0.5), c1 = add(M, at({ x: 0, y: 0 }, d - 90, w)), c2 = add(M, at({ x: 0, y: 0 }, d + 90, w))
+function lens(A, B, w, cls, mid) {
+  const d = ang(A, B), M = mid || lerpPt(A, B, 0.5), c1 = add(M, at({ x: 0, y: 0 }, d - 90, w)), c2 = add(M, at({ x: 0, y: 0 }, d + 90, w))
   return { t: 'path', a: { d: `M${A.x} ${A.y}Q${c1.x} ${c1.y} ${B.x} ${B.y}Q${c2.x} ${c2.y} ${A.x} ${A.y}Z` }, c: cls }
 }
 // muscular limb: widths at the start, at the belly of the muscle (pos 0..1) and at the end; round ends, filled
@@ -199,7 +248,7 @@ function gear(g, J, pose, near) {
   return []
 }
 
-function prop(p) {
+function prop(p, pose = {}) {
   switch (p.k) {
     case 'bench': { // x,y = centre of the pad top, len, ang
       const a = p.ang || 0, half = (p.len || 140) / 2, c = { x: p.x, y: p.y + 6 }
@@ -217,7 +266,10 @@ function prop(p) {
       const h = p.h || 230
       /** @type {any[]} */
       const out = [line({ x: p.x - 17, y: 0 }, { x: p.x - 17, y: -h }, 5, 'gear frame'), line({ x: p.x + 17, y: 0 }, { x: p.x + 17, y: -h }, 5, 'gear frame'), line({ x: p.x - 20, y: -h }, { x: p.x + 20, y: -h }, 6, 'gear frame'), circle({ x: p.x, y: -h + 10 }, 6, 'gear'), line({ x: p.x, y: -h + 10 }, { x: p.x, y: -96 }, 1.5, 'cable')]
-      for (let i = 0; i < 8; i++) out.push({ t: 'rect', a: { x: p.x - 13, y: -14 - i * 11, width: 26, height: 9, rx: 2 }, c: 'pad' })
+      // the top plates (the chosen weight) ride up with the movement
+      const up = pose.lift || 0
+      for (let i = 0; i < 8; i++) out.push({ t: 'rect', a: { x: p.x - 13, y: -14 - i * 11 - (i >= 4 ? up : 0), width: 26, height: 9, rx: 2 }, c: 'pad' })
+      out[4] = line({ x: p.x, y: -h + 10 }, { x: p.x, y: -96 - up }, 1.5, 'cable')
       return out
     }
     case 'wall': return [line({ x: p.x, y: 0 }, { x: p.x, y: p.top ?? -280 }, 6, 'gear frame')]
@@ -272,7 +324,7 @@ function drawFig(scene, pose) {
   const front = scene.view === 'f'
   const J = joints(pose, scene.view)
   const g = scene.gear || [], main = scene.main || [], help = scene.help || []
-  const out = (scene.props || []).flatMap(prop)
+  const out = (scene.props || []).flatMap(q => prop(q, pose))
   const both = g.filter(x => x.both)
   if (front) {
     const ff = (K, A, side) => { const o = ang(J.H, J.S) + 90 * side; return line(at(A, o, -2), at(A, o, 6), 10, 'body') }

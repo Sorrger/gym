@@ -1,7 +1,7 @@
 // Exercise animations. Each scene uses the shared figure (model.js): static shapes + a frame(k) for the moving parts,
 // k = 0 (start) … 1 (end of the movement). Roles (c) become CSS classes in ExerciseAnim.vue, so colours follow the theme.
 import { rigScene } from './library'
-import { frameBox, joints } from './rig'
+import { frameBox, joints, poseAt } from './rig'
 
 const BENCH_CUES = {
   pl: ['Ściągnij łopatki, stopy mocno na ziemi.', 'Opuść sztangę powoli do dołu klatki.', 'Wypchnij w górę, łokcie ok. 45° od tułowia.'],
@@ -57,9 +57,32 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
       if (P.y > -130) fr(x, P.y, P.x, P.y) // low pivot: straight across from the stack
       else { const top = Math.min(top0, P.y - 18); fr(x, top0, x, top); fr(x, top, P.x, top); fr(P.x, top, P.x, P.y) }
     }
+    // how far the weights ride up in each frame: the joint that travels most, scaled down
+    const js = scene.frames.map(f => joints(f, scene.view)), keys = ['W', 'A', 'K', 'H', 'S']
+    const far = Object.fromEntries(keys.map(n => [n, Math.max(...js.map(j => Math.hypot(j[n].x - js[0][n].x, j[n].y - js[0][n].y)))]))
+    const key = keys.reduce((a, n) => (far[n] > far[a] ? n : a), 'W'), rest = 0 // frame 0 = weights resting
+    const top = Math.max(16, Math.min(32, far[key] * 0.4)) || 0
+    scene.frames = scene.frames.map((f, i) => ({ ...f, lift: far[key] ? top * Math.hypot(js[i][key].x - js[rest][key].x, js[i][key].y - js[rest][key].y) / far[key] : 0 }))
     // belt squat: the belt cable runs under the platform to the stack
     if (baseId === 'belt-squat') scene.props.push({ k: 'line', x1: x, y1: -4, x2: J0.H.x, y2: -4, w: 1.6, c: 'cable' })
     scene.box = frameBox(scene)
+  }
+  // a machine arm or a landmine bar is rigid: the hands move on a circle round its pivot, at one length
+  for (const g of scene.gear || []) {
+    const P = g.k === 'lever' && typeof g.pivot === 'object' && (!g.to || g.to === 'hands') ? g.pivot : g.k === 'pole' ? g.from : null
+    if (!P) continue
+    // in-between frames on the arc, so the blend doesn't cut across the circle
+    const fr = scene.frames, dense = [fr[0]]
+    for (let i = 1; i < fr.length; i++) { for (const u of [0.25, 0.5, 0.75]) dense.push(poseAt([fr[i - 1], fr[i]], u)); dense.push(fr[i]) }
+    scene.frames = dense
+    const ws = scene.frames.map(f => { const J = joints(f, scene.view); return J.P || J.W })
+    const R = ws.reduce((a, w) => a + Math.hypot(w.x - P.x, w.y - P.y), 0) / ws.length
+    scene.frames = scene.frames.map((f, i) => {
+      const w = ws[i], d = Math.hypot(w.x - P.x, w.y - P.y) || 1, q = { x: P.x + (w.x - P.x) * R / d, y: P.y + (w.y - P.y) * R / d }
+      if (f.hold) { const { hold, ...rest } = f; void hold; return { ...rest, hp: q } }
+      return { ...f, ax: q.x, ay: q.y }
+    })
+    break
   }
   // Smith machine: the bar runs in vertical rails
   if (sel.eq === 'sm') {
