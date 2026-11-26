@@ -10,6 +10,17 @@
       <svg v-if="wLine" class="wc-spark" viewBox="0 0 120 44" preserveAspectRatio="none" aria-hidden="true"><path :d="wLine" /></svg>
       <ion-icon :icon="chevronForward" class="pc-chev" />
     </button>
+    <!-- circumferences (Obwody page) -->
+    <button class="card wcard mcard press" @click="router.push('/measures')">
+      <div class="wc-l">
+        <small>Obwody</small>
+        <template v-if="mTop.length">
+          <span v-for="m in mTop" :key="m.id" class="mrow-t num"><b>{{ m.name }} {{ fmt(m.cm) }} cm</b><em v-if="m.d != null" :class="m.tone">{{ m.d > 0 ? '+' : m.d < 0 ? '−' : '±' }}{{ fmt(Math.abs(m.d)) }}</em></span>
+        </template>
+        <b v-else class="m-empty">Dodaj obwody</b>
+      </div>
+      <ion-icon :icon="chevronForward" class="pc-chev" />
+    </button>
     <!-- per body part -->
     <h3 class="section-title">Partie ciała · serie na tydzień</h3>
     <div class="card muscles">
@@ -65,6 +76,7 @@ import { muscleWeek, muscleSets, plansDone, planMuscleSets } from '../../stats'
 import { MUSCLE_NAMES } from '../../muscles'
 import { weights, smooth, trend as wTrendOf } from '../../weight'
 import { usePlans } from './plans'
+import { PARTS, byPart } from '../../measures'
 
 const props = defineProps({ period: Number }) // days, or null = all time
 const router = useIonRouter()
@@ -82,6 +94,12 @@ const wLine = computed(() => {
   return v.map((y, i) => (i ? 'L' : 'M') + (i / (v.length - 1) * 116 + 2).toFixed(1) + ' ' + (40 - (y - lo) / (hi - lo) * 36).toFixed(1)).join(' ')
 })
 
+// up to 3 tracked parts (waist first – the best fat marker), with the change since the first measurement
+const mTop = computed(() => PARTS.filter(p => byPart.value[p.id]).slice(0, 3).map(p => {
+  const d = byPart.value[p.id], ch = d.pts.length > 1 ? d.change : null
+  const tone = ch == null || p.up == null || Math.abs(ch) < 0.25 ? '' : (p.up ? ch > 0 : ch < 0) ? 'ok' : 'bad'
+  return { id: p.id, name: p.name, cm: d.last.cm, d: ch, tone }
+}).sort((a, b) => Number(b.id === 'waist') - Number(a.id === 'waist')))
 const all = computed(() => { void state.sessions; return muscleSets(props.period) })
 const done = computed(() => { void state.sessions; return plansDone(props.period) })
 const mw = computed(() => { void state.sessions; return muscleWeek(props.period) })
@@ -145,6 +163,11 @@ const radar = computed(() => {
 .wc-l span.upw { color: var(--app-bad); }
 .wc-spark { width: 96px; height: 40px; flex: none; }
 .wc-spark path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.mcard .mrow-t { display: flex; gap: 8px; align-items: baseline; margin-top: 2px; }
+.mcard .mrow-t b { font-size: 17px; font-weight: 700; color: var(--ion-text-color); }
+.mcard .mrow-t em { font-style: normal; font-size: 13px; font-weight: 600; color: var(--app-muted); }
+.mcard .mrow-t em.ok { color: var(--app-ok); } .mcard .mrow-t em.bad { color: var(--app-bad); }
+.mcard .m-empty { font-size: 20px; }
 .pc-chev { font-size: 18px; opacity: .8; }
 .muscles { margin: 0 16px; padding: 16px; }
 .mm-map { height: 170px; display: flex; justify-content: center; }

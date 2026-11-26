@@ -1,5 +1,5 @@
 // Fourth set: notes per exercise, exercises added during a workout, supersets, plates on the bar.
-const { store, plan, stats, muscles, prefsM, idb } = await import('./b.mjs')
+const { store, plan, stats, muscles, prefsM, idb, measuresM } = await import('./b.mjs')
 const { state } = store
 let fails = 0, n = 0
 const ok = (c, m, extra) => { n++; if (!c) { fails++; console.log('FAIL', m, extra ?? '') } else console.log('ok  ', m) }
@@ -104,6 +104,24 @@ ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,1
   store.finishSession(o.id); await tick()
   ok(store.dataRev.value > r0 && stats.overview(null).vol > v1, 'stats cache: finishing a workout recomputes', [v1, stats.overview(null).vol])
   stats.enableStatsCache(false)
+}
+
+// body measurements: per day, per part, tombstones, merge by time
+{
+  const M = measuresM
+  ok(M.parseCm('92,5') === 92.5 && M.parseCm('') === null && Number.isNaN(M.parseCm('5')) && Number.isNaN(M.parseCm('abc')), 'measures: cm parsing (comma, empty, out of range)')
+  M.setMeasures('2026-10-01', { waist: 95, arm: 40, foo: 3, chest: 5 })
+  ok(JSON.stringify(M.mstate.entries['2026-10-01'].v) === '{"waist":95,"arm":40}', 'measures: unknown parts and impossible values are dropped', M.mstate.entries['2026-10-01'])
+  M.setMeasures('2026-11-01', { waist: 92.04, arm: 40.5 })
+  const w = M.byPart.value.waist
+  ok(w.first.cm === 95 && w.last.cm === 92 && Math.abs(w.change + 3) < 1e-9 && w.pts.length === 2, 'measures: change since the first measurement', w)
+  M.delMeasures('2026-10-01')
+  ok(M.measures.value.length === 1 && M.mstate.entries['2026-10-01'].del, 'measures: delete keeps a tombstone')
+  const t = M.mstate.entries['2026-10-01'].t
+  ok(M.importMeasures({ '2026-10-01': { v: { waist: 99 }, t: t - 1000 } }) === 0 && M.measures.value.length === 1, 'measures: an older copy does not bring a deleted day back')
+  ok(M.importMeasures({ '2026-09-01': { v: { thigh: 60 }, t: 5 }, 'bad': { v: { waist: 1 }, t: 9 } }) === 1 && M.byPart.value.thigh?.last.cm === 60, 'measures: import adds new days, skips bad keys')
+  M.setMeasures('2026-09-01', {})
+  ok(M.mstate.entries['2026-09-01'].del, 'measures: saving an empty day deletes it')
 }
 
 globalThis.T4 = { n, fails }

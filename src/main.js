@@ -9,6 +9,7 @@ import { load, state } from './store'
 import { initCloud } from './cloud'
 import { initStrava } from './strava'
 import { initWeights } from './weight'
+import { initMeasures } from './measures'
 import { initAccount, account } from './account'
 import { initI18n, addPhrases, lang, loadLang } from './i18n'
 import { initErrors } from './errors'
@@ -40,6 +41,7 @@ const router = createRouter({
     { path: '/plan/:day', component: () => import('./views/PlanView.vue') },
     { path: '/plans', component: () => import('./views/PlansView.vue') },
     { path: '/weight', component: () => import('./views/WeightView.vue') },
+    { path: '/measures', component: () => import('./views/MeasuresView.vue') },
     { path: '/settings', component: () => import('./views/SettingsView.vue') },
     { path: '/settings/:sec', component: () => import('./views/SettingsView.vue') },
     { path: '/welcome', component: () => import('./views/WelcomeView.vue') },
@@ -94,6 +96,7 @@ initPlan().then(load).then(() => initAccount().catch(() => {})).then(() => langR
   initCloud()
   initStrava()
   initWeights()
+  initMeasures()
   const app = createApp(App).use(IonicVue, { mode: 'ios', navAnimation: pageAnim }).use(router)
   router.isReady().then(() => {
     app.mount('#app')

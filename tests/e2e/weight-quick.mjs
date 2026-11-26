@@ -21,7 +21,7 @@ await p.mouse.wheel(0, 900); await p.waitForTimeout(400); await p.screenshot({ p
 // Postępy → Ciało → weight card (its one place besides the Start tile), invisible pages?
 await p.goto('http://localhost:4173/#/tabs/progress'); await p.reload(); await p.waitForTimeout(1300)
 await p.locator('.ptabs button:visible', { hasText: 'Ciało' }).click(); await p.waitForTimeout(500)
-await p.locator('.wcard:visible').click(); await p.waitForTimeout(1500)
+await p.locator('.wcard:not(.mcard):visible').click(); await p.waitForTimeout(1500)
 // Profil no longer repeats Waga / plan / history / numbers
 await p.evaluate(() => {})
 console.log('invisible pages:', await p.locator('.ion-page.ion-page-invisible').count(), 'h1', await p.locator('h1:visible').allInnerTexts())

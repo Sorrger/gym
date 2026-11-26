@@ -90,6 +90,7 @@ import { ask } from '../../dialog'
 import { accountData, importAccount } from '../../account'
 import { state, iso, fmtDate, ago, doneSessions, mergeSessions } from '../../store'
 import { wstate, importWeights } from '../../weight'
+import { measuresData, importMeasures } from '../../measures'
 import { planData, importPlan } from '../../customPlan'
 import { cloud, connect, syncNow, restoreNow, disconnect } from '../../cloud'
 import { useNow, agoMin } from './now'
@@ -108,7 +109,7 @@ function markBackup() { lastBackup.value = iso(new Date()); try { localStorage.s
 
 // one JSON file with everything: workouts, weights, own plan, account + settings
 async function exportData() {
-  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, deleted: state.deleted, weights: wstate.entries, plan: await planData(), profile: accountData() }, null, 1)
+  const json = JSON.stringify({ app: 'silownia', v: 2, exported: new Date().toISOString(), sessions: state.sessions, deleted: state.deleted, weights: wstate.entries, measures: measuresData(), plan: await planData(), profile: accountData() }, null, 1)
   const name = 'silownia-' + iso(new Date()) + '.json'
   try {
     const f = new File([json], name, { type: 'application/json' })
@@ -129,9 +130,10 @@ function importData(e) {
       if (!d?.sessions) throw 0
       const n = mergeSessions(d.sessions, d.deleted)
       const w = d.weights ? importWeights(d.weights) : 0
+      const mz = d.measures ? importMeasures(d.measures) : 0
       if (d.profile) importAccount(d.profile)
       if (d.plan && await importPlan(d.plan)) setTimeout(() => location.reload(), 1500)
-      say('Wczytano ' + n + ' treningów' + (w ? ' i ' + w + ' pomiarów wagi' : ''))
+      say('Wczytano ' + n + ' treningów' + (w ? ' i ' + w + ' pomiarów wagi' : '') + (mz ? ' i ' + mz + ' pomiarów obwodów' : ''))
     } catch { say('To nie jest plik kopii z tej aplikacji') }
     e.target.value = ''
   }

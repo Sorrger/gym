@@ -25,7 +25,7 @@ for (const mode of ['light', 'dark']) {
   await p.locator('ion-back-button:visible').first().click(); await log('back')
   console.log(mode, 'ptab kept:', await p.locator('.ptabs button.on').textContent())
   await p.locator('.ptabs button', { hasText: 'Ciało' }).click(); await p.waitForTimeout(300)
-  await p.locator('.wcard:visible').click(); await log('weight from Ciało')
+  await p.locator('.wcard:not(.mcard):visible').click(); await log('weight from Ciało')
   await p.locator('.back:visible').first().click(); await log('back')
   await p.locator('#tab-button-history').click(); await p.waitForTimeout(500)
   const row = p.locator('.hrow:visible, .ios-group .row:visible, ion-item:visible').first(); if (await row.count()) { await row.click(); await log('session') ; await p.locator('.rb:visible').first().click(); await log('back') }
