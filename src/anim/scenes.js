@@ -32,6 +32,16 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
     }
     return g
   })
+  // the chosen equipment is always drawn: a weight where it is carried, a band where it pulls
+  {
+    const kinds = (scene.gear || []).map(g => g.k), eq = sel.eq
+    const WEIGHT = ['db', 'bb', 'kb', 'pl', 'ez', 'hx', 'tb']
+    if (WEIGHT.includes(eq) && !kinds.some(k => [...WEIGHT, 'pole', 'handle', 'belt', 'roller', 'ball', 'wheel'].includes(k))) {
+      const at = CARRY[baseId] || 'hands', k = eq === 'ez' || eq === 'hx' || eq === 'tb' ? 'bb' : eq
+      scene.gear = [...(scene.gear || []), at === 'belt' ? { k: 'belt' } : { k, ...(at === 'hands' ? {} : { at }), ...(at === 'hands' && scene.view === 'f' ? { both: true } : {}) }]
+    }
+    if (eq === 'bd' && !kinds.some(k => ['band', 'footband', 'bandloop'].includes(k))) scene.gear = [...(scene.gear || []), { k: 'bandloop', mode: BAND[baseId] || 'feet' }]
+  }
   const J0 = joints(scene.frames[0], scene.view)
   // cable version of a free-weight scene: the weight becomes a handle on a cable from a low pulley in front (lying: beyond the head)
   if (sel.eq === 'cb' && !(scene.gear || []).some(g => ['cable', 'band', 'rope', 'lever', 'bar2', 'deck'].includes(g.k))) {
@@ -107,6 +117,10 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   }
   return scene
 }
+// where a weight sits when the scene itself doesn't place one (default: in the hands), and how a band is worn
+const CARRY = { plank: 'back', 'push-up': 'back', dip: 'belt', 'muscle-up': 'belt', 'calf-raise': 'knee', 'leg-raise': 'foot', 'knee-tuck': 'foot', wipers: 'foot', 'tibialis-raise': 'foot' }
+const BAND = { 'push-up': 'back', 'glute-bridge': 'knee', 'hip-thrust': 'knee', 'hip-abduction': 'knee', 'reverse-hyper': 'knee' }
+
 // what the hands hold: free-weight kind, or the attachment on the cable
 const ATT = { bb: 'Sztanga', ez: 'Gryf łamany', db: 'Hantle', kb: 'Kettlebell', hx: 'Gryf heksagonalny', tb: 'T-gryf', bd: 'Guma',
   rope: 'Lina', vbar: 'V-uchwyt', bar: 'Drążek', lat: 'Szeroki drążek', d: 'Uchwyt D', ankle: 'Opaska na kostkę' }

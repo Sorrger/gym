@@ -206,7 +206,7 @@ function foot(K, A, fo, cls = 'body') {
 }
 
 function gear(g, J, pose, near) {
-  const W = g.at === 'hold' && J.P ? J.P : g.at === 'back' ? add(lerpPt(J.H, J.S, 0.62), J.L, 15) : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : g.at === 'hip' ? J.H : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
+  const W = g.at === 'hold' && J.P ? J.P : g.at === 'back' ? add(lerpPt(J.H, J.S, 0.62), J.L, 15) : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : g.at === 'hip' ? J.H : g.at === 'knee' ? at(lerpPt(J.H, J.K, 0.8), ang(J.H, J.K) - 90, 15) : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
   switch (g.k) {
     case 'bb': return [{ t: 'plate', at: W, r: g.r || 22, far: !near }]
     case 'pl': return [{ t: 'plate', at: W, r: g.r || 15, far: !near }]
@@ -216,6 +216,11 @@ function gear(g, J, pose, near) {
     case 'handle': return [circle(W, 5, 'gear' + f)]
     case 'cable': return [line(near ? g.from : g.from2 || g.from, W, 1.6, 'cable' + f), circle(W, 4, 'gear' + f)]
     case 'band': return [line(g.from, W, 3, 'band' + f)]
+    case 'bandloop': { // a band with no anchor: around the knees, over the back from hand to hand, or from under the feet to the hands
+      if (g.mode === 'knee') { const c = lerpPt(J.H, J.K, 0.85); return [{ t: 'path', a: { d: `M${c.x - 10} ${c.y}a10 6 0 1 0 20 0a10 6 0 1 0 -20 0`, 'stroke-width': 3 }, c: 'band' }] }
+      if (g.mode === 'back') { const c = add(J.S, J.L, 34); return [{ t: 'path', a: { d: `M${J.W.x} ${J.W.y}Q${c.x} ${c.y} ${J.W2.x} ${J.W2.y}`, 'stroke-width': 3 }, c: 'band' }] }
+      return [line(J.A, J.W, 3, 'band'), ...(J.W2.x !== J.W.x || J.W2.y !== J.W.y ? [line(J.A2, J.W2, 3, 'band far')] : [])]
+    }
     case 'pole': return [line(g.from, at(W, ang(g.from, W), g.over ?? 14), 5, 'gear-line' + f)]
     case 'wheel': return [circle(at(W, 90, 6), 11, 'gear'), circle(at(W, 90, 6), 11, 'rim'), circle(at(W, 90, 6), 3, 'hub')]
     case 'roller': { const end = { x: W.x, y: W.y + (pose.rl ?? 60) }; return [line(W, end, 1.5, 'cable'), { t: 'plate', at: { x: end.x, y: end.y + 10 }, r: 11 }] }
