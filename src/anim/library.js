@@ -89,7 +89,11 @@ const LIB = {
       const ay = v === 'lowhigh' ? -30 : v === 'highlow' ? -300 : -226
       return { view: 'f', frames, props: [tower(150, -320, ay), tower(-150, -320, ay)], gear: [{ k: 'cable', from: { x: 150, y: ay }, from2: { x: -150, y: ay }, both: true }], lab: ['Złącz', 'Rozciągnij'] }
     }
-    if (sel.eq === 'mc') { const b = { hx: 0, hy: -92, t: -90, l1: 90, l2: 90, tf: 0.25 }; return { view: 'f', frames: [{ ...b, a1: 2, a2: -84, af: 1, ff: 1 }, { ...b, a1: 2, a2: -88, af: 0.22, ff: 1 }], props: [{ k: 'pad', x1: 0, y1: -100, x2: 0, y2: -250, w: 40 }, { k: 'pad', x1: -34, y1: -84, x2: 34, y2: -84, w: 14 }, { k: 'post', x: 0, y2: -78 }], gear: [{ k: 'deck', y: -262 }, { k: 'handle', both: true }], lab: ['Złącz', 'Rozciągnij'] } }
+    if (sel.eq === 'mc') { // butterfly: nearly straight arms at shoulder height swing round to meet in front
+      const b = { hx: 0, hy: -92, t: -90, l1: 90, l2: 90, tf: 0.25 }
+      const arm = (a, k, bend) => ({ ...b, a1: a, a2: a + bend, af: k, ff: k })
+      const frames = [0, 25, 50, 70, 84].map(d => arm(6, Math.cos(d * Math.PI / 180), 8)).concat([arm(6, 0.04, 8), arm(178, 0.04, -8), arm(178, 0.2, -8)])
+      return { view: 'f', frames, props: [{ k: 'pad', x1: 0, y1: -100, x2: 0, y2: -250, w: 40 }, { k: 'pad', x1: -34, y1: -84, x2: 34, y2: -84, w: 14 }, { k: 'post', x: 0, y2: -78 }], gear: [{ k: 'deck', y: -262 }, { k: 'handle', both: true }], lab: ['Złącz', 'Rozciągnij'] } }
     const b = { hx: 0, hy: -150, t: -90, l1: 90, l2: 90 }
     return { view: 'f', top: true, frames: [{ ...b, a1: 4, a2: 4, af: 0.16 }, { ...b, a1: 6, a2: 22, af: 1 }], props: [{ k: 'pad', x1: 0, y1: -120, x2: 0, y2: -268, w: 64 }], gear: held('db'), lab: ['Rozciągnij', 'Złącz'] }
   },
