@@ -31,7 +31,7 @@
           <div class="grow"><b>Przywróć z GitHuba</b></div>
         </button>
       </div>
-      <p class="section-foot">Kopia wysyła się sama kilka sekund po każdej zmianie. Bez internetu poczeka i wyśle się później.</p>
+      <p class="section-foot">Kopia wysyła się sama kilka sekund po zmianie. W trakcie treningu najwyżej co 5 minut, przy wyjściu z apki i od razu po zakończeniu. Bez internetu poczeka i wyśle się później.</p>
     </template>
 
     <h3 class="section-title">Dane</h3>

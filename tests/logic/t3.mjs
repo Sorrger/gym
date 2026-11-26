@@ -90,4 +90,20 @@ ok(Object.keys(state.sessions).sort().join() === 'a,b' && state.sessions.a.ex['W
   ok(csv.parseCSV('a;b\n"x;1";2').length === 2 && csv.parseCSV('a;b\n"x;1";2')[1][0] === 'x;1', 'csv: semicolons and quotes are handled')
 }
 
+// cloud upload timing: rare during an open workout, quick otherwise
+{
+  const { cloudM } = await import('./b.mjs')
+  for (const k of Object.keys(state.sessions)) delete state.sessions[k]
+  state.sessions.f = W('f', '2026-11-20', 1)
+  const t0 = 1_000_000_000
+  cloudM.cloud.lastSync = t0
+  ok(cloudM.nextDelay(t0) === 4000, 'cloud: no open workout → upload after a few seconds')
+  state.sessions.o = W('o', '2026-11-21', 2, { finished: null })
+  ok(cloudM.nextDelay(t0 + 60e3) === cloudM.WORKOUT_GAP - 60e3, 'cloud: open workout → wait until 5 minutes after the last upload')
+  ok(cloudM.nextDelay(t0 + 10 * 60e3) === 4000, 'cloud: open workout, last upload long ago → send soon')
+  state.sessions.o.offApp = true
+  ok(cloudM.nextDelay(t0 + 60e3) === 4000, 'cloud: a done-outside-app mark is not an open workout')
+  delete state.sessions.o; delete state.sessions.f
+}
+
 globalThis.T3 = { n, fails }

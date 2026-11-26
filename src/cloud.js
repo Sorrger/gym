@@ -128,17 +128,27 @@ export async function disconnect() {
 }
 
 let timer = null
-const schedule = (ms = 4000) => { clearTimeout(timer); timer = setTimeout(() => { if (cloud.dirty) syncNow() }, ms) }
+const QUICK = 4000 // outside a workout: a few seconds after the last change
+export const WORKOUT_GAP = 5 * 60e3 // during an open workout: at most one upload per 5 minutes (the phone keeps every tap anyway)
+const openWorkout = () => Object.values(state.sessions).some(s => s && !s.finished && !s.offApp)
+export const nextDelay = (now = Date.now()) => openWorkout() ? Math.max(QUICK, (cloud.lastSync || 0) + WORKOUT_GAP - now) : QUICK
+const schedule = (ms = nextDelay()) => { clearTimeout(timer); timer = setTimeout(() => { if (cloud.dirty) syncNow() }, ms) }
+const finishedIds = () => new Set(Object.values(state.sessions).filter(s => s?.finished).map(s => s.id))
 
 export async function initCloud() {
   try { Object.assign(cloud, (await get('cloud')) || {}) } catch (e) { console.warn(e) }
   cloud.loaded = true
   // any change to workouts marks the backup as out of date; sent a few seconds later when online
-  watch(() => [state.sessions, state.deleted], () => { if (cloud.token) { rev++; if (!cloud.dirty) { cloud.dirty = true; persist() } schedule() } }, { deep: true })
-  window.addEventListener('online', () => schedule(1000))
+  // a workout just finished goes out at once, in one upload
+  let done = finishedIds()
+  watch(() => [state.sessions, state.deleted], () => {
+    const now = finishedIds(), fresh = [...now].some(id => !done.has(id)); done = now
+    if (cloud.token) { rev++; if (!cloud.dirty) { cloud.dirty = true; persist() } schedule(fresh ? 1000 : nextDelay()) }
+  }, { deep: true })
+  window.addEventListener('online', () => schedule(Math.max(1000, nextDelay())))
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden' && cloud.dirty) { clearTimeout(timer); syncNow({ leaving: true }) } // leaving the app: try right away
-    if (document.visibilityState === 'visible') schedule(1500)
+    if (document.visibilityState === 'visible') schedule(Math.max(1500, nextDelay()))
   })
   // also check now and then, so a missed upload (no signal at the gym) goes out later
   if (cloud.token && (cloud.dirty || !cloud.lastSync)) { cloud.dirty = true; schedule(2000) }

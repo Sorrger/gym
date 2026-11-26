@@ -377,7 +377,7 @@ export const EN = {
   "Kopia nie działa": "Backup not working",
   "Kopia pobrana": "Backup downloaded",
   "Kopia wysłana": "Backup sent",
-  "Kopia wysyła się sama kilka sekund po każdej zmianie. Bez internetu poczeka i wyśle się później.": "The backup is sent a few seconds after every change. Offline it waits and sends later.",
+  "Kopia wysyła się sama kilka sekund po zmianie. W trakcie treningu najwyżej co 5 minut, przy wyjściu z apki i od razu po zakończeniu. Bez internetu poczeka i wyśle się później.": "The backup is sent a few seconds after a change. During a workout at most every 5 minutes, when you leave the app and right after you finish. Offline it waits and sends later.",
   "Kopia zapasowa": "Backup",
   "Kopia zapisana": "Backup saved",
   "Krok ciężaru": "Weight step",
