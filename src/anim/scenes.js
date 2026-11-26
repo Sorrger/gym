@@ -25,7 +25,7 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   scene.frames = scene.frames.map(f => {
     if (f.hold || f.hp || f.af) return f
     const J = joints(f, scene.view); let g = f
-    for (const [x, y, sh] of [['ax', 'ay', J.SR], ['bx', 'by', J.SL]]) {
+    for (const [x, y, sh] of /** @type {[string, string, {x: number, y: number}][]} */ ([['ax', 'ay', J.SR], ['bx', 'by', J.SL]])) {
       if (g[x] == null || g[y] < -24) continue
       const dy = g[y] - sh.y, dx = g[x] - sh.x
       if (Math.hypot(dx, dy) > ARM && Math.abs(dy) < ARM) g = { ...g, [x]: sh.x + Math.sign(dx || 1) * Math.sqrt(ARM * ARM - dy * dy) }
