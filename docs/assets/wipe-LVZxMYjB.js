@@ -1,0 +1,1 @@
+import{B as e,x as t}from"./store-Cy9qour3.js";import{r as n}from"./cloud-DMlYu82o.js";async function r(){t.loadError=!0,await n().catch(()=>{}),await e();try{localStorage.clear()}catch{}try{sessionStorage.clear()}catch{}}export{r as wipeAll};
