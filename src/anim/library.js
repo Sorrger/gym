@@ -605,7 +605,9 @@ const LIB = {
     const stand = st({}), squat = { hx: -20, hy: -60, t: -20, fx: 10, fy: -7, ax: hx, ay: -4, ab: -1 }
     const kick = { hx: -10, hy: -100, t: -38, fx: -118, fy: -30, ax: hx, ay: -4, ab: -1 }
     const jump = st({ hy: -184, fy: -46, fo: 30, a1: -90, a2: -90, ab: -1 })
-    return { frames: [stand, squat, kick, plank, kick, squat, jump, stand], ph: [[600, 'Przysiad', 0, 1 / 7], [700, 'Wyskok nogami w tył', 1 / 7, 3 / 7], [700, 'Nogi do rąk', 3 / 7, 5 / 7], [500, 'Wyskocz', 5 / 7, 6 / 7], [500, 'Wyląduj', 6 / 7, 1]] }
+    const rise = { hx: -10, hy: -96, t: -60, fx: 10, fy: -7, a1: -10, a2: -10, ab: -1 } // arms swing forward on the way up
+    const land = { ...st({ a1: 20, a2: 20 }), hy: -134, fx: 6 } // arms come down in front
+    return { frames: [stand, squat, kick, plank, kick, squat, rise, jump, land, stand], ph: [[600, 'Przysiad', 0, 1 / 9], [700, 'Wyskok nogami w tył', 1 / 9, 3 / 9], [700, 'Nogi do rąk', 3 / 9, 5 / 9], [600, 'Wyskocz', 5 / 9, 7 / 9], [600, 'Wyląduj', 7 / 9, 1]] }
   },
   'battle-ropes': () => {
     // athletic half squat facing the anchor, arms whip up and down in turn; each rope makes its own wave
