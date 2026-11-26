@@ -56,6 +56,7 @@
               <span v-if="e.pr" class="pr">REKORD</span>
               <span v-else-if="e.diff" class="diff num" :class="e.diff.cls">{{ e.diff.text }}</span>
             </div>
+            <div v-if="!e.label && s.notes?.[e.name]" class="snote">{{ s.notes[e.name] }}</div>
             <div v-if="e.done.length" class="sets num">
               <span v-for="(x, i) in e.done" :key="i" class="set">{{ setText(x, e.unit) }}</span>
             </div>
@@ -242,4 +243,6 @@ onBeforeUnmount(() => chart?.destroy())
 .rb.danger { background: color-mix(in srgb, var(--app-bad) 14%, var(--app-card)); color: var(--app-bad); }
 .empty { color: var(--app-muted); text-align: center; padding: 28px; }
 .pad-b { padding-bottom: 28px; }
+.snote { margin: 3px 0 2px; font-size: 13px; color: var(--app-muted); white-space: pre-line; }
+.snote::before { content: '✎ '; color: #c99a00; }
 </style>

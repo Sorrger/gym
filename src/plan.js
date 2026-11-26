@@ -137,6 +137,15 @@ export const HARDER = {
 // warm-up sets before heavy barbell lifts (only shown on screen, never saved – so they never count in stats)
 export const WARMUP = { 'Wyciskanie sztangi na ławce płaskiej': 20, 'Przysiad Zerchera': 20, 'Wyciskanie sztangi siedząc z oparciem': 20, 'Martwy ciąg rumuński': 20 }
 const PLATES = [25, 20, 15, 10, 5, 2.5, 1.25]
+// bar weight of a barbell exercise (null = not loaded with plates on a bar): own warm-up table first, then the name
+export function barOf(name) {
+  const w = WARMUP[name] ?? WARMUP[canon(name)]
+  if (w != null) return w
+  const n = String(name).toLowerCase()
+  if (/smith|hantl|wyciąg|maszyn|linkach|kettl|talerz/.test(n)) return null
+  if (/łaman|\bez\b/.test(n)) return 10
+  return /sztang|martwy ciąg|przysiad zerchera|hip thrust/.test(n) ? 20 : null
+}
 export function warmupSets(W, bar = 20) {
   if (!(W > bar)) return []
   const out = [{ w: bar, r: 10 }]
@@ -242,7 +251,9 @@ export function unitOfKey(k, arr = []) {
   for (const st of PULLUP_STAGES) for (const p of st.parts) if (PULLUP + ' · ' + p.label === k) return p.unit
   return arr.some(x => x.r != null) ? 'kg' : 'reps'
 }
-export function entriesOf(day, ctx) { return PLAN[day].ex.flatMap((ex, i) => groupsOf(ex, ctx).map(g => ({ ...g, ex: i }))) }
+// the exercises of one workout: the plan's, plus the ones added during that workout (`session.extra`)
+export const exOf = (day, s) => [...(PLAN[day]?.ex || []), ...(s && typeof s === 'object' ? s.extra || [] : [])]
+export function entriesOf(day, ctx) { return exOf(day, ctx).flatMap((ex, i) => groupsOf(ex, ctx).map(g => ({ ...g, ex: i }))) }
 
 // exercises renamed later: old stored name → current name (history keeps working)
 export const RENAMED = {
@@ -284,5 +295,7 @@ export function migrateNames(s) {
     if (s.xid) delete s.xid[key]
     changed = true
   }
+  // notes follow a renamed exercise
+  for (const n of Object.keys(s?.notes || {})) { const to = resolveName(n); if (to !== n && s.notes[to] == null) { s.notes[to] = s.notes[n]; delete s.notes[n]; changed = true } }
   return changed
 }

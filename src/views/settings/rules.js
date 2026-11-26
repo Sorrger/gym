@@ -12,6 +12,7 @@ export const TOGGLES = [
   { k: 'live', t: 'Rady w trakcie serii', d: 'Za ciężko / za lekko – pod serią' },
   { k: 'rir', t: 'Zapas powtórzeń', d: 'Ile zostało do upadku (0, 1, 2, 3+)' },
   { k: 'warmup', t: 'Rozgrzewka', d: 'Serie rozgrzewkowe przy sztandze' },
+  { k: 'plates', t: 'Talerze na stronę', d: 'Przy sztandze: co założyć na każdą stronę gryfu' },
   { k: 'autoNext', t: 'Przejdź dalej sam', d: 'Po ostatniej serii następne ćwiczenie' },
   { k: 'deload', t: 'Lżejszy tydzień (deload)', d: 'Apka sama ustawia lżejszy tydzień' },
   { k: 'restTimer', t: 'Minutnik przerwy', d: 'Startuje sam po odhaczeniu serii' },
@@ -31,7 +32,7 @@ export const GOALS = [
   { v: 'maintain', t: 'Utrzymanie', d: 'Waga stabilna: zmiana do ±0,25 % na tydzień.' },
   { v: 'bulk', t: 'Masa', d: 'Powoli w górę: 0,1–0,5 % wagi na tydzień, mało tłuszczu.' }]
 // preferences that "Przywróć domyślne zasady treningu" resets (look, language, weight goal stay)
-export const RULES = ['rirUp', 'repsGain', 'stepKg', 'failN', 'dropPct', 'deloadEvery', 'deloadPct', 'deloadHalf', 'coach', 'live', 'rir', 'warmup', 'autoNext', 'deload', 'restTimer', 'restSec', 'setTypes']
+export const RULES = ['rirUp', 'repsGain', 'stepKg', 'failN', 'dropPct', 'deloadEvery', 'deloadPct', 'deloadHalf', 'coach', 'live', 'rir', 'warmup', 'plates', 'autoNext', 'deload', 'restTimer', 'restSec', 'setTypes']
 export const rulesDefault = () => RULES.every(k => prefs[k] === DEFAULT_PREFS[k])
 export const resetRules = () => RULES.forEach(k => setPref(k, DEFAULT_PREFS[k]))
 

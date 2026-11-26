@@ -65,7 +65,8 @@ function setsText(done, unit) {
 // Strava description: only what was really done (skipped exercises and their muscles are left out)
 function describe(s, all = []) {
   const plan = PLAN[s.day]
-  const order = plan ? plan.ex.flatMap(e => groupsOf(e, s)) : []
+  for (const e of s.extra || []) if (!MUSCLES[e[0]] && e[4]) MUSCLES[e[0]] = [e[4].m || [], e[4].h || []] // added during the workout
+  const order = plan ? [...plan.ex, ...(s.extra || [])].flatMap(e => groupsOf(e, s)) : []
   const known = new Set(order.map(g => g.key))
   const extra = Object.keys(s.ex || {}).filter(k => !known.has(k)).map(k => ({ key: k, name: k.split(' · ')[0], label: k.split(' · ')[1] || null, unit: UNIT[k] || 'kg' }))
   const earlier = all.filter(o => o.id !== s.id && (o.started || 0) < (s.started || 0))

@@ -1,7 +1,8 @@
 import { prefs } from './prefs'
 import { reactive, watch, computed } from 'vue'
 import { get, set, keys, getMany, setMany, delMany } from './db'
-import { PLAN, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, stampIds, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
+import { MUSCLES } from './muscles'
+import { PLAN, exOf, entriesOf, groupsOf, DEF_REPS, WEEKDAY_TO_DAY, rangeOf, migrateNames, stampIds, ensurePlans, visiblePlans, setStageFn, stageOfSession, stageGoalMet, isAssisted, incOf } from './plan'
 
 export const iso = d => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
 export const fmtDate = s => { const [y, m, d] = s.split('-'); return `${d}.${m}.${y}` }
@@ -58,6 +59,7 @@ export async function load() {
     if (s.finished == null) s.finished = s.date < iso(new Date())
     migrateNames(s)
     stampIds(s)
+    extraMuscles(s)
   })
   ensurePlans(Math.max(0, ...Object.values(state.sessions).map(s => +s.day || 0)))
   closeStale()
@@ -162,6 +164,10 @@ export function startSession(day) {
   if (deload) s.deload = true
   // always the planned number of sets (half of it in a light week); extra sets can still be added
   entriesOf(day).forEach(g => { const n = g.sets || 1; s.ex[g.key] = prefill(g, deload ? deloadSets(n) : n, deload) })
+  // supersets stay as they were set the last time this training was done
+  const n = PLAN[day]?.ex.length || 0, prevSs = sorted().find(o => o.day === day && !o.offApp)?.ss
+  const ss = (prevSs || []).filter(p => p.every(i => i < n))
+  if (ss.length) s.ss = ss.map(p => [...p])
   state.sessions[s.id] = s
   saveNow()
   return s
@@ -286,7 +292,7 @@ export function mergeSessions(src, deleted = {}) {
     if ((state.deleted[k] || 0) >= (b.updated || b.started || 0)) return
     const a = state.sessions[k]
     if (!a || (b.updated || 0) > (a.updated || 0)) {
-      migrateNames(b)
+      migrateNames(b); extraMuscles(b)
       state.sessions[k] = { ...b, id: k, started: b.started || new Date(b.date + 'T12:00:00').getTime(), finished: b.finished ?? true }
       n++
     }
@@ -366,3 +372,58 @@ export function series(name) {
 }
 
 export const doneSessions = () => sorted().filter(hasData)
+
+// ---------- exercises added during a workout ----------
+// session.extra = [[name, target, null, unit, { m: main, h: help }]] – only in this workout, after the plan's exercises
+export function extraMuscles(s) {
+  for (const e of s?.extra || []) if (!MUSCLES[e[0]] && e[4]) MUSCLES[e[0]] = [e[4].m || [], e[4].h || []]
+}
+export const namesIn = s => exOf(s.day, s).flatMap(e => groupsOf(e, s).map(g => g.name))
+export function addExtra(s, { name, unit, range, main = [], help = [] }) {
+  if (namesIn(s).includes(name)) return false
+  const [lo, hi] = range || [8, 12]
+  const ex = [name, `3 × ${lo}-${hi}${unit === 's' ? ' s' : ''}`, null, unit || 'kg', { m: main, h: help }]
+  s.extra = [...(s.extra || []), ex]
+  extraMuscles(s)
+  for (const g of groupsOf(ex, s)) if (!s.ex[g.key]) s.ex[g.key] = prefill(g, s.deload ? deloadSets(g.sets || 1) : g.sets || 1, !!s.deload, s.id)
+  s.updated = Date.now()
+  return true
+}
+// only while nothing of it is ticked; returns false otherwise
+export function removeExtra(s, i) {
+  const k = i - (PLAN[s.day]?.ex.length || 0), ex = s.extra?.[k]
+  if (!ex) return false
+  const gs = groupsOf(ex, s)
+  if (gs.some(g => (s.ex[g.key] || []).some(x => x.d))) return false
+  gs.forEach(g => delete s.ex[g.key])
+  s.extra = s.extra.filter((_, j) => j !== k)
+  if (!s.extra.length) delete s.extra
+  s.ss = (s.ss || []).filter(p => !p.includes(i)).map(p => p.map(j => (j > i ? j - 1 : j)))
+  if (!s.ss.length) delete s.ss
+  if ((s.cur || 0) >= i) s.cur = Math.max(0, (s.cur || 0) - 1)
+  s.updated = Date.now()
+  return true
+}
+
+// ---------- notes per exercise ----------
+// session.notes = { exerciseName: text }. The newest note is shown in every later workout until it is changed;
+// an empty text clears it.
+export function noteFor(name, s) {
+  if (s?.notes?.[name] != null) return { text: s.notes[name], own: true, date: s.date }
+  const o = sorted().find(o => o.id !== s?.id && o.notes?.[name] != null && (!s || o.date < s.date || (o.date === s.date && o.started < s.started)))
+  return o ? { text: o.notes[name], own: false, date: o.date } : { text: '', own: false, date: '' }
+}
+export function setNote(s, name, text) {
+  s.notes = { ...(s.notes || {}), [name]: String(text || '').trim().slice(0, 500) }
+  s.updated = Date.now()
+}
+
+// ---------- supersets ----------
+// session.ss = [[i, j]]: indices of two exercises done in turns
+export const partnerOf = (s, i) => { const p = (s?.ss || []).find(p => p.includes(i)); return p ? p.find(j => j !== i) : null }
+export function setSuperset(s, i, j) {
+  s.ss = (s.ss || []).filter(p => !p.includes(i) && (j == null || !p.includes(j)))
+  if (j != null && j !== i) s.ss.push([Math.min(i, j), Math.max(i, j)])
+  if (!s.ss.length) delete s.ss
+  s.updated = Date.now()
+}

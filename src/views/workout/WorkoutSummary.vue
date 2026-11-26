@@ -8,7 +8,7 @@
       <p v-if="sv" class="done-sv num"><ion-icon :icon="heart" /> {{ svText(sv) }}</p>
       <div class="done-stats">
         <div><b class="num">{{ c.n }}<small>/{{ c.t }}</small></b><span>serii</span></div>
-        <div><b class="num">{{ exDone }}<small>/{{ plan.ex.length }}</small></b><span>ćwiczeń</span></div>
+        <div><b class="num">{{ exDone }}<small>/{{ plan.ex.length + (s.extra?.length || 0) }}</small></b><span>ćwiczeń</span></div>
         <div><b class="num">{{ prs.length }}</b><span>{{ prs.length === 1 ? 'rekord' : prs.length >= 2 && prs.length <= 4 ? 'rekordy' : 'rekordów' }}</span></div>
       </div>
     </div>

@@ -31,6 +31,9 @@ interface Session {
   offApp?: boolean
   manual?: boolean
   swap?: Record<string, string>
+  extra?: any[]           // exercises added during this workout: [name, target, null, unit, { m, h }]
+  notes?: Record<string, string> // exercise name → note (shown in later workouts until changed)
+  ss?: number[][]         // supersets: pairs of exercise indices
 }
 
 /** Build stamp injected by vite.config.js */

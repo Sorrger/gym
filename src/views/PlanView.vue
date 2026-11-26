@@ -30,6 +30,7 @@
             <span class="n num">{{ i + 1 }}</span>
             <div class="ex-body">
               <b>{{ ex.name }}</b>
+              <span v-if="ex.note" class="pnote">{{ ex.note }}</span>
               <span v-if="ex.alt.length" class="alt">albo: {{ ex.alt.join(', ') }}</span>
               <span v-if="ex.stage" class="stage num">{{ ex.stage.t }}<small v-if="ex.stage.goal">Następny etap: {{ ex.stage.goal }}</small></span>
               <div v-for="g in ex.groups" :key="g.key" class="g">
@@ -38,12 +39,14 @@
                 <span class="last none" v-else>jeszcze nie było</span>
               </div>
             </div>
+            <button class="how press" @click="how = ex.name" :aria-label="'Jak to zrobić: ' + ex.name">?</button>
           </div>
         </div>
         <div class="spacer"></div>
       </div>
       <div v-else class="page"><div class="card empty">Nie ma takiego planu.</div></div>
     </ion-content>
+    <HowToSheet :open="!!how" :name="how" :color="color" :muscles="musclesOf(how)" @close="how = ''" />
     <ion-footer v-if="plan" class="go-foot">
       <button class="go press" :style="{ '--c': color }" @click="go">
         <ion-icon :icon="play" /> {{ active && active.day === day ? 'Kontynuuj trening' : 'Rozpocznij trening' }}
@@ -60,8 +63,9 @@ import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonContent, IonFooter, IonIcon, useIonRouter } from '@ionic/vue'
 import { chevronBack, statsChart, play, informationCircle, trendingDown, createOutline } from 'ionicons/icons'
 import { PLAN, COLORS, UNITS, groupsOf, fmtNum, targetOf, PULLUP_STAGES, stageOf, altOf } from '../plan'
-import { dayMuscles } from '../muscles'
-import { state, sorted, lastDoneOf, activeSession, ago, deloadState, deloadSets } from '../store'
+import { dayMuscles, musclesOf } from '../muscles'
+import HowToSheet from './HowToSheet.vue'
+import { state, sorted, lastDoneOf, activeSession, ago, deloadState, deloadSets, noteFor } from '../store'
 import { startPlan } from '../startFlow'
 import BodyMap from './BodyMap.vue'
 
@@ -86,7 +90,8 @@ function lastOf(g) {
   const ws = new Set(done.map(x => x.w))
   return ws.size === 1 ? `${fmtNum(done[0].w)} kg × ${done.map(x => x.r ?? '–').join(', ')}` : done.map(x => `${fmtNum(x.w)}×${x.r ?? '–'}`).join(' · ')
 }
-const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], alt: altOf(e[0]), stage: e[3] === 'stages' ? stageText() : null, groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
+const how = ref('')
+const rows = computed(() => { void state.sessions; return plan.value ? plan.value.ex.map(e => ({ name: e[0], note: noteFor(e[0], null).text, alt: altOf(e[0]), stage: e[3] === 'stages' ? stageText() : null, groups: groupsOf(e).map(g => ({ ...g, last: lastOf(g) })) })) : [] })
 
 function stageText() { const st = PULLUP_STAGES[stageOf() - 1]; return { t: targetOf(['', '', '', 'stages']), goal: st.goal } }
 function goBack() { if (router.canGoBack()) router.back(); else router.navigate('/tabs/home', 'back', 'replace') }
@@ -124,6 +129,10 @@ const go = () => startPlan(day.value, router)
 .last { font-size: 13.5px; color: var(--app-muted); }
 .last.none { color: var(--app-faint, var(--app-muted)); }
 .spacer { height: 100px; }
+.how { flex: none; align-self: center; width: 30px; height: 30px; border-radius: 50%; border: 0; padding: 0; font: inherit; font-size: 15px; font-weight: 800;
+  color: var(--c); background: color-mix(in srgb, var(--c) 13%, transparent); }
+.pnote { display: block; margin: 2px 0; font-size: 12.5px; color: var(--app-muted); white-space: pre-line; }
+.pnote::before { content: '✎ '; color: #c99a00; }
 .empty { color: var(--app-muted); text-align: center; padding: 28px; }
 .go-foot { padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); background: linear-gradient(to top, var(--app-bg) 70%, transparent); }
 .go-foot::before { display: none; }

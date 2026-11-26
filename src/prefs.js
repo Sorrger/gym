@@ -6,6 +6,7 @@ export const DEFAULT_PREFS = {
   live: true,       // advice under a set that was clearly too heavy / too light
   rir: true,        // "Zapas" chips (reps in reserve) after ticking a set
   warmup: true,     // warm-up note for barbell lifts
+  plates: true,     // plates per side under barbell sets
   autoNext: true,   // jump to the next exercise when one is done
   deload: true,     // automatic lighter week
   deloadEvery: 6,   // … every n weeks of training

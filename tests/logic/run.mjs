@@ -9,7 +9,8 @@ execSync(`npx esbuild ${r('entry.mjs')} --bundle --format=esm --platform=node --
 await import('./t.mjs')
 await import('./t2.mjs')
 await import('./t3.mjs')
-const { T1, T2, T3 } = globalThis
-const n = T1.n + T2.n + T3.n, fails = T1.fails + T2.fails + T3.fails
+await import('./t4.mjs')
+const { T1, T2, T3, T4 } = globalThis
+const n = T1.n + T2.n + T3.n + T4.n, fails = T1.fails + T2.fails + T3.fails + T4.fails
 console.log(`\n${n - fails}/${n} passed`)
 process.exitCode = fails ? 1 : 0

@@ -8,12 +8,12 @@
       </ion-toolbar>
       <ion-toolbar v-if="s" class="dots-bar">
         <div class="dots">
-          <button v-for="(ex, i) in plan.ex" :key="ex[0]" class="dot" :class="{ on: i === idx, done: isComplete(i) }"
+          <button v-for="(ex, i) in exList" :key="ex[0]" class="dot" :class="{ on: i === idx, done: isComplete(i), ssl: ssSide(i) === 'l', ssr: ssSide(i) === 'r', xtra: i >= plan.ex.length }"
             @click="go(i)" :aria-label="'Ćwiczenie ' + (i + 1)">
             <ion-icon v-if="isComplete(i)" :icon="checkmark" /><span v-else>{{ i + 1 }}</span>
           </button>
+          <button v-if="!s.finished || s.manual" class="dot add press" @click="openAdd" aria-label="Dodaj ćwiczenie"><ion-icon :icon="add" /></button>
         </div>
-        
       </ion-toolbar>
     </ion-header>
 
@@ -22,7 +22,7 @@
         <Transition :name="dir" mode="out-in">
           <div class="ex" :key="exName">
             <div class="ex-meta">
-              <span>Ćwiczenie {{ idx + 1 }} z {{ plan.ex.length }}</span>
+              <span>Ćwiczenie {{ idx + 1 }} z {{ exList.length }}</span>
               <span v-if="s.finished" class="edit-chip"><ion-icon :icon="createOutline" /> {{ s.manual && !c.n ? 'Odhacz zrobione serie' : 'Edycja' }} · {{ fmtDate(s.date) }}</span>
               <span v-else class="saved" :class="{ cloudok: cloud.token && !cloud.dirty && !cloud.error }">
                 <ion-icon :icon="cloud.token && !cloud.dirty && !cloud.error ? cloudDoneOutline : checkmarkCircle" />
@@ -35,10 +35,22 @@
                 <div class="ex-sub">
                   <span class="target">{{ exTarget }}</span>
                   <span v-if="exTag" class="tag">{{ exTag }}</span>
+                  <span v-if="isExtra" class="tag">Dodane dziś</span>
                   <button v-if="s.deload" class="tag dl press" @click="deloadInfo">Tydzień lżejszy</button>
                 </div>
-                <button v-if="swapOpts.length > 1" class="swap press" @click="swapAsk">
-                  <ion-icon :icon="swapHorizontal" /> {{ planName !== exName ? 'Zamiennik · zmień' : 'Zajęte? Zamień ćwiczenie' }}
+                <div class="chips">
+                  <button v-if="swapOpts.length > 1" class="swap press" @click="swapAsk">
+                    <ion-icon :icon="swapHorizontal" /> {{ planName !== exName ? 'Zamiennik · zmień' : 'Zajęte? Zamień ćwiczenie' }}
+                  </button>
+                  <button v-if="exList.length > 1" class="xchip press" :class="{ on: partner != null }" @click="ssAsk">
+                    <ion-icon :icon="linkOutline" /> {{ partner != null ? 'Superseria z ' + (partner + 1) : 'Superseria' }}
+                  </button>
+                  <button v-if="isExtra" class="xchip muted press" @click="dropExtra"><ion-icon :icon="trashOutline" /> Usuń z treningu</button>
+                  <button v-if="!exNote.text" class="xchip muted press" @click="editNote"><ion-icon :icon="createOutline" /> Notatka</button>
+                </div>
+                <button v-if="exNote.text" class="note press" @click="editNote">
+                  <ion-icon :icon="createOutline" />
+                  <span>{{ exNote.text }}<small v-if="!exNote.own && exNote.date"> · {{ fmtShort(exNote.date) }}</small></span>
                 </button>
               </div>
               <button class="ex-body press" @click="howOpen = true" aria-label="Jak to zrobić"><BodyMap v-bind="exMuscles" /><span class="how-q" aria-hidden="true">?</span></button>
@@ -70,6 +82,7 @@
                         </button>
                         <button class="step num" @click="step(g, si, 1)" :aria-label="'Plus ' + fmtNum(UNITS[g.unit].step)"><ion-icon :icon="add" /></button>
                       </div>
+                      <div v-if="platesTxt(g, si)" class="plates num">{{ platesTxt(g, si) }}</div>
                       <div class="line reps" v-if="g.unit === 'kg'">
                         <button class="rstep" @click="stepReps(g, si, -1)" aria-label="Minus 1 powtórzenie"><ion-icon :icon="removeIcon" /></button>
                         <button class="reps-val num" @click="openPicker(g, si, 'r')"><b>× {{ x.r ?? DEF_REPS }}</b><small>powt.</small></button>
@@ -114,7 +127,7 @@
     <ion-footer v-if="s" class="ion-no-border">
       <div class="nav">
         <button class="nav-btn ghost" :disabled="idx === 0" @click="go(idx - 1)" aria-label="Poprzednie ćwiczenie"><ion-icon :icon="chevronBack" /></button>
-        <button class="nav-btn" v-if="idx < plan.ex.length - 1" @click="go(idx + 1)">Dalej <ion-icon :icon="chevronForward" /></button>
+        <button class="nav-btn" v-if="idx < exList.length - 1" @click="go(idx + 1)">Dalej <ion-icon :icon="chevronForward" /></button>
         <button class="nav-btn" v-else @click="finish">{{ s.finished ? 'Gotowe' : 'Zakończ trening' }}</button>
       </div>
     </ion-footer>
@@ -141,6 +154,8 @@
     <Transition name="rise">
       <WorkoutSummary v-if="summary && s" :s="s" :plan="plan" @save="save" @back="summary = false" />
     </Transition>
+    <!-- own host element: Ionic moves open overlays out of the page, so Vue needs a stable parent to insert into -->
+    <div class="add-host"><ExercisePicker v-if="addReady" :open="addOpen" :color="color" :own="ownList" :used-names="[]" @close="addOpen = false" @pick="addPicked" /></div>
     <ion-toast :is-open="!!note" :message="t(note)" :duration="2200" position="top" @didDismiss="note = ''" />
   </ion-page>
 </template>
@@ -158,17 +173,20 @@ import { bestBefore } from './workout/records'
 import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
 import HowToSheet from './HowToSheet.vue'
+import { defineAsyncComponent } from 'vue'
+const ExercisePicker = defineAsyncComponent(() => import('./ExercisePicker.vue'))
+import { custom } from '../customPlan'
 import { suggest, applySuggestion, live } from '../coach'
 import { t } from '../i18n'
 import { musclesOf } from '../muscles'
 import { computed, ref, watch, watchEffect, nextTick, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, IonToast, useIonRouter } from '@ionic/vue'
-import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal } from 'ionicons/icons'
+import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal, linkOutline } from 'ionicons/icons'
 import { prefs, rirTop, rirLabel, deloadWords, SET_TYPES, SET_TYPE_LABEL } from '../prefs'
-import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon } from '../plan'
+import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon, exOf, barOf } from '../plan'
 import { cloud } from '../cloud'
-import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, cancelDeload, swapExercise, dropEmptyManual } from '../store'
+import { state, lastFor, finishSession, remove, fmtShort, fmtDate, counts, ago, cancelDeload, swapExercise, dropEmptyManual, addExtra, removeExtra, noteFor, setNote, partnerOf, setSuperset } from '../store'
 
 const route = useRoute()
 const router = useIonRouter()
@@ -195,14 +213,16 @@ watchEffect(() => {
 const plan = computed(() => (s.value ? PLAN[s.value.day] : null))
 const color = computed(() => COLORS[plan.value?.key] || '#2f4bd8')
 
-const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, plan.value.ex.length - 1) : 0))
-const planName = computed(() => plan.value?.ex[idx.value][0] || '')
-const exName = computed(() => (plan.value ? nameIn(plan.value.ex[idx.value], s.value) : ''))
+const exList = computed(() => (s.value ? exOf(s.value.day, s.value) : []))
+const idx = computed(() => (plan.value ? Math.min(s.value?.cur || 0, exList.value.length - 1) : 0))
+const isExtra = computed(() => !!plan.value && idx.value >= plan.value.ex.length)
+const planName = computed(() => exList.value[idx.value]?.[0] || '')
+const exName = computed(() => (plan.value ? nameIn(exList.value[idx.value], s.value) : ''))
 // alternatives for a busy machine (ALT in plan.js): the plan's exercise first
 // alternatives already done at another place of this workout are left out (two places can't share one exercise)
 const swapOpts = computed(() => {
   if (!planName.value) return []
-  const taken = new Set(plan.value.ex.filter((e, i) => i !== idx.value).flatMap(e => [e[0], nameIn(e, s.value)]))
+  const taken = new Set(exList.value.filter((e, i) => i !== idx.value).flatMap(e => [e[0], nameIn(e, s.value)]))
   return [planName.value, ...altOf(planName.value).filter(n => !taken.has(n))]
 })
 async function swapAsk() {
@@ -219,22 +239,22 @@ async function swapAsk() {
   state.flash = 'Dziś: ' + role
   await nextTick(); const l = sugList(); if (l.length && prefs.coach === 'auto') showTip(l); else if (l.length && prefs.coach === 'set') autoSet(l)
 }
-const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value], s.value) || '' : ''))
-const exTag = computed(() => plan.value?.ex[idx.value][2])
+const exTarget = computed(() => (plan.value ? targetOf(exList.value[idx.value], s.value) || '' : ''))
+const exTag = computed(() => exList.value[idx.value]?.[2])
 const exMuscles = computed(() => musclesOf(exName.value))
 const howOpen = ref(false)
-const groups = computed(() => (plan.value ? groupsOf(plan.value.ex[idx.value], s.value) : []))
+const groups = computed(() => (plan.value ? groupsOf(exList.value[idx.value], s.value) : []))
 /** @returns {SetRow[]} */
 function sets(key) {
   if (!s.value.ex[key]) s.value.ex[key] = [{ w: null, d: false }]
   return s.value.ex[key]
 }
-const isComplete = i => groupsOf(plan.value.ex[i], s.value).every(g => (s.value.ex[g.key] || []).length > 0 && s.value.ex[g.key].every(x => x.d))
+const isComplete = i => groupsOf(exList.value[i], s.value).every(g => (s.value.ex[g.key] || []).length > 0 && s.value.ex[g.key].every(x => x.d))
 const touch = () => { s.value.updated = Date.now() }
 
 const dir = ref('next')
 function go(i) {
-  if (i < 0 || i >= plan.value.ex.length || i === idx.value) return
+  if (i < 0 || i >= exList.value.length || i === idx.value) return
   dir.value = i > idx.value ? 'next' : 'prev'
   s.value.cur = i
 }
@@ -318,8 +338,12 @@ function toggle(g, si) {
   }
   // exercise finished → jump to the next one not done yet (order can change, e.g. a busy machine);
   // when the reps-in-reserve chips are shown, give time to tap one first (jumps right after the tap, or after 5 s)
-  if (x.d) autoNext(g.unit !== 's' && prefs.rir ? 5000 : 650)
-  if (x.d && prefs.restTimer && g.unit !== 's' && c.value.n < c.value.t) { unlockAudio(); rest.start() }
+  const wait = g.unit !== 's' && prefs.rir ? 5000 : 650
+  // superset: after a set of the first exercise go straight to the second one (no rest); after the second, rest and go back
+  const p = x.d ? partner.value : null, pOpen = p != null && hasOpen(p)
+  if (x.d && pOpen) { clearTimeout(nextT); const at = idx.value; nextT = setTimeout(() => { if (idx.value === at && !summary.value) go(p) }, wait) }
+  else if (x.d) autoNext(wait)
+  if (x.d && prefs.restTimer && g.unit !== 's' && c.value.n < c.value.t && !(pOpen && idx.value < p)) { unlockAudio(); rest.start() }
   if (!x.d) rest.stop()
 }
 let nextT = 0
@@ -336,7 +360,7 @@ const rest = useRest()
 function autoNext(ms) {
   clearTimeout(nextT)
   if (!prefs.autoNext || !isComplete(idx.value)) return
-  const at = idx.value, n = plan.value.ex.length
+  const at = idx.value, n = exList.value.length
   const to = [...Array(n - 1)].map((_, k) => (at + 1 + k) % n).find(i => !isComplete(i))
   if (to != null) nextT = setTimeout(() => { if (idx.value === at && !summary.value && isComplete(at)) go(to) }, ms)
 }
@@ -344,7 +368,7 @@ function setRir(g, si, q) {
   const x = sets(g.key)[si]
   if (x.q === q) delete x.q; else x.q = q
   touch()
-  if (x.q != null) autoNext(600)
+  if (x.q != null) { const p = partner.value; if (p != null && hasOpen(p)) { clearTimeout(nextT); nextT = setTimeout(() => go(p), 600) } else autoNext(600) }
 }
 function step(g, si, dirn) {
   const a = sets(g.key), x = a[si], u = UNITS[g.unit]
@@ -413,6 +437,68 @@ function autoSet(list) {
   const main = can.find(x => x.sug.kind === 'up') || can.find(x => x.sug.kind === 'down') || can[0]
   note.value = can.length > 1 ? 'Ustawiono podpowiedź na dziś' : 'Ustawiono: ' + main.sug.short
 }
+// ---------- notes ----------
+const exNote = computed(() => { void state.sessions; return s.value ? noteFor(exName.value, s.value) : { text: '', own: false, date: '' } })
+async function editNote() {
+  const { role, value } = await ask({ icon: createOutline, color: color.value, title: 'Notatka · ' + exName.value,
+    message: 'Np. ustawienie siedzenia, chwyt, na co uważać. Pokaże się przy następnych treningach.',
+    input: { value: exNote.value.text, placeholder: 'Np. siedzenie na 4, łokcie bliżej', multi: true },
+    buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, ...(exNote.value.text ? [{ text: 'Usuń notatkę', role: 'clear', kind: 'danger' }] : []), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (role === 'ok') setNote(s.value, exName.value, value)
+  else if (role === 'clear') setNote(s.value, exName.value, '')
+}
+
+// ---------- plates on the bar (per side) ----------
+function platesTxt(g, si) {
+  if (!prefs.plates || g.unit !== 'kg' || g.label) return ''
+  const bar = barOf(g.name), a = sets(g.key), w = a[si]?.w
+  if (bar == null || !(w > bar) || (si > 0 && a[si - 1].w === w)) return ''
+  const pl = platesPerSide(w, bar)
+  const rest = Math.round((w - bar - 2 * pl.reduce((x, y) => x + y, 0)) * 100) / 100
+  return 'Na stronę: ' + pl.map(fmtNum).join(' + ') + (rest > 0 ? ' (+' + fmtNum(rest) + ' kg)' : '') + ' · gryf ' + bar
+}
+
+// ---------- add an exercise during the workout ----------
+// the catalogue loads on first use; the sheet opens once it is there
+const addOpen = ref(false), addReady = ref(false)
+async function openAdd() {
+  if (!addReady.value) { addReady.value = true; await import('./ExercisePicker.vue'); await nextTick(); await new Promise(r => setTimeout(r, 50)) }
+  addOpen.value = true
+}
+const ownList = computed(() => Object.entries(custom.data?.own || {}).map(([id, o]) => ({ id, ...o })))
+async function addPicked(r) {
+  const sess = s.value
+  if (!addExtra(sess, r)) {
+    await ask({ icon: add, color: color.value, title: 'To ćwiczenie już jest w treningu', message: `„${r.name}” jest już w tym treningu. Wybierz inne albo zmień opcje.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
+    return
+  }
+  dir.value = 'next'; sess.cur = exList.value.length - 1
+  note.value = 'Dodano: ' + r.name
+}
+async function dropExtra() {
+  const name = exName.value
+  if (!removeExtra(s.value, idx.value)) {
+    await ask({ icon: trashOutline, color: color.value, title: 'Masz już zaliczone serie', message: `Żeby usunąć ${name} z treningu, najpierw odznacz jego serie.`, buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
+    return
+  }
+  note.value = 'Usunięto: ' + name
+}
+
+// ---------- supersets ----------
+const partner = computed(() => (s.value ? partnerOf(s.value, idx.value) : null))
+const hasOpen = i => groupsOf(exList.value[i], s.value).some(g => (s.value.ex[g.key] || []).some(x => !x.d))
+const ssSide = i => { const p = s.value ? partnerOf(s.value, i) : null; return p == null ? '' : p > i ? 'l' : 'r' }
+async function ssAsk() {
+  const i = idx.value, sess = s.value
+  const free = exList.value.map((e, j) => j).filter(j => j !== i && (partnerOf(sess, j) == null || partnerOf(sess, j) === i))
+  const { role } = await ask({ icon: linkOutline, color: color.value, title: 'Superseria',
+    message: 'Dwa ćwiczenia na zmianę: seria jednego, od razu seria drugiego, potem przerwa. Apka sama przeskakuje między nimi.',
+    buttons: [...free.map(j => ({ text: (partner.value === j ? '✓ ' : '') + (j + 1) + '. ' + nameIn(exList.value[j], sess), role: 'j' + j, kind: partner.value === j ? 'soft' : 'primary' })),
+      ...(partner.value != null ? [{ text: 'Rozłącz superserię', role: 'off', kind: 'danger' }] : []), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (role === 'off') { setSuperset(sess, i, null); note.value = 'Superseria rozłączona' }
+  else if (role?.startsWith('j')) { const j = +role.slice(1); if (j !== partner.value) { setSuperset(sess, i, j); note.value = 'Superseria: ' + (Math.min(i, j) + 1) + ' + ' + (Math.max(i, j) + 1) } }
+}
+
 function finish() {
   if (s.value.finished) { if (s.value.manual) dropEmptyManual(); router.back(); return }
   summary.value = true
@@ -453,6 +539,21 @@ ion-title .wt-name { display: block; line-height: 1.15; }
   font-weight: 600; font-size: 14px; display: grid; place-items: center; transition: background .2s, color .2s; }
 .dot.done { background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c); font-size: 17px; }
 .dot.on { background: var(--c); color: #fff; }
+.dot.ssl, .dot.ssr { position: relative; }
+.dot.ssl::after, .dot.ssr::after { content: ''; position: absolute; bottom: -5px; height: 3px; border-radius: 2px; background: var(--c); }
+.dot.ssl::after { left: 30%; right: -6px; }
+.dot.ssr::after { left: -6px; right: 30%; }
+.dot.xtra { border: 1.5px dashed color-mix(in srgb, var(--c) 45%, transparent); }
+.dot.add { flex: none; width: 34px; background: none; color: var(--c); font-size: 20px; border: 1.5px dashed color-mix(in srgb, var(--c) 45%, transparent); }
+.chips { display: flex; flex-wrap: wrap; gap: 0 6px; }
+.xchip.on { background: var(--c); color: #fff; }
+.xchip.muted { color: var(--app-muted); background: var(--app-field); }
+.note { display: flex; align-items: flex-start; gap: 6px; margin: 8px 4px 0; padding: 6px 11px; max-width: 100%; border: 0; border-radius: 12px; font: inherit; font-size: 13.5px; line-height: 1.3; text-align: left;
+  color: var(--ion-text-color); background: color-mix(in srgb, #ffcc00 16%, var(--app-card)); }
+.note span { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; white-space: pre-line; }
+.note small { color: var(--app-muted); }
+.note ion-icon { flex: none; font-size: 15px; margin-top: 1px; color: #c99a00; }
+.plates { text-align: center; font-size: 12px; color: var(--app-muted); margin-top: -4px; }
 
 .swipe { height: 100%; overflow: hidden; }
 .ex { height: 100%; display: flex; flex-direction: column; padding: 16px 16px 8px; }
@@ -470,9 +571,9 @@ h1 { margin: 6px 4px 4px; font-size: 28px; font-weight: 700; line-height: 1.15; 
 .ex-tt { flex: 1; min-width: 0; }
 .ex-body { flex: none; height: 112px; position: relative; border: 0; padding: 0; background: none; font: inherit; }
 .how-q { position: absolute; top: -2px; right: -6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-size: 14px; font-weight: 800; color: #fff; background: var(--c, var(--accent)); box-shadow: 0 0 0 2px var(--app-bg); }
-.swap { display: inline-flex; align-items: center; gap: 6px; margin: 8px 4px 0; padding: 6px 11px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600;
+.swap, .xchip { display: inline-flex; align-items: center; gap: 6px; margin: 8px 4px 0; padding: 6px 11px; border: 0; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600;
   color: var(--c); background: color-mix(in srgb, var(--c) 12%, transparent); }
-.swap ion-icon { font-size: 15px; }
+.swap ion-icon, .xchip ion-icon { font-size: 15px; }
 .ex-sub { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 4px; }
 .target { color: var(--c); font-weight: 600; font-size: 17px; }
 .tag { font-size: 12px; font-weight: 600; color: var(--app-muted); background: var(--app-field); border-radius: 6px; padding: 2px 7px; }
