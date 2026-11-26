@@ -2,6 +2,7 @@
 // k = 0 (start) … 1 (end of the movement). Roles (c) become CSS classes in ExerciseAnim.vue, so colours follow the theme.
 import { rigScene } from './library'
 import { frameBox, joints, poseAt } from './rig'
+import { FIG } from './model'
 
 const BENCH_CUES = {
   pl: ['Ściągnij łopatki, stopy mocno na ziemi.', 'Opuść sztangę powoli do dołu klatki.', 'Wypchnij w górę, łokcie ok. 45° od tułowia.'],
@@ -19,6 +20,18 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   if (att) scene.inset = { kind: att, label: ATT[att] }
   if (baseId === 'bench-press' && (sel.eq === 'bb' || sel.eq === 'sm') && sel.angle === 'flat' && sel.width !== 'close') scene.cues = BENCH_CUES
   scene.box = frameBox(scene)
+  // hands meant to press on the floor never float: slide an unreachable floor target towards the shoulder
+  const ARM = FIG.upperArm + FIG.foreArm - 1
+  scene.frames = scene.frames.map(f => {
+    if (f.hold || f.hp || f.af) return f
+    const J = joints(f, scene.view); let g = f
+    for (const [x, y, sh] of [['ax', 'ay', J.SR], ['bx', 'by', J.SL]]) {
+      if (g[x] == null || g[y] < -24) continue
+      const dy = g[y] - sh.y, dx = g[x] - sh.x
+      if (Math.hypot(dx, dy) > ARM && Math.abs(dy) < ARM) g = { ...g, [x]: sh.x + Math.sign(dx || 1) * Math.sqrt(ARM * ARM - dy * dy) }
+    }
+    return g
+  })
   const J0 = joints(scene.frames[0], scene.view)
   // cable version of a free-weight scene: the weight becomes a handle on a cable from a low pulley in front (lying: beyond the head)
   if (sel.eq === 'cb' && !(scene.gear || []).some(g => ['cable', 'band', 'rope', 'lever', 'bar2', 'deck'].includes(g.k))) {

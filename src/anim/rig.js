@@ -63,6 +63,7 @@ const BEND = new Set(['ab', 'bb', 'lb', 'gb']) // bend sides switch, they don't 
 // a bend side flips where that limb is straightest in the move, so the elbow / knee never jumps across
 const LIMB = { ab: ['S', 'W'], bb: ['S', 'W2'], lb: ['H', 'A'], gb: ['H', 'A2'] }
 const bendOf = (p, key) => (key === 'ab' ? p.ab ?? 1 : key === 'bb' ? p.bb ?? p.ab ?? 1 : key === 'lb' ? p.lb ?? -1 : p.gb ?? p.lb ?? -1)
+const NEUTRAL = { af: 1, tf: 1, sf: 1, cu: 0, sg: 0, lift: 0, hd: 0 }
 const flipAt = new WeakMap()
 function flipPoint(a, b, key) {
   let m = flipAt.get(a); if (!m) flipAt.set(a, (m = new Map()))
@@ -104,7 +105,9 @@ function mix2(a0, b0, k, raw) {
   }
   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
     if (BEND.has(key)) continue
-    const x = a[key] ?? b[key], y = b[key] ?? a[key]
+    // scales and offsets have a neutral value: a frame without one is at rest, not at the other frame's value
+    const dflt = key === 'ff' ? p => p.af ?? 1 : NEUTRAL[key] != null ? () => NEUTRAL[key] : null
+    const x = a[key] ?? (dflt ? dflt(a) : b[key]), y = b[key] ?? (dflt ? dflt(b) : a[key])
     if (typeof x !== 'number' || typeof y !== 'number' || BEND.has(key)) { o[key] = k < 0.5 ? x : y; continue }
     let dd = y - x
     if (ANG.has(key)) dd = ((dd % 360) + 540) % 360 - 180

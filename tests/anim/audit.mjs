@@ -15,13 +15,19 @@ for (const b of BASES) {
     const names = ['W', 'E', 'K', 'A', 'S', 'H', 'W2', 'E2', 'K2', 'A2']
     let worst = 0, wn = ''
     for (const n of names) { if (!J[0][n]) continue; const steps = []; for (let i = 1; i <= N; i++) steps.push(d(J[i][n], J[i - 1][n])); const avg = steps.reduce((a, c) => a + c, 0) / N; const mx = Math.max(...steps); const r = mx - 3 * Math.max(avg, 0.4); if (mx > 9 && r > worst) { worst = r; wn = n + ' ' + mx.toFixed(0) + ' @' + steps.indexOf(mx) } }
+    // a hand or foot told to be somewhere it cannot reach (e.g. floating above the floor it should press on)
+    let miss = ''
+    for (let i = 0; i <= N; i += 10) {
+      const p = poseAt(sc.frames, i / N), j = J[i]
+      for (const [x, y, n] of [['ax', 'ay', 'W'], ['fx', 'fy', 'A']]) if (p[x] != null && !p.hold && !p.hp) { const dd = d(j[n], { x: p[x], y: p[y] }); if (dd > 4 && p[y] > -20) miss = `${n} misses floor target by ${dd.toFixed(0)} @${i}` }
+    }
     const rigid = []
     for (const g of sc.gear || []) if ((g.k === 'lever' && typeof g.pivot === 'object' && (!g.to || g.to === 'hands')) || g.k === 'pole') {
       const P = g.pivot || g.from; if (!P) continue
       const ls = J.map(j => d(j.P || j.W, P)), v = (Math.max(...ls) - Math.min(...ls)) / Math.max(...ls)
       if (v > 0.08) rigid.push(g.k + ' ' + Math.round(v * 100) + '%')
     }
-    if (wn || rigid.length) out.push(`${compose(b, sel).name}  [${b.id} ${key}]  ${wn ? 'jump ' + wn : ''} ${rigid.join(' ')}`)
+    if (wn || rigid.length || miss) out.push(`${compose(b, sel).name}  [${b.id} ${key}]  ${wn ? 'jump ' + wn : ''} ${rigid.join(' ')} ${miss}`)
   }
 }
 console.log(out.join('\n')); console.log(out.length + ' flagged')
