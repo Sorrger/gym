@@ -253,8 +253,9 @@ const LIB = {
   'upright-row': sel => { const b = st({}), S = shoulderOf(b); return { frames: [{ ...b, ax: S.x + 10, ay: S.y + 82 }, { ...b, ax: S.x + 14, ay: S.y - 6, ab: -1 }], gear: sel.eq === 'cb' || sel.eq === 'bd' ? [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: 30, y: -6 } }] : held(sel.eq), lab: ['Podciągnij', 'Opuść'] } },
   'pike-push-up': sel => {
     if (sel.v === 'hspu') { const mk = hy => ({ hx: 40, hy, t: 90, l1: -90, l2: -90, ax: 46, ay: -4, ab: 1 }); return { frames: [mk(-178), mk(-132)], props: [{ k: 'wall', x: 70 }], lab: PRESS } }
-    const mk = (hx, hy, t) => ({ hx, hy, t, fx: -50, fy: -7, lb: 1, ax: 72, ay: -4, ab: 1 })
-    return { frames: [mk(0, -138, 34), mk(6, -120, 55)], lab: PRESS }
+    // inverted V on the toes: arms straight in line with the back, then the head drops between the hands, elbows go back
+    const mk = (hx, hy, t, ab) => ({ hx, hy, t, fx: -40, fy: -15, fo: 110, ax: 100, ay: -4, ab })
+    return { frames: [mk(-6, -134, 51, 1), mk(48, -120, 60, 1)], lab: PRESS }
   },
   'cuban-press': sel => {
     const b = st({}), S = shoulderOf(b)
