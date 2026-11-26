@@ -220,8 +220,10 @@ const LIB = {
     // front view: pull high, turn the wrists over the bar, press up to straight arms
     const P = LIB['pull-up']({ eq: 'bw' }), bar = -330
     const hang = { hx: 0, t: -90, l1: 92, l2: 98, ax: 38, ay: bar, ab: 1 }
-    return { ...P, frames: [{ ...hang, hy: bar + 168 }, { ...hang, hy: bar + 92 }, { ...hang, hy: bar + 40, ab: -1 }, { ...hang, hy: bar + 4, ax: 30, ab: -1 }],
-      ph: [[800, 'Podciągnij', 0, 1 / 3], [700, 'Przejdź nad drążek', 1 / 3, 2 / 3], [700, 'Wypchnij', 2 / 3, 1], [500, 'Wypchnij', 1, 1], [1400, 'Opuść', 1, 0], [500, 'Opuść', 0, 0]] }
+    // the turn-over: elbows swing from under the hands to above them; seen from the front the arms point at the viewer
+    // there (short upper arms and forearms), so the elbows switch sides without a visible jump
+    return { ...P, frames: [{ ...hang, hy: bar + 168 }, { ...hang, hy: bar + 92 }, { ...hang, hy: bar + 62, af: 0.35, ff: 0.35 }, { ...hang, hy: bar + 40, ab: -1, af: 0.6, ff: 0.6 }, { ...hang, hy: bar + 4, ax: 30, ab: -1 }],
+      ph: [[800, 'Podciągnij', 0, 0.25], [800, 'Przejdź nad drążek', 0.25, 0.75], [600, 'Wypchnij', 0.75, 1], [500, 'Wypchnij', 1, 1], [1400, 'Opuść', 1, 0], [500, 'Opuść', 0, 0]] }
   },
 
   'landmine-row': () => { const b = st({ hx: -34, hy: -124, t: -24, fx: 10, gx: -50, gy: -7 }), S = shoulderOf(b); return { frames: [{ ...b, ax: S.x + 8, ay: S.y + 84 }, { ...b, ax: S.x - 30, ay: S.y + 28 }], gear: [{ k: 'pole', from: { x: 190, y: -4 } }], lab: PULL } },
@@ -569,9 +571,11 @@ const LIB = {
   'v-up': () => { const b = { hx: 0, hy: -13 }; return { frames: [{ ...b, t: 180, l1: 0, l2: 0, a1: 180, a2: 180 }, { ...b, t: 234, l1: -50, l2: -50, a1: -40, a2: -40, cu: 0.6 }], lab: ['Złóż się', 'Połóż się'] } },
   bicycle: () => { const b = { hx: 30, hy: -16, t: 204, cu: 0.8, hold: 'head', ab: 1 }; return { frames: [{ ...b, l1: -40, l2: 60, m1: -6, m2: -6 }, { ...b, l1: -6, l2: -6, m1: -40, m2: 60 }], lab: ['Łokieć do kolana', 'Zmień stronę'] } },
   'landmine-rot': () => {
-    // facing the anchor, both hands on the bar end, arms long: a rainbow from one hip over the head to the other hip
-    const b = st({ fx: 26, fy: -7 }), arc = d => { const r = d * Math.PI / 180; return { ...b, hp: { x: Math.sin(r) * 72, y: -176 - Math.cos(r) * 52 }, ab: 1, af: 0.55 + 0.42 * Math.abs(Math.sin(r)) } } // arms reach towards the viewer at the top: they look shorter
-    return { view: 'f', frames: [-78, -40, 0, 40, 78].map(arc), gear: [{ k: 'pole', from: { x: 0, y: -4 }, over: 10, flex: true }], ph: [[1100, 'Przenieś w górę', 0, 0.5], [1100, 'Na drugą stronę', 0.5, 1], [1100, 'Przenieś w górę', 1, 0.5], [1100, 'Na drugą stronę', 0.5, 0]] }
+    // facing the anchor, both hands on the bar end, arms long: a rainbow from one hip over the head to the other hip.
+    // The hands travel on a circle round the middle of the shoulders, so the arms stay long and never fold across the body
+    const b = st({ fx: 26, fy: -7 }), J = joints(b, 'f'), cx = (J.SR.x + J.SL.x) / 2, cy = (J.SR.y + J.SL.y) / 2
+    const arc = d => { const r = d * Math.PI / 180; return { ...b, hp: { x: cx + Math.sin(r) * 78, y: cy - Math.cos(r) * 78 }, ab: d < 0 ? 1 : -1, bb: d < 0 ? -1 : 1 } }
+    return { view: 'f', frames: [-142, -72, 0, 72, 142].map(arc), gear: [{ k: 'pole', from: { x: 0, y: -4 }, over: 10, flex: true }], ph: [[1100, 'Przenieś w górę', 0, 0.5], [1100, 'Na drugą stronę', 0.5, 1], [1100, 'Przenieś w górę', 1, 0.5], [1100, 'Na drugą stronę', 0.5, 0]] }
   },
 
   // ---------- full body ----------
@@ -616,9 +620,9 @@ const LIB = {
     const elbow = { hx: 4, hy: -14, t: 205, fx: 56, fy: -7, lb: -1, gx: 132, gy: -9, bx: -24, by: -4, bb: 1, ...up }
     const handF = { hx: 6, hy: -15, t: 225, fx: 56, fy: -7, lb: -1, gx: 128, gy: -9, bx: -86, by: -4, bb: 1, ...up }
     const bridge = { hx: 10, hy: -46, t: 210, fx: 56, fy: -7, lb: -1, gx: 112, gy: -9, bx: -82, by: -4, bb: 1, ...up }
-    const sweep = { hx: 0, hy: -50, t: 212, fx: 56, fy: -7, lb: -1, m1: 100, m2: 180, bx: -82, by: -4, bb: 1, ...up }
+    const sweep = { hx: 0, hy: -56, t: 212, fx: 56, fy: -7, lb: -1, m1: 140, m2: 180, bx: -82, by: -4, bb: 1, ...up } // the far leg sweeps back under the body, knee just off the floor
     const kneel = { hx: 0, hy: -76, t: -90, l1: 0, l2: 90, m1: 90, m2: 180, b1: 90, b2: 90, ...up }
-    const stand = st({ ...up, b1: 90, b2: 90 })
+    const stand = st({ ...up, b1: 90, b2: 90, gx: -4, gy: -7 }) // far foot comes forward next to the other one (a straight path along the floor)
     return { frames: [lie, elbow, handF, bridge, sweep, kneel, stand], gear: [{ k: sel.eq === 'db' ? 'db' : 'kb', up: true }], ph: [...seq(['Usiądź', 'Usiądź', 'Unieś biodra', 'Uklęknij', 'Uklęknij', 'Wstań'], 800), [2400, 'Wróć', 1, 0]] }
   },
   'sled-push': sel => {

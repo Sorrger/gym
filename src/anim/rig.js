@@ -18,7 +18,9 @@ function chain(root, l1, l2, a1, a2, tx, ty, bend) {
     const d = Math.max(Math.abs(l1 - l2) + 0.5, Math.min(full, l1 + l2 - 0.3))
     const a = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))) / R
     const mid = at(root, Math.atan2(dy, dx) / R + a * Math.max(-1, Math.min(1, bend)), l1) // fractional bend = elbow passing through the line
-    return { mid, end: at(mid, ang(mid, { x: root.x + dx * d / full, y: root.y + dy * d / full }), l2) }
+    const T = { x: root.x + dx * d / full, y: root.y + dy * d / full }
+    // while the elbow/knee passes through the line the hand/foot stays on its target (the lower part looks a bit shorter, like turning)
+    return { mid, end: Math.abs(bend) < 1 ? T : at(mid, ang(mid, T), l2) }
   }
   const mid = at(root, a1, l1)
   return { mid, end: at(mid, a2, l2) }
@@ -100,7 +102,9 @@ function mix2(a0, b0, k, raw) {
   for (const key of BEND) {
     const x = bendOf(a, key), y = bendOf(b, key)
     if (x === y || raw) { o[key] = x; continue }
-    const f = flipPoint(a, b, key), w = 0.2, u = f.soft ? Math.max(0, Math.min(1, (k - (f.at - w)) / (2 * w))) : k < f.at ? 0 : 1
+    // the switch is spread over a short stretch round the straightest moment (longer when the limb never gets straight);
+    // the stretch stays inside the move, so each frame itself keeps its own side and nothing snaps at a frame
+    const f = flipPoint(a, b, key), w = f.soft ? 0.2 : 0.08, c = Math.min(1 - w, Math.max(w, f.at)), u = Math.max(0, Math.min(1, (k - (c - w)) / (2 * w)))
     o[key] = x + (y - x) * u
   }
   for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
@@ -113,6 +117,8 @@ function mix2(a0, b0, k, raw) {
     if (ANG.has(key)) dd = ((dd % 360) + 540) % 360 - 180
     o[key] = x + dd * k
   }
+  // two explicit hold points: the hands travel between them
+  if (a.hp && b.hp && !a.hold && !b.hold) o.hp = lerpPt(a.hp, b.hp, k)
   // hands moving between a hold point (rack, back…) and a free target travel in a straight line instead of jumping
   if ((a.hold || b.hold) && a.hold !== b.hold) {
     const ja = joints(a), jb = joints(b), pa = ja.P || ja.W, pb = jb.P || jb.W
