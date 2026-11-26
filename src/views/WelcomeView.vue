@@ -97,7 +97,7 @@ function soon(p) { ask({ title: 'Logowanie przez ' + p, message: 'Będzie wkrót
 function next() {
   if (step.value === 0) { pick(cur.value); return }
   if (step.value === 1) {
-    setPref('weightOn', want.weightOn); setPref('coach', want.coach ? 'auto' : 'off'); setPref('live', want.coach)
+    setPref('weightOn', want.weightOn); setPref('coach', want.coach ? 'set' : 'off'); setPref('live', want.coach)
     for (const k of ['rir', 'warmup', 'restTimer', 'deload', 'setTypes']) setPref(k, want[k])
     step.value = 2; return
   }

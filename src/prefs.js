@@ -2,7 +2,7 @@
 // Stored with the account (account.js: IndexedDB `profile.prefs`, synced in gym-profile.json, newer `updated` wins).
 import { reactive } from 'vue'
 export const DEFAULT_PREFS = {
-  coach: 'auto',    // weight/rep suggestions: 'auto' (pop up when an exercise opens + chip) | 'chip' (only the chip) | 'off'
+  coach: 'set',     // weight/rep suggestions: 'set' (filled in quietly + chip) | 'auto' (pop up when an exercise opens + chip) | 'chip' (only the chip) | 'off'
   live: true,       // advice under a set that was clearly too heavy / too light
   rir: true,        // "Zapas" chips (reps in reserve) after ticking a set
   warmup: true,     // warm-up note for barbell lifts
@@ -22,10 +22,11 @@ export const DEFAULT_PREFS = {
   restSec: 120,     // … this long
   weightOn: true,   // body weight tracking (tile on Start, Waga page links); off = hidden everywhere
   goalKg: null,     // target body weight (Waga page), optional
+  quietCoach: true, // set once the quiet 'set' coach mode exists; older saved 'auto' moves to it once
   setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }
 export const prefs = reactive({ ...DEFAULT_PREFS })
-export const setPrefsLocal = p => Object.assign(prefs, DEFAULT_PREFS, p || {})
+export const setPrefsLocal = p => Object.assign(prefs, DEFAULT_PREFS, p || {}, p && !p.quietCoach && p.coach === 'auto' ? { coach: 'set' } : {})
 export const prefsData = () => ({ ...prefs })
 // colour class for a weight change per week: 'dn' = good for the goal (green), 'upw' = against it (red)
 export const weightTone = v => { if (v == null || Math.abs(v) < 0.05 || prefs.goal === 'maintain') return ''; return (prefs.goal === 'bulk' ? v > 0 : v < 0) ? 'dn' : 'upw' }

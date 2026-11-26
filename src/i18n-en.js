@@ -5,6 +5,7 @@
 const pl = (n, one, many) => (+n === 1 ? one : many)
 
 export const EN = {
+  "Apka sama wpisuje dziś sugerowany ciężar i powtórzenia – bez okienka. Dlaczego tak: pod „Ostatnio…”.": "The app fills in today's suggested weight and reps – no pop-up. Why: under “Last time…”.",
   "Drążek": "Straight bar",
   "Gryf heksagonalny": "Trap bar",
   "Gryf łamany": "EZ bar",
@@ -12,6 +13,7 @@ export const EN = {
   "Hantle": "Dumbbells",
   "Kettlebell": "Kettlebell",
   "Lina": "Rope",
+  "Okienko": "Pop-up",
   "Opaska na kostkę": "Ankle strap",
   "plecy": "back", "ręce": "arms", "nogi": "legs",
   "Czerwony": "Red",
@@ -29,11 +31,14 @@ export const EN = {
   "Miętowy": "Mint",
   "Morski": "Teal",
   "Nic nie znaleziono. Wpisz własną nazwę w polu ćwiczenia.": "Nothing found. Type your own name in the exercise field.",
+  "Po otwarciu ćwiczenia apka pokazuje okienko, ile dziś dźwignąć.": "When you open an exercise the app shows a pop-up with what to lift today.",
   "Rozciągnij": "Stretch",
   "Szeroki drążek": "Wide bar",
   "Sztanga": "Barbell",
   "T-gryf": "T-bar",
   "Uchwyt D": "D-handle",
+  "Ustawiaj": "Fill in",
+  "Ustawiono podpowiedź na dziś": "Today's suggestion filled in",
   "V-uchwyt": "V-handle",
   "Złącz": "Bring together",
   "Rozsuń": "Push apart",
@@ -996,6 +1001,7 @@ export const PATTERNS = [
   ["zapas (.+)", "RIR $1"],
   ["Lżej: (.+)", "Lighter: $1"],
   ["Dziś: (.+)", "Today: $1"],
+  ["Ustawiono: (.+)", "Filled in: $1"],
   ["Minus ([\\d,.]+)", "Minus $1"],
   ["(.+) powt\\.", "$1 reps"],
   ["krok (.+)", "step $1"],

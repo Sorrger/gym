@@ -35,7 +35,7 @@ console.log('rows:', (await p.locator('.ex:visible .tgt').allTextContents()).sli
 await p.locator('.go:visible').click(); await p.waitForTimeout(1500)
 console.log('dialog:', (await p.locator('.dlg, [class*=dlg]').first().textContent().catch(() => ''))?.slice(0, 300))
 await p.screenshot({ path: 'z-dialog.png' })
-await p.locator('.dlg-btn:has-text("Ustaw")').first().click().catch(() => p.locator('.dlg-btn').first().click()); await p.waitForTimeout(700)
+if (await p.locator('.dlg-btn:visible').count()) await p.locator('.dlg-btn:visible').first().click(); await p.waitForTimeout(700)
 console.log('sets per group:', await p.locator('.group:visible').evaluateAll(gs => gs.map(g => g.querySelector('b')?.textContent + ':' + g.querySelectorAll('.set').length)))
 console.log('target:', await txt('.target:visible'))
 await p.screenshot({ path: 'z-workout.png' })

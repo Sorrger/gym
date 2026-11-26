@@ -4,7 +4,8 @@ import { setPref } from '../../account'
 
 const num = v => String(v).replace('.', ',')
 export const COACH = [
-  { v: 'auto', t: 'Same', d: 'Po otwarciu ćwiczenia apka sama pokazuje, ile dziś dźwignąć.' },
+  { v: 'set', t: 'Ustawiaj', d: 'Apka sama wpisuje dziś sugerowany ciężar i powtórzenia – bez okienka. Dlaczego tak: pod „Ostatnio…”.' },
+  { v: 'auto', t: 'Okienko', d: 'Po otwarciu ćwiczenia apka pokazuje okienko, ile dziś dźwignąć.' },
   { v: 'chip', t: 'Na dotyk', d: 'Podpowiedź tylko pod „Ostatnio…” – otwierasz ją, kiedy chcesz.' },
   { v: 'off', t: 'Wyłączone', d: 'Bez podpowiedzi. Ciężary i tak wpisują się z ostatniego treningu.' }]
 export const TOGGLES = [

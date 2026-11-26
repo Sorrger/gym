@@ -141,6 +141,7 @@
     <Transition name="rise">
       <WorkoutSummary v-if="summary && s" :s="s" :plan="plan" @save="save" @back="summary = false" />
     </Transition>
+    <ion-toast :is-open="!!note" :message="t(note)" :duration="2200" position="top" @didDismiss="note = ''" />
   </ion-page>
 </template>
 
@@ -158,10 +159,11 @@ import { ask } from '../dialog'
 import BodyMap from './BodyMap.vue'
 import HowToSheet from './HowToSheet.vue'
 import { suggest, applySuggestion, live } from '../coach'
+import { t } from '../i18n'
 import { musclesOf } from '../muscles'
 import { computed, ref, watch, watchEffect, nextTick, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, useIonRouter  } from '@ionic/vue'
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButtons, IonButton, IonBackButton, IonIcon, IonFooter, IonToast, useIonRouter } from '@ionic/vue'
 import { checkmark, trashOutline, createOutline, timeOutline, chevronBack, chevronForward, add, remove as removeIcon, stopwatchOutline, checkmarkCircle, cloudDoneOutline, trendingUp, trendingDown, bulbOutline, trophyOutline, swapHorizontal } from 'ionicons/icons'
 import { prefs, rirTop, rirLabel, deloadWords, SET_TYPES, SET_TYPE_LABEL } from '../prefs'
 import { PLAN, COLORS, UNITS, DEF_REPS, groupsOf, fmtNum, fmtVal, rangeOf, targetOf, isAssisted, WARMUP, warmupSets, platesPerSide, altOf, nameIn, canon } from '../plan'
@@ -215,7 +217,7 @@ async function swapAsk() {
   if (role === 'cancel' || role === cur || !swapOpts.value.includes(role)) return
   swapExercise(sess, planName.value, role)
   state.flash = 'Dziś: ' + role
-  await nextTick(); const l = sugList(); if (l.length && prefs.coach === 'auto') showTip(l)
+  await nextTick(); const l = sugList(); if (l.length && prefs.coach === 'auto') showTip(l); else if (l.length && prefs.coach === 'set') autoSet(l)
 }
 const exTarget = computed(() => (plan.value ? targetOf(plan.value.ex[idx.value], s.value) || '' : ''))
 const exTag = computed(() => plan.value?.ex[idx.value][2])
@@ -388,9 +390,10 @@ function hangSaved(secs) {
 
 // finishing shows the summary screen; "Zapisz trening" saves and returns to the main menu
 const summary = ref(false)
+const note = ref('') // short toast: what the quiet coach filled in
 watch(() => [s.value?.id, idx.value, summary.value], () => {
   const sess = s.value
-  if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout') || prefs.coach !== 'auto') return
+  if (!sess || sess.finished || summary.value || !route.path.startsWith('/workout') || (prefs.coach !== 'auto' && prefs.coach !== 'set')) return
   const k = sess.id + ':' + idx.value
   if (tipsShown.has(k)) return
   tipsShown.add(k)
@@ -398,8 +401,18 @@ watch(() => [s.value?.id, idx.value, summary.value], () => {
   // light week: the numbers are already set, so explain it once per workout (the chip stays on every exercise)
   if (sess.deload && sugList().every(x => x.sug.kind === 'deload')) { if (tipsShown.has(sess.id + ':dl')) return; tipsShown.add(sess.id + ':dl') }
   const list = sugList()
-  if (list.length) setTimeout(() => { if (s.value?.id === sess.id && idx.value === +k.split(':')[1]) showTip(list) }, 450)
+  if (!list.length) return
+  if (prefs.coach === 'set') { autoSet(list); return }
+  setTimeout(() => { if (s.value?.id === sess.id && idx.value === +k.split(':')[1]) showTip(list) }, 450)
 }, { immediate: true })
+// quiet mode: put today's suggestion straight into the sets, a short note says what changed (the chip still explains why)
+function autoSet(list) {
+  const can = list.filter(x => x.sug.sets)
+  if (!can.length) { note.value = list[0].sug.title || ''; return } // light week / new stage: numbers are set already, just say so
+  can.forEach(x => applySuggestion(sets(x.g.key), x.sug, x.g.unit)); touch()
+  const main = can.find(x => x.sug.kind === 'up') || can.find(x => x.sug.kind === 'down') || can[0]
+  note.value = can.length > 1 ? 'Ustawiono podpowiedź na dziś' : 'Ustawiono: ' + main.sug.short
+}
 function finish() {
   if (s.value.finished) { if (s.value.manual) dropEmptyManual(); router.back(); return }
   summary.value = true
