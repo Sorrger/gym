@@ -86,15 +86,32 @@ export function smooth(list) {
     return { ...p, avg: win.reduce((a, q) => a + q.kg, 0) / win.length }
   })
 }
-// trend in kg per week: least squares over the entries of the last `days` days
-export function trend(list, days = 21) {
-  const last = list.length ? day(list[list.length - 1].date) : 0
-  const pts = list.filter(p => day(p.date) >= last - days * 864e5)
-  if (pts.length < 3) return null
-  const xs = pts.map(p => (day(p.date) - last) / 864e5), ys = pts.map(p => p.kg)
-  const mx = xs.reduce((a, b) => a + b, 0) / xs.length, my = ys.reduce((a, b) => a + b, 0) / ys.length
-  const den = xs.reduce((a, x) => a + (x - mx) ** 2, 0)
-  if (!den) return null
-  const slope = xs.reduce((a, x, i) => a + (x - mx) * (ys[i] - my), 0) / den
-  return slope * 7
+// Pace over the last `days` days from AVERAGES of weigh-ins: the average of the last half of the window against the
+// average of the first half, divided by the days between them (each half needs 2 weigh-ins). Without that, a line
+// through the points (Theil–Sen: median of pair slopes, robust to one odd weigh-in). level = the weight that line
+// gives for the last day; lo/hi = pace ± its standard error (about 2 in 3 chance the real pace is inside).
+// Needs 4 weigh-ins spread over at least a week.
+export function pace(list, days = 28) {
+  if (!list.length) return null
+  const last = day(list[list.length - 1].date)
+  const pts = list.filter(p => day(p.date) >= last - days * 864e5).map(p => ({ x: (day(p.date) - last) / 864e5, y: p.kg }))
+  if (pts.length < 4 || -pts[0].x < 7) return null
+  const mean = (a, k) => a.reduce((q, p) => q + p[k], 0) / a.length
+  const cut = pts[0].x / 2, A = pts.filter(p => p.x < cut), B = pts.filter(p => p.x >= cut)
+  let b, a, how
+  if (A.length >= 2 && B.length >= 2 && mean(B, 'x') - mean(A, 'x') >= 5) {
+    b = (mean(B, 'y') - mean(A, 'y')) / (mean(B, 'x') - mean(A, 'x')); a = mean(B, 'y') - b * mean(B, 'x'); how = 'avg'
+  } else {
+    const sl = []
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) if (pts[j].x - pts[i].x >= 1) sl.push((pts[j].y - pts[i].y) / (pts[j].x - pts[i].x))
+    const med = v => { const s2 = [...v].sort((u, w) => u - w), m = s2.length >> 1; return s2.length % 2 ? s2[m] : (s2[m - 1] + s2[m]) / 2 }
+    b = med(sl); a = med(pts.map(p => p.y - b * p.x)); how = 'line'
+  }
+  const mx = mean(pts, 'x'), sxx = pts.reduce((q, p) => q + (p.x - mx) ** 2, 0)
+  const se = Math.sqrt(pts.reduce((q, p) => q + (p.y - (a + b * p.x)) ** 2, 0) / Math.max(1, pts.length - 2) / sxx)
+  return { kg: b * 7, lo: (b - se) * 7, hi: (b + se) * 7, level: a, n: pts.length, span: Math.round(-pts[0].x), from: pts[0].x, pct: (b * 7) / a * 100, how }
 }
+// kg per week (see pace) – null until there is enough data
+export function trend(list, days = 28) { return pace(list, days)?.kg ?? null }
+// ~7700 kcal per kg of body fat: what a weekly change means per day (a rough estimate, water moves the scale too)
+export const kcalPerDay = kgWeek => Math.round(kgWeek * 7700 / 7 / 10) * 10

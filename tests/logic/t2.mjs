@@ -131,7 +131,16 @@ const sm = weight.smooth(L)
 ok(Math.abs(sm[1].avg - 99.8) < 1e-9 && Math.abs(sm[2].avg - 99.5) < 1e-9, '7-day average uses only the last 7 days', sm.map(x => x.avg))
 const tr = weight.trend(L)
 ok(tr < -0.5 && tr > -0.8, 'trend ≈ −0.6 kg/week', tr)
-ok(weight.trend(L.slice(0, 2)) === null, 'trend needs 3 weigh-ins')
+ok(weight.trend(L.slice(0, 3)) === null, 'trend needs 4 weigh-ins over a week')
+{ // one odd weigh-in barely moves the robust pace; the estimate range and level make sense
+  const D = (d, kg) => ({ date: iso(new Date(Date.UTC(2026, 10, d))), kg })
+  const base = [1, 3, 5, 8, 10, 12, 15, 17, 19, 22, 24, 26].map((d, k) => D(d, 100 - 0.07 * (d - 1) + (k % 2 ? 0.3 : -0.3)))
+  const p0 = weight.pace(base), p1 = weight.pace([...base, D(27, 96.5)])
+  ok(Math.abs(p0.kg + 0.49) < 0.12, 'pace ≈ −0.49 kg/week through day-to-day noise', p0)
+  ok(p0.how === 'avg' && Math.abs(p1.kg - p0.kg) < 0.25, 'pace from averages; one very low weigh-in moves it only a little', [p0.kg, p1.kg])
+  ok(p0.lo <= p0.kg && p0.kg <= p0.hi && Math.abs(p0.level - 98.25) < 0.5, 'pace range around the value, level near the line', p0)
+  ok(weight.kcalPerDay(-0.5) === -550, 'half a kilo a week ≈ 550 kcal a day')
+}
 weight.wstate.entries = { '2026-11-01': { kg: 100, t: 5 } }
 ok(weight.importWeights({ '2026-11-01': { kg: 90, t: 1 }, '2026-11-02': { kg: 99, t: 2 }, 'bad': { kg: 1, t: 9 }, '2026-11-03': { kg: 0, t: 9 } }) === 1, 'weight import: only newer/new valid entries')
 ok(weight.wstate.entries['2026-11-01'].kg === 100 && weight.wstate.entries['2026-11-02'].kg === 99, 'older remote weight does not overwrite')

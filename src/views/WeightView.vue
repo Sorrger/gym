@@ -27,6 +27,19 @@
           <div><b>{{ verdict.title }}</b><p>{{ verdict.text }}</p></div>
         </div>
 
+        <!-- pace in detail + where it leads (estimates) -->
+        <div v-if="P" class="card est">
+          <div class="card-title">Tempo i prognoza</div>
+          <div class="e-row"><span>Tempo<small>{{ P.how === 'avg' ? 'średnia z ostatnich 2 tyg. vs średnia z 2 tyg. wcześniej' : 'linia przez pomiary z ostatnich 4 tyg.' }}</small></span>
+            <b class="num" :class="tone(P.kg)">{{ signK(P.kg) }} {{ wu() }}/tydz.</b></div>
+          <div class="e-row"><span>Realnie między<small>przy takim rozrzucie pomiarów</small></span><b class="num">{{ signK(P.lo) }} i {{ signK(P.hi) }}</b></div>
+          <div class="e-row"><span>% wagi na tydzień<small>z {{ P.n }} pomiarów w {{ P.span }} dni</small></span><b class="num" :class="tone(P.kg)">{{ signPct(P.pct) }}</b></div>
+          <div class="e-row"><span>Dziś według trendu<small>bez dziennych skoków wody</small></span><b class="num">{{ fmtKg(r1(P.level)) }} {{ wu() }}</b></div>
+          <div class="e-row" v-for="w in [4, 12]" :key="w"><span>Za {{ w }} {{ w < 5 ? 'tygodnie' : 'tygodni' }}<small>{{ fmtDate(iso(new Date(Date.now() + w * 7 * 864e5))) }}</small></span>
+            <b class="num">ok. {{ fmtKg(r1(P.level + P.kg * w)) }} {{ wu() }}<i>{{ fmtKg(r1(P.level + P.lo * w)) }}–{{ fmtKg(r1(P.level + P.hi * w)) }}</i></b></div>
+          <div class="e-row"><span>{{ kcal < 0 ? 'Deficyt' : 'Nadwyżka' }} kalorii<small>szacunek: 1 kg tłuszczu ≈ 7700 kcal</small></span><b class="num">ok. {{ Math.abs(kcal) }} kcal/dzień</b></div>
+        </div>
+
         <!-- target weight: progress + when, at the current pace -->
         <button v-if="list.length" class="card target press" @click="setTarget">
           <template v-if="prefs.goalKg">
@@ -44,8 +57,9 @@
         </ion-segment>
 
         <div class="card chart-card">
-          <div class="card-title">Waga <span class="leg"><i class="dot"></i>pomiar <i class="ln"></i>średnia 7 dni</span></div>
+          <div class="card-title">Waga <span class="leg"><i class="dot"></i>pomiar <i class="ln"></i>średnia 7 dni<template v-if="P"> <i class="ln dash"></i>prognoza</template></span></div>
           <div v-show="shown.length" class="chart-wrap"><canvas ref="cv"></canvas></div>
+          <p v-if="P && shown.length" class="c-note">Przerywana linia = tempo z ostatnich 4 tyg. przedłużone o 4 tygodnie, pas = realny zakres.</p>
           <div v-if="!shown.length" class="empty">Brak pomiarów{{ list.length ? ' w tym okresie' : '' }}.<br>Dodaj pierwszy przyciskiem poniżej.</div>
         </div>
 
@@ -91,7 +105,7 @@
 </template>
 
 <script setup>
-import { LOC } from '../i18n'
+import { LOC, t } from '../i18n'
 import Ico from './Ico.vue'
 import { prefs } from '../prefs'
 import { setPref } from '../account'
@@ -104,7 +118,7 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, 
 import { add as add_, clipboardOutline, scale } from 'ionicons/icons'
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
 import { cloud } from '../cloud'
-import { weightsU as weights, setWeight, delWeight, parseList, smooth, trend } from '../weight'
+import { weightsU as weights, setWeight, delWeight, parseList, smooth, pace, kcalPerDay } from '../weight'
 import { wu, toU, fromU } from '../units'
 import { askWeight, parseKg } from '../weightQuick'
 import { ask } from '../dialog'
@@ -119,8 +133,17 @@ const dstr = n => fmtShort(iso(new Date(n * 864e5)))
 const list = computed(() => smooth(weights.value))
 const last = computed(() => list.value[list.value.length - 1])
 const avg7 = computed(() => last.value?.avg ?? null)
-const total = computed(() => (list.value.length > 1 ? last.value.avg - list.value[0].kg : 0))
-const wk = computed(() => trend(weights.value))
+// change since the start: average now against the average of the first week of weigh-ins (averages, not single days)
+const total = computed(() => {
+  if (list.value.length < 2) return 0
+  const end = new Date(list.value[0].date + 'T12:00').getTime() + 6 * 864e5, first = list.value.filter(p => new Date(p.date + 'T12:00').getTime() <= end)
+  return last.value.avg - first.reduce((a, p) => a + p.kg, 0) / first.length
+})
+const P = computed(() => pace(weights.value))
+const wk = computed(() => P.value?.kg ?? null)
+const kcal = computed(() => (P.value ? kcalPerDay(fromU(P.value.kg)) : 0))
+const signK = v => { const r = Math.round(v * 100) / 100; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) }
+const signPct = v => { const r = Math.round(v * 100) / 100; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) + ' %' }
 const range = ref(null)
 const shown = computed(() => {
   if (!range.value) return list.value
@@ -160,7 +183,7 @@ const target = computed(() => {
   const pct = Math.max(0, Math.min(100, Math.round(start === g ? 100 : (start - now) / (start - g) * 100)))
   let eta
   if (left <= 0.05) eta = 'Gratulacje – trzymaj wagę.'
-  else if (wk.value == null) eta = 'Termin pokażę, gdy będzie tempo (3 pomiary w 3 tygodnie).'
+  else if (wk.value == null) eta = 'Termin pokażę, gdy będzie tempo (4 pomiary z co najmniej tygodnia).'
   else if (Math.sign(g - now) !== Math.sign(wk.value) || Math.abs(wk.value) < 0.02) eta = 'Przy obecnym tempie waga nie idzie w stronę celu.'
   else { const w = left / Math.abs(wk.value), d = new Date(Date.now() + w * 7 * 864e5); eta = 'Przy obecnym tempie: ok. ' + Math.ceil(w) + ' tyg. – około ' + fmtDate(iso(d)) }
   return { left, pct, eta }
@@ -175,8 +198,8 @@ async function setTarget() {
 const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
 const tone = v => { const g = prefs.goal; if (g === 'maintain' || Math.abs(v) < 0.05) return ''; return (g === 'bulk' ? v > 0 : v < 0) ? 'ok' : 'bad' }
 const verdict = computed(() => {
-  if (wk.value == null) return list.value.length ? { ico: 'chart', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 3 pomiarach z ostatnich 3 tygodni. Najlepiej waż się 3–4× w tygodniu.' } : null
-  const pct = (wk.value / (avg7.value || 1)) * 100
+  if (wk.value == null) return list.value.length ? { ico: 'chart', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 4 pomiarach z co najmniej tygodnia. Najlepiej waż się codziennie rano.' } : null
+  const pct = P.value.pct
   if (prefs.goal === 'maintain') {
     if (pct < -0.25) return { ico: 'bolt', cls: 'warn', title: 'Waga spada', text: 'Chcesz utrzymać wagę – dorzuć ok. 100–200 kcal dziennie.' }
     if (pct > 0.25) return { ico: 'up', cls: 'warn', title: 'Waga rośnie', text: 'Chcesz utrzymać wagę – ok. 100–200 kcal mniej albo więcej kroków.' }
@@ -222,25 +245,53 @@ const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).
 function draw() {
   if (!cv.value || !shown.value.length) return
   const c = css('--accent') || '#7346f5', muted = css('--app-muted') || '#8a8a8e', line = css('--app-line') || 'rgba(0,0,0,.1)'
-  const g = cv.value.getContext('2d').createLinearGradient(0, 0, 0, 240)
+  const g = cv.value.getContext('2d').createLinearGradient(0, 0, 0, 250)
   g.addColorStop(0, c + '40'); g.addColorStop(1, c + '00')
-  const pts = shown.value
+  const pts = shown.value, byX = new Map(pts.map((p, k) => [dnum(p.date), { p, prev: k ? pts[k - 1] : null }]))
+  // the 7-day average breaks where there were 8+ days without weighing (no invented line over the gap)
+  const avg = []
+  pts.forEach((p, k) => { if (k && dnum(p.date) - dnum(pts[k - 1].date) > 7) avg.push({ x: dnum(p.date) - 1, y: null }); avg.push({ x: dnum(p.date), y: +p.avg.toFixed(2) }) })
+  const pr = P.value, x0 = dnum(list.value.at(-1).date), x1 = pts.length ? dnum(pts[0].date) : x0
+  const ahead = pr ? 28 : 0, proj = []
+  if (pr) for (let d = Math.max(Math.ceil(pr.from), x1 - x0); d <= ahead; d += 1) proj.push({ x: x0 + d, y: pr.level + pr.kg / 7 * d, lo: pr.level + (d > 0 ? pr.lo : pr.kg) / 7 * d, hi: pr.level + (d > 0 ? pr.hi : pr.kg) / 7 * d })
+  const ys = [...pts.map(p => p.kg), ...proj.flatMap(q => [q.lo, q.hi])], lo = Math.min(...ys), hi = Math.max(...ys)
+  const step = hi - lo < 3 ? 0.5 : hi - lo < 8 ? 1 : hi - lo < 20 ? 2 : 5
+  const xmin = x1 - (pts.length === 1 ? 3 : 0), xmax = x0 + (ahead || (pts.length === 1 ? 3 : 0)), span = xmax - xmin
+  const every = span <= 40 ? 7 : span <= 120 ? 14 : 28
   chart?.destroy()
   chart = new Chart(cv.value, {
     type: 'line',
     data: {
       datasets: [
-        { label: 'Średnia 7 dni', data: pts.map(p => ({ x: dnum(p.date), y: +p.avg.toFixed(2) })), borderColor: c, backgroundColor: g, fill: true, tension: .35, borderWidth: 3, pointRadius: 0, pointHitRadius: 0 },
-        { label: 'Pomiar', data: pts.map(p => ({ x: dnum(p.date), y: p.kg })), showLine: false, pointRadius: pts.map((p, k) => (k === pts.length - 1 ? 5.5 : 3.5)),
-          pointBackgroundColor: muted, pointBorderWidth: 0, pointHoverRadius: 6 }
+        { label: 'band-lo', data: proj.map(q => ({ x: q.x, y: q.hi })), borderWidth: 0, pointRadius: 0, pointHitRadius: 0, fill: false },
+        { label: 'band', data: proj.map(q => ({ x: q.x, y: q.lo })), borderWidth: 0, pointRadius: 0, pointHitRadius: 0, backgroundColor: c + '22', fill: '-1' },
+        { label: 'Prognoza', data: proj.map(q => ({ x: q.x, y: q.y })), borderColor: c, borderDash: [5, 5], borderWidth: 2, pointRadius: 0, pointHitRadius: 0, fill: false },
+        { label: 'Średnia 7 dni', data: avg, borderColor: c, backgroundColor: g, fill: true, tension: .3, borderWidth: 3, pointRadius: 0, pointHitRadius: 0, spanGaps: false },
+        { label: 'Pomiar', data: pts.map(p => ({ x: dnum(p.date), y: p.kg })), showLine: false, pointRadius: pts.map((p, k) => (k === pts.length - 1 ? 5 : 3.5)),
+          pointBackgroundColor: muted, pointBorderWidth: 0, pointHoverRadius: 6, pointHitRadius: 12 }
       ]
     },
     options: {
-      responsive: true, maintainAspectRatio: false, animation: { duration: 450 }, interaction: { mode: 'index', intersect: false },
-      plugins: { legend: { display: false }, tooltip: { displayColors: false, callbacks: { title: x => dstr(x[0].parsed.x), label: x => x.dataset.label + ': ' + fmtKg(x.parsed.y.toFixed(1)) + ' ' + wu() } } },
+      responsive: true, maintainAspectRatio: false, animation: { duration: 450 }, layout: { padding: { right: 10, top: 6 } },
+      interaction: { mode: 'nearest', axis: 'x', intersect: false },
+      plugins: { legend: { display: false }, tooltip: { displayColors: false, filter: x => x.dataset.label === 'Pomiar' || x.dataset.label === 'Prognoza', yAlign: 'bottom',
+        callbacks: {
+          title: x => { const n = x[0].parsed.x; return dstr(n) + ' · ' + new Date(n * 864e5).toLocaleDateString(LOC(), { weekday: 'short' }) },
+          label: x => {
+            const n = x.parsed.x, q = byX.get(n), U = ' ' + wu()
+            if (x.dataset.label === 'Prognoza') return n > x0 ? [t('Prognoza') + ': ' + fmtKg(x.parsed.y.toFixed(1)) + U, t('Zakres') + ': ' + fmtKg(proj.find(r => r.x === n).lo.toFixed(1)) + '–' + fmtKg(proj.find(r => r.x === n).hi.toFixed(1)) + U] : []
+            if (!q) return []
+            const out = [t('Pomiar') + ': ' + fmtKg(q.p.kg.toFixed(1)) + U, t('Średnia 7 dni') + ': ' + fmtKg(q.p.avg.toFixed(1)) + U]
+            if (q.prev) out.push(t('Od poprzedniego') + ': ' + sign(q.p.kg - q.prev.kg) + U)
+            return out
+          }
+        } } },
       scales: {
-        x: { type: 'linear', grid: { display: false }, ticks: { color: muted, maxTicksLimit: 5, maxRotation: 0, callback: v => (Number.isInteger(v) ? dstr(v) : '') }, min: dnum(pts[0].date) - (pts.length === 1 ? 3 : 0), max: dnum(pts[pts.length - 1].date) + (pts.length === 1 ? 3 : 0) },
-        y: { grid: { color: line }, border: { display: false }, ticks: { color: muted, maxTicksLimit: 5, callback: v => fmtKg(v) }, grace: '15%' }
+        x: { type: 'linear', min: xmin, max: xmax, grid: { color: line, drawTicks: false }, border: { display: false },
+          afterBuildTicks: ax => { const t = [], mon = n => n - ((new Date(n * 864e5).getUTCDay() + 6) % 7); for (let n = mon(Math.ceil(xmin)); n <= xmax; n += every) if (n >= xmin) t.push({ value: n }); ax.ticks = t },
+          ticks: { color: muted, maxRotation: 0, autoSkip: true, padding: 6, callback: v => dstr(v) } },
+        y: { min: Math.floor((lo - step * 0.2) / step) * step, max: Math.ceil((hi + step * 0.2) / step) * step, grid: { color: line }, border: { display: false },
+          ticks: { color: muted, stepSize: step, callback: v => (Math.abs(+v / step - Math.round(+v / step)) < 1e-6 ? fmtKg(v) : '') } }
       }
     }
   })
@@ -274,7 +325,16 @@ onBeforeUnmount(() => chart?.destroy())
 .leg { font-size: 12px; font-weight: 500; color: var(--app-muted); display: flex; align-items: center; gap: 5px; }
 .leg .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--app-muted); }
 .leg .ln { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); margin-left: 6px; }
-.chart-wrap { position: relative; height: 220px; }
+.chart-wrap { position: relative; height: 250px; }
+.leg .ln.dash { background: repeating-linear-gradient(90deg, var(--accent) 0 4px, transparent 4px 7px); }
+.c-note { margin: 8px 2px 0; font-size: 12px; color: var(--app-muted); line-height: 1.35; }
+.est .e-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 0.5px solid var(--app-line); }
+.est .card-title + .e-row { border-top: 0; }
+.est .e-row span { font-size: 14.5px; display: flex; flex-direction: column; min-width: 0; }
+.est .e-row small { font-size: 12px; color: var(--app-muted); margin-top: 1px; line-height: 1.3; }
+.est .e-row b { font-size: 16px; font-weight: 700; text-align: right; flex: none; display: flex; flex-direction: column; align-items: flex-end; }
+.est .e-row b i { font-style: normal; font-size: 12px; font-weight: 500; color: var(--app-muted); }
+.est .e-row b.ok { color: var(--app-ok); } .est .e-row b.bad { color: var(--app-bad); }
 .empty { color: var(--app-muted); text-align: center; padding: 28px 8px; line-height: 1.4; }
 .btns { display: flex; flex-direction: column; gap: 10px; margin: 0 16px 16px; }
 .primary-btn { background: var(--accent); color: #fff; }
