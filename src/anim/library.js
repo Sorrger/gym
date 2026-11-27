@@ -54,7 +54,8 @@ function held(eq, o = {}) {
   }
   return []
 }
-const tower = (x, top = -300, pulley) => ({ k: 'tower', x, top, pulley: pulley ?? top + 8 })
+// the tower always stands full height; `top` only sets where the pulley sits when no pulley height is given
+const tower = (x, top = -300, pulley) => ({ k: 'tower', x, top: Math.min(top, -290), pulley: pulley ?? top + 8 })
 const UP = ['Unieś', 'Opuść'], PRESS = ['Opuść', 'Wypchnij'], PULL = ['Przyciągnij', 'Wróć'], SQ = ['Zejdź', 'Wstań']
 const holdPh = [[2200, 'Trzymaj', 0, 1], [2200, 'Trzymaj', 1, 0]]
 // a point behind (to the left of) two hand positions, equally far from both: a lever round it passes through both
@@ -317,7 +318,7 @@ const LIB = {
     const cable = sel.eq === 'cb'
     const b = sel.pos === 'seat' ? seat({}) : st(cable ? { t: -72, fx: 30, gx: -40, gy: -7 } : {})
     const up = b.t - 6
-    return { frames: [{ ...b, a1: up, a2: up + 196 }, { ...b, a1: up, a2: up + 4 }], props: [...(sel.pos === 'seat' ? [SEAT_PROP, BACKREST] : []), ...(cable ? [tower(-120, -60, -40)] : [])], gear: cable ? [{ k: 'cable', from: { x: -120, y: -40 } }] : held(sel.eq === 'mc' ? 'db' : sel.eq), lab: ['Wyprostuj', 'Opuść'] }
+    return { frames: [{ ...b, a1: up, a2: up + 196 }, { ...b, a1: up, a2: up + 4 }], props: [...(sel.pos === 'seat' ? [SEAT_PROP, BACKREST] : []), ...(cable ? [tower(-130, -300, -120)] : [])], gear: cable ? [{ k: 'cable', from: { x: -130, y: -120 } }] : held(sel.eq === 'mc' ? 'db' : sel.eq), lab: ['Wyprostuj', 'Opuść'] }
   },
   'skull-crusher': sel => { const L = benchLike(sel); const b = L.frames[0], up = -100 + (b.t - 180); return { frames: [{ ...b, ax: undefined, ay: undefined, a1: up, a2: up }, { ...b, ax: undefined, ay: undefined, a1: up, a2: up - 110 }], props: L.props, gear: held(sel.eq === 'cb' ? 'bb' : sel.eq), lab: ['Opuść', 'Wyprostuj'] } },
   'tate-press': sel => { // elbows out to the sides (towards the viewer): forearms turn from the chest up to straight arms
@@ -508,7 +509,16 @@ const LIB = {
     const b = { hx: 30, hy: -13, t: 180, hold: 'head', ab: 1, ...(legsUp ? { l1: -90, l2: 0 } : { fx: 86, fy: -7 }) }
     return { frames: [b, { ...b, t: 218, cu: 1 }], lab: ['Spięcie', 'Wróć'] }
   },
-  'oblique-crunch': () => { const b = { hx: 30, hy: -13, t: 180, hold: 'head', ab: 1, fx: 86, fy: -7 }; return { frames: [b, { ...b, t: 212, hd: -10, cu: 0.9 }], lab: ['Spięcie', 'Wróć'] } },
+  'oblique-crunch': sel => {
+    if (sel.pos === 'roman' || sel.eq === 'db' || sel.eq === 'pl') { // a weight is only offered on the Roman chair
+      // seen from the front: lying sideways on a Roman chair, hip on the pad, feet locked; the weight hangs in the lower
+      // hand, the torso drops towards the floor and bends up sideways; upper hand along the body
+      // the chair is a 45° one: legs slope down to the foot pads, the body line runs on up at 45°; the torso drops below that
+      // line and bends up past it
+      const b = { hx: 0, hy: -172, t: 188, l1: 45, l2: 45, m1: 45, m2: 45, ra1: 174, ra2: 174, b1: 92, b2: 92 }
+      return { view: 'f', frames: [b, { ...b, t: 250, b1: 112, b2: 112 }], props: [{ k: 'pad', x1: -14, y1: -158, x2: 16, y2: -130, w: 14 }, { k: 'post', x: 6, y2: -140 }, { k: 'pad', x1: 92, y1: -64, x2: 112, y2: -84, w: 10 }, { k: 'post', x: 104, y2: -72 }], gear: sel.eq === 'bw' ? [] : [{ k: sel.eq === 'pl' ? 'pl' : 'db', far: true }], lab: ['Unieś bokiem', 'Opuść'] }
+    } const b = { hx: 30, hy: -13, t: 180, hold: 'head', ab: 1, fx: 86, fy: -7 }; return { frames: [b, { ...b, t: 212, hd: -10, cu: 0.9 }], lab: ['Spięcie', 'Wróć'] }
+  },
   'sit-up': () => { const b = { hx: 30, hy: -13, fx: 86, fy: -7, ra1: 150, ra2: 160 }; return { frames: [{ ...b, t: 180 }, { ...b, t: 250, cu: 0.5 }], lab: ['Usiądź', 'Połóż się'] } },
   'leg-raise': sel => {
     const v = sel.v || 'bent'

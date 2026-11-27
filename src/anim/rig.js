@@ -228,6 +228,7 @@ function foot(K, A, fo, cls = 'body') {
 }
 
 function gear(g, J, pose, near) {
+  if (g.far) near = false // held in the far hand only
   const W = g.at === 'hold' && J.P ? J.P : g.at === 'back' ? add(lerpPt(J.H, J.S, 0.62), J.L, 15) : g.at === 'elbow' ? J.E : g.at === 'foot' ? J.A : g.at === 'hip' ? J.H : g.at === 'knee' ? at(lerpPt(J.H, J.K, 0.8), ang(J.H, J.K) - 90, 15) : near ? J.W : J.W2, E = near ? J.E : J.E2, f = near ? '' : ' far'
   switch (g.k) {
     case 'bb': return [{ t: 'plate', at: W, r: g.r || 22, far: !near }]
@@ -236,7 +237,7 @@ function gear(g, J, pose, near) {
     case 'kb': { const dd = g.up ? ang(E, W) : 90, c = at(W, dd, 11); return [line(W, at(W, dd, 6), 4, 'gear-line' + f), circle(c, 10, 'gear' + f), circle(c, 10, 'rim' + f)] }
     case 'ball': { const c = at(W, g.dir ?? -90, g.off ?? 10); return [circle(c, g.r || 15, 'gear'), circle(c, g.r || 15, 'rim')] }
     case 'handle': return [circle(W, 5, 'gear' + f)]
-    case 'cable': return [line(near ? g.from : g.from2 || g.from, W, 1.6, 'cable' + f), circle(W, 4, 'gear' + f)]
+    case 'cable': { const F = near ? g.from : g.from2 || g.from, d = ang(F, W); return [line(F, W, 1.6, 'cable' + f), line(at(W, d + 90, 7), at(W, d - 90, 7), 4.5, 'gear' + f)] } // handle across the end of the cable
     case 'band': return [line(g.from, W, 3, 'band' + f)]
     case 'bandloop': { // a band with no anchor: around the knees, over the back from hand to hand, or from under the feet to the hands
       if (g.mode === 'knee') { const c = lerpPt(J.H, J.K, 0.85); return [{ t: 'path', a: { d: `M${c.x - 10} ${c.y}a10 6 0 1 0 20 0a10 6 0 1 0 -20 0`, 'stroke-width': 3 }, c: 'band' }] }

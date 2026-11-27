@@ -108,6 +108,7 @@ export const EN = {
   "Twoje ustawienia – zmieniasz każdą rzecz osobno w „Ustaw wszystko szczegółowo”.": "Your own settings – change each thing separately in “Set everything in detail”.",
   "Uchwyt D": "D-handle",
   "Udo": "Thigh",
+  "Unieś bokiem": "Lift sideways",
   "Ustaw wszystko szczegółowo": "Set everything in detail",
   "Ustawiaj": "Fill in",
   "Ustawiono podpowiedź na dziś": "Today's suggestion filled in",
