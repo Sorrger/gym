@@ -64,6 +64,7 @@ function pivotFor(p, q, d) {
   return { x: m.x + n.x * d, y: m.y + n.y * d }
 }
 const BALL = 14 // ankle → ball of the foot along the drawn foot
+const SEAT_IN = { ...FSEAT, a1: 80, a2: 84, l1: 84, l2: 90, tf: 0.22 }, SEAT_OUT = { ...FSEAT, a1: 80, a2: 84, l1: 14, l2: 90, tf: 0.7 }
 const seq = (labels, ms = 900) => labels.map((l, i) => [ms, l, i / labels.length, (i + 1) / labels.length])
 
 // ---------- chest ----------
@@ -473,16 +474,17 @@ const LIB = {
     const b = { hx: 0, hy: -72, t: -13, m1: 90, m2: 180, fo2: 180, ax: 80, ay: -4 } // straight arms under the shoulders
     return { frames: [{ ...b, l1: 120, l2: 180 }, { ...b, l1: 190, l2: 185 }], props: sel.eq === 'cb' ? [tower(-150, -40, -20)] : [], gear: sel.eq === 'cb' ? [{ k: 'cable', from: { x: -150, y: -20 }, at: 'foot' }] : sel.eq === 'bd' ? [{ k: 'band', from: { x: 70, y: -6 }, at: 'foot' }] : sel.eq === 'mc' ? [{ k: 'shin', side: -1 }] : [], lab: ['Wypchnij nogę', 'Wróć'] }
   },
+  // seated hip machine, seen from the front: closed = thighs point at the viewer (short), open = thighs swing out to the
+  // sides (their full length shows) and the knees travel far apart; shins hang straight down from the knees
   'hip-abduction': sel => {
     const pos = sel.pos || (sel.eq === 'mc' ? 'seat' : 'stand')
-    if (pos === 'seat') { const b = { ...FSEAT, tf: 0.35, a1: 80, a2: 84 }; return { view: 'f', frames: [{ ...b, l1: 90, l2: 90 }, { ...b, l1: 12, l2: 72 }], props: FSEAT_PROPS, lab: ['Rozsuń', 'Złącz'] } }
+    if (pos === 'seat') return { view: 'f', frames: [SEAT_IN, SEAT_OUT], props: FSEAT_PROPS, lab: ['Rozsuń', 'Złącz'] }
     if (pos === 'stand') { const b = st({ fx: null, fy: null, m1: 90, m2: 90, a1: 84, a2: 84 }); return { view: 'f', frames: [{ ...b, l1: 90, l2: 90 }, { ...b, l1: 58, l2: 58 }], props: sel.eq === 'cb' ? [tower(-150, -40, -20)] : [], lab: UP } }
     return { view: 'f', frames: [{ hx: 0, hy: -20, t: 180, l1: 0, l2: 0, m1: 0, m2: 0, a1: 0, a2: 0, b1: 196, b2: 300 }, { hx: 0, hy: -20, t: 180, l1: -36, l2: -36, m1: 0, m2: 0, a1: 0, a2: 0, b1: 196, b2: 300 }], lab: UP }
   },
   'hip-adduction': sel => {
     if (sel.eq === 'cb') { const b = st({ fx: null, fy: null, m1: 90, m2: 90, a1: 84, a2: 84 }); return { view: 'f', frames: [{ ...b, l1: 72, l2: 72 }, { ...b, l1: 100, l2: 100 }], props: [tower(150, -40, -20)], lab: ['Przyciągnij', 'Wróć'] } }
-    const b = { ...FSEAT, tf: 0.35, a1: 80, a2: 84 }
-    return { view: 'f', frames: [{ ...b, l1: 12, l2: 72 }, { ...b, l1: 90, l2: 90 }], props: FSEAT_PROPS, lab: ['Złącz', 'Rozsuń'] }
+    return { view: 'f', frames: [SEAT_OUT, SEAT_IN], props: FSEAT_PROPS, lab: ['Złącz', 'Rozsuń'] }
   },
   'kb-swing': sel => {
     const bot = { hx: -40, hy: -118, t: -30, fx: 6, a1: 110, a2: 120 }
