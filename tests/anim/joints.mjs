@@ -35,7 +35,17 @@ for (const b of BASES) {
         if (!K0) continue
         const flex = norm((t + 180) - ang(H0, K0))
         if (flex < -30) note(n + ' przeprost', flex, i)
+        if (flex > 155) note(n + ' za mocno zgięte', flex, i) // the torso line includes the spine: a deep squat / deficit pull reaches ~150
       }
+      // ankle: the foot is drawn at `fo` (absolute) or square to the shin; 0 = neutral, + = toes down (up to ~90 when kneeling on the instep), − = toes up (dorsiflexion, real limit ~45)
+      for (const [n, K0, A0, fo] of [['stopa', J.K, J.A, p.fo], ['stopa2', J.K2, J.A2, p.fo2 ?? p.fo]]) {
+        if (!K0 || fo == null) continue
+        const pf = norm(fo - (ang(K0, A0) - 90))
+        if (pf < -45) note(n + ' za mocno w górę', pf, i)
+        if (pf > 95) note(n + ' za mocno w dół', pf, i)
+      }
+      // head: tilt against the torso
+      if (Math.abs(p.hd || 0) > 55) note('głowa', p.hd, i)
       for (const [n, S0, E0] of [['bark', J.S, J.E], ['bark2', J.S, J.E2]]) {
         if (!E0) continue
         let flex = norm((t + 180) - ang(S0, E0)); if (flex < -110) flex += 360

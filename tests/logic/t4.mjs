@@ -199,4 +199,29 @@ ok(prefsM.prefs.plates === false && prefsM.prefs.plateSet.join() === '25,20,15,1
   ok(!bad.length, 'anim: no hyperextended or over-folded elbows / knees', [...new Set(bad.map(x => x.split(' @')[0]))].slice(0, 12))
 }
 
+// feet and hips: the ankle never bends up past ~45° (heels down) and the hip never folds the thigh flat on the chest
+// (the TGU sweep leg is the one hip that goes behind the body on purpose)
+{
+  const ang = (a, b) => Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI, norm = a => ((a + 540) % 360) - 180
+  const bad = []
+  for (const b of catalog.BASES) for (const eq of b.o.eq || ['']) for (const ax of ['', 'pos', 'v']) for (const val of ax ? (ax === 'v' ? (b.v || []).map(x => x[0]) : b.o[ax] || []) : ['']) {
+    const sel = catalog.fullSel(b, { ...catalog.fullSel(b, eq ? { eq } : {}), ...(ax ? { [ax]: val } : {}) })
+    const sc = scenes.sceneFor(b.id, sel, catalog.compose(b, sel)); if (!sc || sc.view === 'f' || sc.top) continue
+    for (let i = 0; i <= 40; i++) {
+      const p = rig.poseAt(sc.frames, i / 40), J = rig.joints(p, sc.view)
+      for (const [K, A, fo] of [[J.K, J.A, p.fo], [J.K2, J.A2, p.fo2 ?? p.fo]]) {
+        if (!K || fo == null) continue
+        const pf = norm(fo - (ang(K, A) - 90))
+        if (pf < -45 || pf > 95) bad.push(b.id + ' ankle ' + Math.round(pf) + '° @' + i)
+      }
+      for (const K of [J.K, J.K2]) {
+        if (!K) continue
+        const flex = norm(p.t + 180 - ang(J.H, K))
+        if (flex > 155 || (flex < -30 && b.id !== 'tgu')) bad.push(b.id + ' hip ' + Math.round(flex) + '° @' + i)
+      }
+    }
+  }
+  ok(!bad.length, 'anim: ankles and hips stay in a human range', [...new Set(bad.map(x => x.split(' @')[0]))].slice(0, 12))
+}
+
 globalThis.T4 = { n, fails }

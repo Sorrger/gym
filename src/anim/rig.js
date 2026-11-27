@@ -101,6 +101,12 @@ function fillTargets(a, b) {
     if ((a[x] == null) === (b[x] == null)) continue
     if (a[x] == null) { const p = joints(a)[j]; A = { ...A, [x]: p.x, [y]: p.y } } else { const p = joints(b)[j]; B = { ...B, [x]: p.x, [y]: p.y } }
   }
+  // a foot set in one frame only: the other frame's foot is square to its own shin (else the ankle keeps a stale angle)
+  for (const [f, K, An] of [['fo', 'K', 'A'], ['fo2', 'K2', 'A2']]) {
+    if ((A[f] == null) === (B[f] == null) || (f === 'fo2' && (A.fo != null || B.fo != null))) continue
+    const src = A[f] == null ? A : B, J = joints(src), v = Math.atan2(J[An].y - J[K].y, J[An].x - J[K].x) * 180 / Math.PI - 90
+    if (src === A) A = { ...A, [f]: v }; else B = { ...B, [f]: v }
+  }
   return [A, B]
 }
 const filled = new WeakMap()
