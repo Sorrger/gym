@@ -118,7 +118,7 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, 
 import { add as add_, clipboardOutline, scale } from 'ionicons/icons'
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
 import { cloud } from '../cloud'
-import { weightsU as weights, setWeight, delWeight, parseList, smooth, pace, kcalPerDay } from '../weight'
+import { weightsU as weights, setWeight, delWeight, parseList, smooth, paceToday, daysSince, kcalPerDay } from '../weight'
 import { wu, toU, fromU } from '../units'
 import { askWeight, parseKg } from '../weightQuick'
 import { ask } from '../dialog'
@@ -128,7 +128,7 @@ const ionRouter = useIonRouter()
 const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/profile', 'back', 'replace'))
 const { scrolled, onScroll } = useScrolled()
 const dnum = s => Math.round(new Date(s + 'T12:00').getTime() / 864e5) // x axis = real days, so gaps show as gaps
-const dstr = n => fmtShort(iso(new Date(n * 864e5)))
+const dstr = n => fmtShort(iso(new Date(n * 864e5))) // n is a day number from dnum; read back in local time it is that same date
 
 const list = computed(() => smooth(weights.value))
 const last = computed(() => list.value[list.value.length - 1])
@@ -139,7 +139,8 @@ const total = computed(() => {
   const end = new Date(list.value[0].date + 'T12:00').getTime() + 6 * 864e5, first = list.value.filter(p => new Date(p.date + 'T12:00').getTime() <= end)
   return last.value.avg - first.reduce((a, p) => a + p.kg, 0) / first.length
 })
-const P = computed(() => pace(weights.value))
+const P = computed(() => paceToday(weights.value))
+const since = computed(() => daysSince(weights.value))
 const wk = computed(() => P.value?.kg ?? null)
 const kcal = computed(() => (P.value ? kcalPerDay(fromU(P.value.kg)) : 0))
 const signK = v => { const r = Math.round(v * 100) / 100; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) }
@@ -198,6 +199,7 @@ async function setTarget() {
 const GOALS = [{ v: 'cut', t: 'Redukcja' }, { v: 'maintain', t: 'Utrzymanie' }, { v: 'bulk', t: 'Masa' }]
 const tone = v => { const g = prefs.goal; if (g === 'maintain' || Math.abs(v) < 0.05) return ''; return (g === 'bulk' ? v > 0 : v < 0) ? 'ok' : 'bad' }
 const verdict = computed(() => {
+  if (wk.value == null && since.value > 14) return { ico: 'chart', cls: '', title: 'Dawno bez pomiaru', text: 'Ostatnia waga jest sprzed ' + since.value + ' dni. Zważ się, żeby policzyć aktualne tempo.' }
   if (wk.value == null) return list.value.length ? { ico: 'chart', cls: '', title: 'Zbieram dane', text: 'Tempo pokażę po 4 pomiarach z co najmniej tygodnia. Najlepiej waż się codziennie rano.' } : null
   const pct = P.value.pct
   if (prefs.goal === 'maintain') {
@@ -253,10 +255,10 @@ function draw() {
   pts.forEach((p, k) => { if (k && dnum(p.date) - dnum(pts[k - 1].date) > 7) avg.push({ x: dnum(p.date) - 1, y: null }); avg.push({ x: dnum(p.date), y: +p.avg.toFixed(2) }) })
   const pr = P.value, x0 = dnum(list.value.at(-1).date), x1 = pts.length ? dnum(pts[0].date) : x0
   const ahead = pr ? 28 : 0, proj = []
-  if (pr) for (let d = Math.max(Math.ceil(pr.from), x1 - x0); d <= ahead; d += 1) proj.push({ x: x0 + d, y: pr.level + pr.kg / 7 * d, lo: pr.level + (d > 0 ? pr.lo : pr.kg) / 7 * d, hi: pr.level + (d > 0 ? pr.hi : pr.kg) / 7 * d })
+  if (pr) for (let d = Math.max(Math.ceil(pr.from), x1 - x0); d <= ahead + pr.ago; d += 1) proj.push({ x: x0 + d, y: pr.level0 + pr.kg / 7 * d, lo: pr.level0 + (d > 0 ? pr.lo : pr.kg) / 7 * d, hi: pr.level0 + (d > 0 ? pr.hi : pr.kg) / 7 * d })
   const ys = [...pts.map(p => p.kg), ...proj.flatMap(q => [q.lo, q.hi])], lo = Math.min(...ys), hi = Math.max(...ys)
   const step = hi - lo < 3 ? 0.5 : hi - lo < 8 ? 1 : hi - lo < 20 ? 2 : 5
-  const xmin = x1 - (pts.length === 1 ? 3 : 0), xmax = x0 + (ahead || (pts.length === 1 ? 3 : 0)), span = xmax - xmin
+  const xmin = x1 - (pts.length === 1 ? 3 : 0), xmax = x0 + (ahead ? ahead + pr.ago : pts.length === 1 ? 3 : 0), span = xmax - xmin
   const every = span <= 40 ? 7 : span <= 120 ? 14 : 28
   chart?.destroy()
   chart = new Chart(cv.value, {
@@ -288,7 +290,7 @@ function draw() {
         } } },
       scales: {
         x: { type: 'linear', min: xmin, max: xmax, grid: { color: line, drawTicks: false }, border: { display: false },
-          afterBuildTicks: ax => { const t = [], mon = n => n - ((new Date(n * 864e5).getUTCDay() + 6) % 7); for (let n = mon(Math.ceil(xmin)); n <= xmax; n += every) if (n >= xmin) t.push({ value: n }); ax.ticks = t },
+          afterBuildTicks: ax => { const t = [], mon = n => n - ((new Date(n * 864e5).getDay() + 6) % 7); for (let n = mon(Math.ceil(xmin)); n <= xmax; n += every) if (n >= xmin) t.push({ value: n }); ax.ticks = t },
           ticks: { color: muted, maxRotation: 0, autoSkip: true, padding: 6, callback: v => dstr(v) } },
         y: { min: Math.floor((lo - step * 0.2) / step) * step, max: Math.ceil((hi + step * 0.2) / step) * step, grid: { color: line }, border: { display: false },
           ticks: { color: muted, stepSize: step, callback: v => (Math.abs(+v / step - Math.round(+v / step)) < 1e-6 ? fmtKg(v) : '') } }

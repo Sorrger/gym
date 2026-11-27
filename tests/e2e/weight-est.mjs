@@ -18,4 +18,10 @@ await p.locator('.chart-card').scrollIntoViewIfNeeded(); await p.waitForTimeout(
 const bx = await p.locator('.chart-wrap canvas').boundingBox()
 await p.mouse.click(bx.x + bx.width * 0.55, bx.y + bx.height / 2); await p.waitForTimeout(400)
 if (!(bx.height > 200)) console.log('FAIL chart height')
+// an old log (last weigh-in 30 days ago): no pace, a hint to weigh in, no estimates card
+await p.evaluate(async () => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); const W = {}; [[60, 108], [50, 107], [40, 106.4], [30, 106]].forEach(([n, kg]) => W[new Date(Date.now() - n * 864e5).toISOString().slice(0, 10)] = { kg, t: 1 }); tx.objectStore('keyval').put(W, 'weights'); tx.oncomplete = res } }) })
+await p.reload(); await p.waitForTimeout(1500)
+const v = (await p.locator('.verdict').innerText()).replace(/\s+/g, ' ')
+console.log('stale:', v)
+if (!/(Dawno bez pomiaru|No weigh-in for a while)/.test(v) || await p.locator('.est').count()) console.log('FAIL stale pace shown as current')
 console.log('errs', errs); await b.close()

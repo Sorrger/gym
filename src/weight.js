@@ -10,7 +10,7 @@ const FILE = 'gym-weights.json'
 export const wstate = reactive({ entries: {}, loaded: false, syncing: false, error: '' })
 
 export const weights = computed(() => Object.entries(wstate.entries)
-  .filter(([, e]) => e && !e.del && e.kg > 0).map(([date, e]) => ({ date, kg: e.kg })).sort((a, b) => a.date.localeCompare(b.date)))
+  .filter(([, e]) => e && !e.del && +e.kg > 0).map(([date, e]) => ({ date, kg: +e.kg })).sort((a, b) => a.date.localeCompare(b.date)))
 // the same list in the shown unit (`kg` then holds lb when the user picked lb) – screens use this one
 export const weightsU = computed(() => weights.value.map(p => ({ date: p.date, kg: toU(p.kg) })))
 
@@ -111,6 +111,16 @@ export function pace(list, days = 28) {
   const se = Math.sqrt(pts.reduce((q, p) => q + (p.y - (a + b * p.x)) ** 2, 0) / Math.max(1, pts.length - 2) / sxx)
   return { kg: b * 7, lo: (b - se) * 7, hi: (b + se) * 7, level: a, n: pts.length, span: Math.round(-pts[0].x), from: pts[0].x, pct: (b * 7) / a * 100, how }
 }
+// pace for today: null when the last weigh-in is over `fresh` days old (an old pace would pass for the current one);
+// `level` moves along the line to today, `level0` = at the last weigh-in, `ago` = days since it
+export function paceToday(list, now = Date.now(), fresh = 14) {
+  const p = pace(list)
+  if (!p) return null
+  const ago = Math.max(0, Math.round((day(iso(new Date(now))) - day(list[list.length - 1].date)) / 864e5))
+  return ago > fresh ? null : { ...p, ago, level0: p.level, level: p.level + p.kg / 7 * ago }
+}
+// days since the last weigh-in (null without any)
+export const daysSince = (list, now = Date.now()) => (list.length ? Math.round((day(iso(new Date(now))) - day(list[list.length - 1].date)) / 864e5) : null)
 // kg per week (see pace) – null until there is enough data
 export function trend(list, days = 28) { return pace(list, days)?.kg ?? null }
 // ~7700 kcal per kg of body fat: what a weekly change means per day (a rough estimate, water moves the scale too)

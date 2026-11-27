@@ -15,6 +15,7 @@ export const EN = {
   "cały plan": "whole plan",
   "Cel (redukcja, utrzymanie, masa) i wagę docelową ustawiasz na ekranie Waga: Postępy → Ciało.": "Set your goal (cut, maintain, bulk) and target weight on the Weight screen: Progress → Body.",
   "Data pomiaru": "Measurement date",
+  "Dawno bez pomiaru": "No weigh-in for a while",
   "Deficyt kalorii": "Calorie deficit",
   "Dodaj notatkę": "Add a note",
   "Dodaj obwody": "Add measurements",
@@ -955,6 +956,7 @@ export const EN = {
 }
 
 export const PATTERNS = [
+  ["^Ostatnia waga jest sprzed (\\d+) dni\\. Zważ się, żeby policzyć aktualne tempo\\.$", "Your last weigh-in is $1 days old. Weigh yourself to get the current pace."],
   ["^ok\\. ([\\d,]+) (kg|lb)$", "about $1 $2"],
   ["^([−+±][\\d,]+) i ([−+±][\\d,]+)$", "$1 to $2"],
   ["^([−+±][\\d,]+) (kg|lb)/tydz\\.$", "$1 $2/wk"],

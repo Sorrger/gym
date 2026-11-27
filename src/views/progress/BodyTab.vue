@@ -74,7 +74,7 @@ import { prefs, weightTone } from '../../prefs'
 import { state } from '../../store'
 import { muscleWeek, muscleSets, plansDone, planMuscleSets } from '../../stats'
 import { MUSCLE_NAMES } from '../../muscles'
-import { weightsU as weights, smooth, trend as wTrendOf } from '../../weight'
+import { weightsU as weights, smooth, paceToday } from '../../weight'
 import { wu } from '../../units'
 import { usePlans } from './plans'
 import { PARTS, byPart } from '../../measures'
@@ -88,7 +88,7 @@ const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace
 const fmtSets = v => String(Math.round(v * 2) / 2).replace('.', ',')
 const wS = computed(() => smooth(weights.value).slice(-30))
 const wNow = computed(() => (wS.value.length ? wS.value.at(-1).avg : null))
-const wTr = computed(() => wTrendOf(weights.value))
+const wTr = computed(() => paceToday(weights.value)?.kg ?? null)
 const wLine = computed(() => {
   const v = wS.value.map(p => p.avg); if (v.length < 2) return ''
   const lo = Math.min(...v), hi = Math.max(...v, lo + 0.5)

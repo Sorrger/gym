@@ -92,7 +92,7 @@ import { chevronForward, checkmark, alertCircle, cloudOfflineOutline, trendingDo
 import { PLAN, COLORS, groupsOf, entriesOf, visiblePlans } from '../plan'
 import { setPref } from '../account'
 import { cloud } from '../cloud'
-import { weights, weightsU, smooth, trend } from '../weight'
+import { weights, weightsU, smooth, paceToday } from '../weight'
 import { wu } from '../units'
 import { askWeight } from '../weightQuick'
 import { weekStreak, overview, volumeOf, fmtTon } from '../stats'
@@ -143,7 +143,7 @@ const last = computed(() => { void state.sessions; return doneSessions().find(s 
 const lastPRs = computed(() => (last.value ? sessionRecords(last.value, entriesOf(last.value.day, last.value)).filter(r => r.pr).length : 0))
 const prTotal = computed(() => { void state.sessions; return overview(null).prs })
 const wNow = computed(() => { const l = weightsU.value; return l.length ? smooth(l).at(-1).avg : null })
-const wTrend = computed(() => trend(weightsU.value))
+const wTrend = computed(() => paceToday(weightsU.value)?.kg ?? null)
 // weight in one tap from Start: dialog right here (details → the Weight page)
 const weighedToday = computed(() => weights.value.some(p => p.date === iso(new Date())))
 async function quickWeight() {

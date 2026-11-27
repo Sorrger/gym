@@ -140,7 +140,13 @@ ok(weight.trend(L.slice(0, 3)) === null, 'trend needs 4 weigh-ins over a week')
   ok(p0.how === 'avg' && Math.abs(p1.kg - p0.kg) < 0.25, 'pace from averages; one very low weigh-in moves it only a little', [p0.kg, p1.kg])
   ok(p0.lo <= p0.kg && p0.kg <= p0.hi && Math.abs(p0.level - 98.25) < 0.5, 'pace range around the value, level near the line', p0)
   ok(weight.kcalPerDay(-0.5) === -550, 'half a kilo a week ≈ 550 kcal a day')
+  const last = new Date(Date.UTC(2026, 10, 26, 12)).getTime()
+  const t3 = weight.paceToday(base, last + 3 * 864e5), t20 = weight.paceToday(base, last + 20 * 864e5)
+  ok(t3 && t3.ago === 3 && Math.abs(t3.level - (t3.level0 + t3.kg / 7 * 3)) < 1e-9, 'pace for today moves the trend weight to today', t3)
+  ok(t20 === null && weight.daysSince(base, last + 20 * 864e5) === 20, 'no pace when the last weigh-in is over 2 weeks old')
 }
+weight.wstate.entries = { '2026-11-01': { kg: '100', t: 5 } }
+ok(weight.weights.value[0].kg === 100 && typeof weight.smooth(weight.weights.value)[0].avg === 'number', 'a weight stored as text is read as a number')
 weight.wstate.entries = { '2026-11-01': { kg: 100, t: 5 } }
 ok(weight.importWeights({ '2026-11-01': { kg: 90, t: 1 }, '2026-11-02': { kg: 99, t: 2 }, 'bad': { kg: 1, t: 9 }, '2026-11-03': { kg: 0, t: 9 } }) === 1, 'weight import: only newer/new valid entries')
 ok(weight.wstate.entries['2026-11-01'].kg === 100 && weight.wstate.entries['2026-11-02'].kg === 99, 'older remote weight does not overwrite')
