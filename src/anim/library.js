@@ -57,6 +57,13 @@ function held(eq, o = {}) {
 const tower = (x, top = -300, pulley) => ({ k: 'tower', x, top, pulley: pulley ?? top + 8 })
 const UP = ['Unieś', 'Opuść'], PRESS = ['Opuść', 'Wypchnij'], PULL = ['Przyciągnij', 'Wróć'], SQ = ['Zejdź', 'Wstań']
 const holdPh = [[2200, 'Trzymaj', 0, 1], [2200, 'Trzymaj', 1, 0]]
+// a point behind (to the left of) two hand positions, equally far from both: a lever round it passes through both
+function pivotFor(p, q, d) {
+  const m = { x: (p.x + q.x) / 2, y: (p.y + q.y) / 2 }, dx = q.x - p.x, dy = q.y - p.y, L = Math.hypot(dx, dy)
+  let n = { x: dy / L, y: -dx / L }; if (n.x > 0) n = { x: -n.x, y: -n.y }
+  return { x: m.x + n.x * d, y: m.y + n.y * d }
+}
+const BALL = 14 // ankle → ball of the foot along the drawn foot
 const seq = (labels, ms = 900) => labels.map((l, i) => [ms, l, i / labels.length, (i + 1) / labels.length])
 
 // ---------- chest ----------
@@ -247,7 +254,10 @@ const LIB = {
     const seated = sel.pos === 'seat' || sel.eq === 'mc'
     const b = seated ? seat({ t: -90 }) : sel.pos === 'floor' ? { hx: 0, hy: -14, t: -90, l1: 0, l2: 0 } : st({})
     const S = shoulderOf(b)
-    return { frames: [{ ...b, ax: S.x + 18, ay: S.y - 6, ab: 1 }, { ...b, ax: S.x + 4, ay: S.y - 86 }], props: seated ? [SEAT_PROP, BACKREST] : [], gear: sel.eq === 'mc' ? [{ k: 'lever', pivot: { x: S.x - 56, y: S.y + 20 } }, { k: 'handle' }] : held(sel.eq), lab: ['Wypchnij', 'Opuść'] }
+    // machine: the lever turns round a pivot behind the backrest that is equally far from the low and the locked-out
+    // handle, so the arms straighten fully at the top
+    const lo = { x: S.x + 18, y: S.y - 6 }, up = { x: S.x + 2, y: S.y - 87.5 }
+    return { frames: [{ ...b, ax: lo.x, ay: lo.y, ab: 1 }, { ...b, ax: up.x, ay: up.y }], props: seated ? [SEAT_PROP, BACKREST] : [], gear: sel.eq === 'mc' ? [{ k: 'lever', pivot: pivotFor(lo, up, 112) }, { k: 'handle' }] : held(sel.eq), lab: ['Wypchnij', 'Opuść'] }
   },
   arnold: sel => LIB.ohp({ ...sel, eq: 'db' }),
   'push-press': sel => {
@@ -273,8 +283,12 @@ const LIB = {
     return { frames: [mk(-6, -134, 51, 1), mk(48, -120, 60, 1)], lab: PRESS }
   },
   'cuban-press': sel => {
-    const b = st({ eo: 1 }), S = shoulderOf(b)
-    return { frames: [{ ...b, ax: S.x + 8, ay: S.y + 82 }, { ...b, ax: S.x + 14, ay: S.y + 2, ab: -1 }, { ...b, ax: S.x + 10, ay: S.y - 40, ab: -1 }, { ...b, ax: S.x + 4, ay: S.y - 86 }], gear: held(sel.eq), ph: [...seq(['Podciągnij', 'Obróć w górę', 'Wypchnij'], 900), [1200, 'Opuść', 1, 0]] }
+    // front view: upright row to elbows at shoulder height (forearms hang), forearms turn up and forward (external
+    // rotation – seen end-on half-way), then press overhead
+    const b = st({ fx: 14, gx: -14, gy: -7 })
+    const hang = { ...b, a1: 86, a2: 88 }, row = { ...b, a1: 4, a2: 88 }, turn = { ...b, a1: 4, a2: 0, ff: 0.12 }, goal = { ...b, a1: 4, a2: -88 }, top = { ...b, a1: -72, a2: -80 }
+    const bar = sel.eq === 'bb' || sel.eq === 'ez'
+    return { view: 'f', frames: [hang, row, turn, goal, top], gear: bar ? [{ k: 'fbar', ez: sel.eq === 'ez' }] : held(sel.eq), ph: [[900, 'Podciągnij', 0, 0.25], [900, 'Obróć w górę', 0.25, 0.75], [900, 'Wypchnij', 0.75, 1], [1600, 'Opuść', 1, 0]] }
   },
   'ext-rotation': sel => (sel.eq === 'cb' || sel.eq === 'bd' ? { view: 'f', frames: [st({ a1: 92, a2: 178, ff: 0.75, b1: 90, b2: 90 }), st({ a1: 92, a2: 270, ff: 0.12, b1: 90, b2: 90 }), st({ a1: 92, a2: 360, ff: 0.75, b1: 90, b2: 90 })], props: sel.eq === 'cb' ? [tower(-160, -300, -150)] : [], gear: [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: -160, y: -150 } }], lab: ['Obróć na zewnątrz', 'Wróć'] } : { view: 'f', frames: [{ hx: 60, hy: -22, t: 180, l1: 0, l2: 0, ra1: 180, ra2: 270, b1: 200, b2: 200 }, { hx: 60, hy: -22, t: 180, l1: 0, l2: 0, ra1: 180, ra2: 90, b1: 200, b2: 200 }], gear: held(sel.eq === 'cb' || sel.eq === 'bd' ? 'db' : sel.eq), lab: ['Obróć na zewnątrz', 'Wróć'] }),
 
@@ -397,12 +411,20 @@ const LIB = {
   },
   'tibialis-raise': () => ({ frames: [{ hx: -30, hy: -144, t: -90, fx: 14, fy: -7, a1: 90, a2: 90, fo: 0 }, { hx: -30, hy: -144, t: -90, fx: 14, fy: -7, a1: 90, a2: 90, fo: -30 }], props: [{ k: 'wall', x: -46 }], lab: ['Unieś palce', 'Opuść'] }),
   'calf-raise': sel => {
-    if (sel.pos === 'seat') { const b = seat({ l1: null, l2: null }); return { frames: [{ ...b, fx: 60, fy: -18, fo: -8 }, { ...b, fx: 62, fy: -31, fo: 40 }], props: [SEAT_PROP, { k: 'box', x: 76, w: 22, h: 16 }], gear: [{ k: 'kneepad' }], lab: ['Wspięcie', 'Opuść'] } }
-    if (sel.pos === 'legpress') { const L = LIB['leg-press']({}), [, top] = L.frames; return { ...L, frames: [{ ...top, fo: -150 }, { ...top, fx: top.fx + 7, fy: top.fy - 7, fo: -100 }], lab: ['Wspięcie', 'Opuść'] } }
-    if (sel.pos === 'donkey') { const b = { hx: -40, hy: -144, t: -4, fx: -30, fy: -19, a1: 92, a2: 92 }; return { frames: [{ ...b, fo: 8 }, { ...b, hy: -156, fy: -31, fo: 38 }], props: [{ k: 'box', x: -22, w: 50, h: 12 }, { k: 'pad', x1: 30, y1: -62, x2: 80, y2: -62, w: 10 }, { k: 'post', x: 60, y2: -62 }, { k: 'pad', x1: -60, y1: -160, x2: -20, y2: -160, w: 12 }], lab: ['Wspięcie', 'Opuść'] } }
+    // the ball of the foot stays put on the step / platform and the heel lifts round it, so the ankle (and the body
+    // above it) rises – the toes never slide or turn into the step
+    const R = Math.PI / 180, toes = (T, fo) => ({ fx: T.x - Math.cos(fo * R) * BALL, fy: T.y - Math.sin(fo * R) * BALL, fo })
+    if (sel.pos === 'seat') { const b = seat({ l1: null, l2: null }), T = { x: 70, y: -20 }; return { frames: [{ ...b, ...toes(T, -10) }, { ...b, ...toes(T, 40) }], props: [SEAT_PROP, { k: 'box', x: 76, w: 22, h: 16 }], gear: [{ k: 'kneepad' }], lab: ['Wspięcie', 'Opuść'] } }
+    if (sel.pos === 'legpress') { const L = LIB['leg-press']({}), [, top] = L.frames; return { ...L, frames: [{ ...top, fo: -135 }, { ...top, fo: -95 }], gear: [{ k: 'plat', ang: -45, toe: BALL }], lab: ['Wspięcie', 'Opuść'] } }
+    if (sel.pos === 'donkey') {
+      const T = { x: -16, y: -17 }, lo = toes(T, -6), hi = toes(T, 38), b = { hx: -40, t: -4, a1: 92, a2: 92 }
+      return { frames: [{ ...b, hy: -144, ...lo }, { ...b, hy: -144 + (hi.fy - lo.fy), hx: -40 + (hi.fx - lo.fx), ...hi }], props: [{ k: 'box', x: -22, w: 50, h: 12 }, { k: 'pad', x1: 30, y1: -62, x2: 80, y2: -62, w: 10 }, { k: 'post', x: 60, y2: -62 }, { k: 'pad', x1: -60, y1: -160, x2: -20, y2: -160, w: 12 }], lab: ['Wspięcie', 'Opuść'] }
+    }
     const heavy = sel.eq === 'bb' || sel.eq === 'sm' || sel.eq === 'mc'
     const h = heavy ? { hold: 'back', ab: -1 } : {}
-    return { frames: [st({ fo: 10, ...h }), st({ hy: -158, fy: -20, fo: 36, ...h })], props: [{ k: 'box', x: 14, w: 50, h: 12 }], gear: heavy ? [{ k: 'bb', at: 'hold' }] : held(sel.eq), lab: ['Wspięcie', 'Opuść'] }
+    // balls of the feet on the back edge of a step, heels hanging off behind it
+    const T = { x: 30, y: -17 }, stand = f => st({ ...f, hx: f.fx - 6, hy: f.fy - 137, ...h })
+    return { frames: [stand(toes(T, -12)), stand(toes(T, 42))], props: [{ k: 'box', x: 46, w: 44, h: 12 }], gear: heavy ? [{ k: 'bb', at: 'hold' }] : held(sel.eq), lab: ['Wspięcie', 'Opuść'] }
   },
 
   // ---------- posterior chain ----------
@@ -517,10 +539,16 @@ const LIB = {
   },
   pallof: sel => { const b = sel.pos === 'kneel' ? { hx: 0, hy: -78, t: -90, l1: 90, l2: 180, fo: 180, fo2: 0, m1: 0, m2: 90, a1: 90, a2: 90 } : st({ fx: 20, gx: -20, gy: -7 }); return { frames: [hand(b, 16, 40), hand(b, 86, 34)], props: [tower(-140, -300, -160)], gear: [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: -140, y: -160 } }], lab: ['Wypchnij', 'Wróć'] } },
   woodchop: sel => {
-    const hl = sel.v === 'lowhigh'
-    const b = st({ fx: 30, gx: -30, gy: -7 })
-    const hi = hand(b, -40, -60), lo = hand({ ...b, hy: -132 }, 70, 70)
-    return { frames: hl ? [lo, hi] : [hi, lo], props: [tower(hl ? 160 : -150, -310, hl ? -30 : -300)], gear: [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: hl ? 160 : -150, y: hl ? -30 : -300 } }], lab: ['Przeciągnij', 'Wróć'] }
+    // front view: both hands together on one handle, arms long, a diagonal from high on one side to low on the other;
+    // the torso leans with the pull and the hips drop a little at the low end
+    const hl = sel.v === 'lowhigh', legs = { fx: 30, fy: -7, gx: -30, gy: -7, gb: 1 }
+    const at = (x, y) => ({ ax: x, ay: y, bx: x, by: y })
+    // half-way the straight arms point at the viewer (shortened), so the elbows never fold or swap sides
+    const hi = { hx: 0, hy: -142, t: -104, ...legs, ...at(-50, -298), ab: -1, bb: -1 }
+    const mid = { hx: 0, hy: -134, t: -90, ...legs, ...at(-4, -214), ab: -1, bb: -1, af: 0.5, ff: 0.5 }
+    const lo = { hx: 0, hy: -126, t: -78, ...legs, ...at(40, -136), ab: -1, bb: -1 }
+    const tw = hl ? { x: 170, top: -310, y: -40 } : { x: -170, top: -310, y: -300 }
+    return { view: 'f', frames: hl ? [lo, mid, hi] : [hi, mid, lo], props: [tower(tw.x, tw.top, tw.y)], gear: [{ k: sel.eq === 'bd' ? 'band' : 'cable', from: { x: tw.x, y: tw.y } }], lab: ['Przeciągnij', 'Wróć'] }
   },
   'russian-twist': sel => { const b = { cu: 0.5, hx: 0, hy: -13, t: -130, l1: -40, l2: 20 }; return { frames: [hand(b, 46, 30), hand(b, 24, 50)], gear: sel.eq === 'bw' ? [] : [{ k: sel.eq === 'db' ? 'db' : 'pl' }], lab: ['Skręć', 'Skręć'] } },
   'side-bend': sel => ({ view: 'f', frames: [st({ fx: 12, gx: -12, a1: 90, a2: 90, b1: 90, b2: 90 }), st({ fx: 12, gx: -12, t: -74, a1: 90, a2: 90, b1: 90, b2: 90 })], gear: [{ k: sel.eq === 'cb' ? 'db' : sel.eq }], lab: ['Pochyl w bok', 'Wróć'] }),
@@ -581,7 +609,7 @@ const LIB = {
     // facing the anchor, both hands on the bar end, arms long: a rainbow from one hip over the head to the other hip.
     // The hands travel on a circle round the middle of the shoulders, so the arms stay long and never fold across the body
     const b = st({ fx: 26, fy: -7 }), J = joints(b, 'f'), cx = (J.SR.x + J.SL.x) / 2, cy = (J.SR.y + J.SL.y) / 2
-    const arc = d => { const r = d * Math.PI / 180; return { ...b, hp: { x: cx + Math.sin(r) * 78, y: cy - Math.cos(r) * 78 }, ab: d < 0 ? 1 : -1, bb: d < 0 ? -1 : 1 } }
+    const arc = d => { const r = d * Math.PI / 180; return { ...b, hp: { x: cx + Math.sin(r) * 70, y: cy - Math.cos(r) * 70 }, ab: 1, bb: -1 } } // elbows keep their sides all the way round
     return { view: 'f', frames: [-142, -72, 0, 72, 142].map(arc), gear: [{ k: 'pole', from: { x: 0, y: -4 }, over: 10, flex: true }], ph: [[1100, 'Przenieś w górę', 0, 0.5], [1100, 'Na drugą stronę', 0.5, 1], [1100, 'Przenieś w górę', 1, 0.5], [1100, 'Na drugą stronę', 0.5, 0]] }
   },
 
@@ -598,19 +626,15 @@ const LIB = {
   snatch: sel => {
     const bot = { hx: -58, hy: -86, t: -26, fx: 8, a1: 90, a2: 90 }
     const ext = st({ fx: 14, fy: -16, fo: 30, sg: 8, hy: -152 })
-    const ov = sel.v === 'full' ? { hx: -36, hy: -68, t: -72, hold: 'up', fx: 10 } : st({ hy: -126, hx: -8, hold: 'up' })
-    // the bar stays close: hips extend, elbows pull high and out to the chest, then the arms turn over to lock out
-    const pull = { ...st({ fx: 14, fy: -12, fo: 30, sg: 10, hy: -150 }) }, S = shoulderOf(pull)
-    void S
-    // the elbow stays high in front while the forearm turns over it: the bar travels up close to the body, no loop
-    const high = { ...pull, a1: -10, a2: 132 } // elbows high, bar at the chest
-    const turn = { ...pull, sg: 4, hy: -140, a1: -22, a2: -128 } // forearm turned up in front of the face
-    // the turn-over is a rotation of the upper arm (elbows out to the sides): seen from the side the forearm shrinks
-    // to a point and grows again upwards instead of folding back through the upper arm
-    const over = { ...pull, sg: 6, hy: -146, a1: -16, a2: 140, ff: 0.08 }
-    const top = { ...ov, hold: undefined, a1: -96, a2: -96 }
-    return { frames: [sel.v === 'hang' ? { ...bot, hx: -36, hy: -128, t: -50 } : bot, ext, high, over, turn, top], gear: held(sel.eq), ph: [[900, 'Ciągnij', 0, 0.5], [500, 'Nad głowę', 0.5, 1], [800, 'Trzymaj', 1, 1], [1200, 'Opuść', 1, 0]] }
+    const ov = sel.v === 'full' ? { hx: -36, hy: -68, t: -72, fx: 10 } : st({ hy: -126, hx: -8 })
+    // the bar rises in a straight line close to the body: elbows lead high and out (seen from the side the elbow sits
+    // above the bar), the arms turn over past the face and punch straight up – one elbow side all the way, no loops
+    const pull = st({ fx: 14, fy: -12, fo: 30, sg: 10, hy: -150 }), arm = { ab: -1, eo: 1 }
+    const high = { ...hand(pull, 24, 32), ...arm }, face = { ...hand({ ...pull, sg: 4, hy: -142 }, 28, -50), ...arm }
+    const top = { ...hand(ov, 10, -87), ...arm }
+    return { frames: [sel.v === 'hang' ? { ...bot, hx: -36, hy: -128, t: -50 } : bot, ext, high, face, top], gear: held(sel.eq), ph: [[900, 'Ciągnij', 0, 0.5], [500, 'Nad głowę', 0.5, 1], [800, 'Trzymaj', 1, 1], [1200, 'Opuść', 1, 0]] }
   },
+
   'clean-jerk': sel => {
     const rack = st({ ra1: 100, ra2: -60 }), dip = { ...rack, hy: -128, hx: -6 }
     const split = { hx: 0, hy: -118, t: -90, fx: 66, fy: -7, gx: -76, gy: -10, fo2: 30, ra1: -6, ra2: -6 }

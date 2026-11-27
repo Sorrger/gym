@@ -37,7 +37,7 @@ for (const b of BASES) {
     // weight / cable missing for the equipment chosen
     let kit = ''
     const kinds = (sc.gear || []).map(g => g.k)
-    if (['db', 'bb', 'kb', 'pl', 'ez', 'hx', 'tb'].includes(sel.eq) && !kinds.some(k => ['db', 'bb', 'kb', 'pl', 'pole', 'handle', 'belt', 'roller', 'ball', 'wheel'].includes(k)) && !['farmer', 'jumps'].includes(b.id)) kit = 'no weight drawn'
+    if (['db', 'bb', 'kb', 'pl', 'ez', 'hx', 'tb'].includes(sel.eq) && !kinds.some(k => ['db', 'bb', 'kb', 'pl', 'fbar', 'pole', 'handle', 'belt', 'roller', 'ball', 'wheel'].includes(k)) && !['farmer', 'jumps'].includes(b.id)) kit = 'no weight drawn'
     if (sel.eq === 'cb' && !kinds.some(k => ['cable', 'band', 'bar2'].includes(k))) kit = 'no cable'
     if (sel.eq === 'bd' && !kinds.some(k => ['band', 'footband', 'bandloop'].includes(k))) kit = 'no band'
     const rigid = []

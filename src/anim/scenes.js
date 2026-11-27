@@ -36,7 +36,7 @@ export function sceneFor(baseId, sel = {}, mus = {}) {
   {
     const kinds = (scene.gear || []).map(g => g.k), eq = sel.eq
     const WEIGHT = ['db', 'bb', 'kb', 'pl', 'ez', 'hx', 'tb']
-    if (WEIGHT.includes(eq) && !kinds.some(k => [...WEIGHT, 'pole', 'handle', 'belt', 'roller', 'ball', 'wheel'].includes(k))) {
+    if (WEIGHT.includes(eq) && !kinds.some(k => [...WEIGHT, 'fbar', 'pole', 'handle', 'belt', 'roller', 'ball', 'wheel'].includes(k))) {
       const at = CARRY[baseId] || 'hands', k = eq === 'ez' || eq === 'hx' || eq === 'tb' ? 'bb' : eq
       scene.gear = [...(scene.gear || []), at === 'belt' ? { k: 'belt' } : { k, ...(at === 'hands' ? {} : { at }), ...(at === 'hands' && scene.view === 'f' ? { both: true } : {}) }]
     }

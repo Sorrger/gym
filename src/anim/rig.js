@@ -264,9 +264,10 @@ function gear(g, J, pose, near) {
     case 'pad': { const c = g.at === 'shoulder' ? add(J.S, J.L, 14) : g.at === 'hip' ? add(J.H, J.L, -16) : W; return [circle(c, g.r || 10, 'pad')] } // round machine pad on the body
     case 'deck': return [line({ x: 26, y: g.y }, J.W, 6, 'gear frame'), line({ x: -26, y: g.y }, J.W2, 6, 'gear frame'), line({ x: -34, y: g.y }, { x: 34, y: g.y }, 7, 'gear frame')] // pec-deck arms hanging from pivots above the shoulders
     case 'kneepad': { const d = ang(J.H, J.K), c = at(lerpPt(J.H, J.K, 0.85), d - 90, 14); return [line(at(c, d, -16), at(c, d, 16), 10, 'pad')] } // machine pad on top of the thighs
+    case 'fbar': { const d = ang(J.W2, J.W), A = at(J.W2, d, -46), B = at(J.W, d, 46), pl = P => line(at(P, d + 90, 13), at(P, d - 90, 13), 7, 'gear'); return [line(A, B, 4, 'gear-line'), pl(at(J.W2, d, -38)), pl(at(J.W, d, 38))] } // barbell seen from the front, plates on both ends
     case 'bar2': { const d = ang(J.W2, J.W), m = lerpPt(J.W, J.W2, 0.5); return [line({ x: m.x, y: m.y }, { x: m.x, y: g.top ?? -330 }, 1.5, 'cable'), line(at(J.W2, d, -14), at(J.W, d, 14), 5, 'gear frame')] } // straight bar between both hands (front view)
     case 'shin': { const c = at(lerpPt(J.K, J.A, 0.86), ang(J.K, J.A) + (g.side ?? -1) * 90, 13); return [circle(c, 9, 'pad'), circle(c, 3, 'gear')] } // roller on the front (-1) or back (+1) of the shin
-    case 'plat': { const a = g.ang ?? 0, c = at(J.A, a, 9); return [line(at(c, a + 90, 30), at(c, a - 90, 30), 8, 'pad')] }
+    case 'plat': { const a = g.ang ?? 0, c = g.toe != null ? at(at(J.A, pose.fo ?? a + 180, g.toe), a, 5) : at(J.A, a, 9); return [line(at(c, a + 90, 30), at(c, a - 90, 30), 8, 'pad')] }
     case 'rope': { // waving rope from the hands to an anchor
       const A = W, B = g.from, n = 32, pts = [], ph = (pose.wv || 0) + (near ? 0 : Math.PI)
       for (let i = 0; i <= n; i++) { const u = i / n, q = lerpPt(A, B, u), amp = 14 * (1 - u) * Math.min(1, u * 6); pts.push(`${q.x} ${q.y + Math.sin(u * Math.PI) * 8 + Math.sin(u * 2.5 * Math.PI * 2 - ph) * amp}`) }
