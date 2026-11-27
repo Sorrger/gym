@@ -1,0 +1,1 @@
+import{j as e}from"./vue.runtime.esm-bundler-D2EpORw3.js";import{a as t,c as n,t as r}from"./cloud-ChUprWy-.js";var i=()=>!!(r.token&&r.gistId&&navigator.onLine),a=()=>!!r.token,o=e=>t(e),s=(e,t)=>n(e,t),c=t=>e(()=>r.gistId,e=>{e&&t()}),l=()=>r.loaded;export{o as a,c as i,l as n,s as o,a as r,i as t};

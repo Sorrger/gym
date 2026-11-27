@@ -18,6 +18,18 @@ await p.locator('.chart-card').scrollIntoViewIfNeeded(); await p.waitForTimeout(
 const bx = await p.locator('.chart-wrap canvas').boundingBox()
 await p.mouse.click(bx.x + bx.width * 0.55, bx.y + bx.height / 2); await p.waitForTimeout(400)
 if (!(bx.height > 200)) console.log('FAIL chart height')
+// calories: 2500 a day for a month → burn and advice; 0,3 % pace asks for less of a cut
+await p.locator('.kcal .soft-btn').click(); await p.waitForTimeout(400)
+await p.locator('.dlg input').fill('2500'); await p.locator('.dlg button', { hasText: /Od miesiąca|For a month/ }).click(); await p.locator('.dlg-btn', { hasText: /Zapisz|Save/ }).click(); await p.waitForTimeout(700)
+const k1 = (await p.locator('.kcal').innerText()).replace(/\s+/g, ' ')
+console.log('kcal:', k1)
+const burn = +(k1.match(/(?:ok\.|about) (\d{4}) kcal/) || [])[1], eat = +(k1.match(/(?:Jedz ok\.|Eat about) (\d{4})/) || [])[1]
+if (!(burn > 2700 && burn < 3000) || !(eat > 2150 && eat < 2400) || !/(mniej niż teraz|less than now)/.test(k1)) console.log('FAIL calories: burn / advice', burn, eat)
+await p.locator('.kcal .seg3 button', { hasText: '0,3' }).first().click(); await p.waitForTimeout(400)
+const eat2 = +((await p.locator('.kcal').innerText()).replace(/\s+/g, ' ').match(/(?:Jedz ok\.|Eat about) (\d{4})/) || [])[1]
+if (!(eat2 > eat)) console.log('FAIL slower pace should allow more food', eat, eat2)
+const saved = await p.evaluate(() => new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const q = r.result.transaction('keyval').objectStore('keyval').get('profile'); q.onsuccess = () => res(q.result?.prefs) } }))
+if (!(saved?.kcalLog?.[0]?.kcal === 2500 && saved.paceGoal === 0.3)) console.log('FAIL calories not saved with the account', saved)
 // an old log (last weigh-in 30 days ago): no pace, a hint to weigh in, no estimates card
 await p.evaluate(async () => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); const W = {}; [[60, 108], [50, 107], [40, 106.4], [30, 106]].forEach(([n, kg]) => W[new Date(Date.now() - n * 864e5).toISOString().slice(0, 10)] = { kg, t: 1 }); tx.objectStore('keyval').put(W, 'weights'); tx.oncomplete = res } }) })
 await p.reload(); await p.waitForTimeout(1500)

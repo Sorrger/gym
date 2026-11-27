@@ -125,3 +125,27 @@ export const daysSince = (list, now = Date.now()) => (list.length ? Math.round((
 export function trend(list, days = 28) { return pace(list, days)?.kg ?? null }
 // ~7700 kcal per kg of body fat: what a weekly change means per day (a rough estimate, water moves the scale too)
 export const kcalPerDay = kgWeek => Math.round(kgWeek * 7700 / 7 / 10) * 10
+
+// ---- calories: the user logs a steady daily intake (counted in another app); weight trend + intake → burn → advice ----
+// intake on a day = the newest step that started on or before it
+export const intakeOn = (log, date) => [...(log || [])].filter(e => e.from <= date).sort((a, b) => a.from.localeCompare(b.from)).at(-1)?.kcal ?? null
+const r50 = v => Math.round(v / 50) * 50
+// list in kg. Burn (TDEE) = average intake over the pace window minus what the weight change stores/releases.
+// Needs a pace (paceToday) and an intake for 14+ days of that window.
+export function energy(list, log, goal = 'cut', paceGoal = null, now = Date.now()) {
+  const p = paceToday(list, now)
+  if (!p) return { need: 'weight' }
+  const end = day(list[list.length - 1].date), days = []
+  for (let d = Math.ceil(p.from); d <= 0; d++) days.push(iso(new Date(end + d * 864e5)))
+  const known = days.map(d => intakeOn(log, d)).filter(v => v != null)
+  const current = intakeOn(log, iso(new Date(now)))
+  if (known.length < 14) return { need: 'kcal', known: known.length, current }
+  const avgIn = known.reduce((a, b) => a + b, 0) / known.length
+  const tdee = avgIn - kcalPerDay(p.kg)
+  const pct = goal === 'maintain' ? 0 : (goal === 'bulk' ? 1 : -1) * (paceGoal ?? (goal === 'bulk' ? 0.25 : 0.5))
+  const targetKg = p.level * pct / 100
+  let suggest = r50(tdee + targetKg * 7700 / 7), floored = false
+  const floor = Math.max(1500, tdee - 1000) // never more than ~1000 kcal under the burn, never below 1500
+  if (suggest < floor) { suggest = r50(floor); floored = true }
+  return { avgIn: r50(avgIn), tdee: r50(tdee), suggest, current, diff: current == null ? null : suggest - current, pct, targetKg, known: known.length, floored, pace: p }
+}

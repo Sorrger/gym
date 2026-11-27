@@ -40,6 +40,31 @@
           <div class="e-row"><span>{{ kcal < 0 ? 'Deficyt' : 'Nadwyżka' }} kalorii<small>szacunek: 1 kg tłuszczu ≈ 7700 kcal</small></span><b class="num">ok. {{ Math.abs(kcal) }} kcal/dzień</b></div>
         </div>
 
+        <!-- calories: a steady daily intake (counted elsewhere) + the weight trend → burn → how much to eat -->
+        <div v-if="list.length" class="card kcal">
+          <div class="card-title">Kalorie</div>
+          <template v-if="!prefs.kcalLog.length">
+            <p class="k-intro">Wpisz, ile średnio jesz kcal dziennie (liczysz w innej apce). Gdy jesz podobnie przez ok. 2 tygodnie, policzę Twoje spalanie i powiem, ile jeść, żeby iść w dobrym tempie.</p>
+            <button class="btn block soft-btn press" @click="setKcal">Wpisz kalorie</button>
+          </template>
+          <template v-else>
+            <button class="e-row press k-row" @click="setKcal"><span>Jesz średnio<small>{{ kcalSince }}</small></span><b class="num">{{ E.current ?? '–' }} kcal<i>zmień</i></b></button>
+            <template v-if="E.tdee">
+              <div class="e-row"><span>Twoje spalanie<small>szacunek z wagi i kalorii, {{ E.known }} dni</small></span><b class="num">ok. {{ E.tdee }} kcal</b></div>
+              <div v-if="prefs.goal !== 'maintain'" class="k-pace">
+                <small>Tempo, które chcesz</small>
+                <div class="seg3"><button v-for="o in paceOpts" :key="o" class="press" :class="{ on: paceNow === o }" @click="setPref('paceGoal', o)">{{ fmtKg(o) }} %</button></div>
+              </div>
+              <div class="k-advice" :class="{ same: Math.abs(E.diff ?? 0) < 100 }">
+                <b class="num">Jedz ok. {{ E.suggest }} kcal dziennie</b>
+                <p>{{ adviceText }}</p>
+              </div>
+              <p class="k-note">Zmień o tyle, trzymaj 2–3 tygodnie i zajrzyj znowu – liczba sama się poprawi, gdy waga zareaguje.<template v-if="E.floored"> Mniej nie radzę – za duży deficyt zabiera mięśnie i siłę.</template></p>
+            </template>
+            <p v-else class="k-note">{{ E.need === 'kcal' ? 'Zbieram dane: ' + E.known + ' z 14 dni z kaloriami w ostatnich tygodniach.' : 'Spalanie policzę, gdy będzie tempo wagi (4 pomiary z co najmniej tygodnia).' }}</p>
+          </template>
+        </div>
+
         <!-- target weight: progress + when, at the current pace -->
         <button v-if="list.length" class="card target press" @click="setTarget">
           <template v-if="prefs.goalKg">
@@ -118,7 +143,7 @@ import { Chart, LineController, LineElement, PointElement, LinearScale, Filler, 
 import { add as add_, clipboardOutline, scale } from 'ionicons/icons'
 import { iso, fmtKg, fmtDate, fmtShort, ago } from '../store'
 import { cloud } from '../cloud'
-import { weightsU as weights, setWeight, delWeight, parseList, smooth, paceToday, daysSince, kcalPerDay } from '../weight'
+import { weights as weightsKg, weightsU as weights, setWeight, delWeight, parseList, smooth, paceToday, daysSince, kcalPerDay, energy } from '../weight'
 import { wu, toU, fromU } from '../units'
 import { askWeight, parseKg } from '../weightQuick'
 import { ask } from '../dialog'
@@ -141,6 +166,31 @@ const total = computed(() => {
 })
 const P = computed(() => paceToday(weights.value))
 const since = computed(() => daysSince(weights.value))
+// calories (always worked out in kg)
+const E = computed(() => energy(weightsKg.value, prefs.kcalLog, prefs.goal, prefs.paceGoal))
+const paceOpts = computed(() => (prefs.goal === 'bulk' ? [0.1, 0.25, 0.5] : [0.3, 0.5, 0.7]))
+const paceNow = computed(() => prefs.paceGoal ?? (prefs.goal === 'bulk' ? 0.25 : 0.5))
+const kcalSince = computed(() => { const e = [...prefs.kcalLog].sort((a, b) => a.from.localeCompare(b.from)).at(-1); return e ? 'od ' + fmtDate(e.from) : '' })
+const adviceText = computed(() => {
+  const e = E.value; if (!e.tdee) return ''
+  const goal = prefs.goal === 'maintain' ? 'żeby trzymać wagę' : (prefs.goal === 'bulk' ? 'żeby przybierać ok. ' : 'żeby chudnąć ok. ') + (prefs.goal === 'maintain' ? '' : fmtKg(r1(Math.abs(toU(e.targetKg)))) + ' ' + wu() + ' na tydzień')
+  if (e.diff == null) return goal + '.'
+  if (Math.abs(e.diff) < 100) return 'Tyle, ile teraz – ' + goal + '.'
+  return (e.diff > 0 ? 'O ' + e.diff + ' kcal więcej' : 'O ' + -e.diff + ' kcal mniej') + ' niż teraz – ' + goal + '.'
+})
+async function setKcal() {
+  const today = iso(new Date()), ago = n => iso(new Date(Date.now() - n * 864e5))
+  const cur = E.value.current
+  const r = await ask({ icon: scale, title: 'Ile jesz dziennie?', message: 'Średnio, w kcal – tak jak liczysz w swojej apce do kalorii.', input: { mode: 'numeric', value: cur ? String(cur) : '', placeholder: 'np. 2400' },
+    choices: [{ key: 'from', label: 'Od kiedy tak jesz?', value: prefs.kcalLog.length ? today : ago(14), options: [{ value: today, label: 'Od dziś' }, { value: ago(7), label: 'Od tygodnia' }, { value: ago(14), label: 'Od 2 tyg.' }, { value: ago(28), label: 'Od miesiąca' }] }],
+    buttons: [{ text: 'Zapisz', role: 'ok', kind: 'primary' }, ...(prefs.kcalLog.length ? [{ text: 'Wyczyść kalorie', role: 'clear', kind: 'danger' }] : []), { text: 'Anuluj', role: 'cancel', kind: 'plain' }] })
+  if (r.role === 'clear') return setPref('kcalLog', [])
+  if (r.role !== 'ok') return
+  const v = Math.round(+String(r.value || '').replace(/[^\d]/g, ''))
+  if (!(v >= 800 && v <= 8000)) return ask({ icon: scale, title: 'Nie rozumiem liczby', message: 'Wpisz kalorie na dzień, np. 2400.', buttons: [{ text: 'OK', role: 'ok', kind: 'primary' }] })
+  const from = r.picks.from
+  setPref('kcalLog', [...prefs.kcalLog.filter(e => e.from < from), { from, kcal: v }])
+}
 const wk = computed(() => P.value?.kg ?? null)
 const kcal = computed(() => (P.value ? kcalPerDay(fromU(P.value.kg)) : 0))
 const signK = v => { const r = Math.round(v * 100) / 100; return (r > 0 ? '+' : r < 0 ? '−' : '±') + fmtKg(Math.abs(r)) }
@@ -328,6 +378,22 @@ onBeforeUnmount(() => chart?.destroy())
 .leg .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--app-muted); }
 .leg .ln { width: 14px; height: 3px; border-radius: 2px; background: var(--accent); margin-left: 6px; }
 .chart-wrap { position: relative; height: 250px; }
+.kcal .k-intro { margin: 0 0 12px; font-size: 14px; color: var(--app-muted); line-height: 1.4; }
+.soft-btn { background: color-mix(in srgb, var(--accent) 16%, transparent); color: var(--accent); }
+.kcal .k-row { width: 100%; background: none; border: 0; font: inherit; color: inherit; text-align: left; }
+.kcal .k-pace { padding: 10px 0; border-top: 0.5px solid var(--app-line); display: flex; align-items: center; gap: 10px; }
+.kcal .k-pace small { font-size: 13px; color: var(--app-muted); flex: none; }
+.kcal .k-advice { margin-top: 6px; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.kcal .k-advice b { font-size: 18px; color: var(--accent); }
+.kcal .k-advice.same b { color: var(--app-ok); }
+.kcal .k-advice p { margin: 3px 0 0; font-size: 14px; line-height: 1.35; }
+.kcal .k-note { margin: 10px 0 0; font-size: 12.5px; color: var(--app-muted); line-height: 1.4; }
+.kcal .e-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 0.5px solid var(--app-line); }
+.kcal .card-title + .e-row { border-top: 0; }
+.kcal .e-row span { font-size: 14.5px; display: flex; flex-direction: column; }
+.kcal .e-row small { font-size: 12px; color: var(--app-muted); margin-top: 1px; }
+.kcal .e-row b { font-size: 16px; font-weight: 700; display: flex; flex-direction: column; align-items: flex-end; }
+.kcal .e-row b i { font-style: normal; font-size: 12px; font-weight: 500; color: var(--accent); }
 .leg .ln.dash { background: repeating-linear-gradient(90deg, var(--accent) 0 4px, transparent 4px 7px); }
 .c-note { margin: 8px 2px 0; font-size: 12px; color: var(--app-muted); line-height: 1.35; }
 .est .e-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 9px 0; border-top: 0.5px solid var(--app-line); }

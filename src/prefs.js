@@ -30,6 +30,8 @@ export const DEFAULT_PREFS = {
   restSec: 120,     // … this long
   weightOn: true,   // body weight tracking (tile on Start, Waga page links); off = hidden everywhere
   goalKg: null,     // target body weight (Waga page), optional
+  kcalLog: [],      // what the user eats a day, as steps: [{ from: 'YYYY-MM-DD', kcal }] – each holds until the next one
+  paceGoal: null,   // wanted pace in % of body weight a week (size only); null = 0,5 on a cut, 0,25 on a bulk
   quietCoach: true, // set once the quiet 'set' coach mode exists; older saved 'auto' moves to it once
   setTypes: false   // mark sets as warm-up / drop set / to failure (tap the set number); warm-ups don't count
 }

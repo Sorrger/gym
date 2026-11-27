@@ -144,6 +144,15 @@ ok(weight.trend(L.slice(0, 3)) === null, 'trend needs 4 weigh-ins over a week')
   const t3 = weight.paceToday(base, last + 3 * 864e5), t20 = weight.paceToday(base, last + 20 * 864e5)
   ok(t3 && t3.ago === 3 && Math.abs(t3.level - (t3.level0 + t3.kg / 7 * 3)) < 1e-9, 'pace for today moves the trend weight to today', t3)
   ok(t20 === null && weight.daysSince(base, last + 20 * 864e5) === 20, 'no pace when the last weigh-in is over 2 weeks old')
+  // eating 2500 a day while losing ~0,49 kg/week → burn ≈ 2500 + 540; a 0,5 %/week cut needs ≈ burn + target kg × 1100
+  const log = [{ from: '2026-10-01', kcal: 2500 }], now = last + 864e5
+  const e = weight.energy(base, log, 'cut', 0.5, now)
+  ok(Math.abs(e.tdee - 3040) <= 100 && e.current === 2500, 'burn from intake + weight trend', e)
+  ok(Math.abs(e.suggest - (e.tdee + e.targetKg * 1100)) <= 60 && e.diff === e.suggest - 2500, 'advice for 0,5 % a week', e)
+  ok(weight.energy(base, [{ from: '2026-11-20', kcal: 2500 }], 'cut', null, now).need === 'kcal', 'needs 14 days with a known intake')
+  ok(weight.energy(base, log, 'maintain', null, now).suggest === e.tdee, 'maintain = eat the burn')
+  ok(weight.energy(base, log, 'cut', 2, now).floored, 'never more than ~1000 kcal under the burn')
+  ok(weight.intakeOn([{ from: '2026-11-01', kcal: 2400 }, { from: '2026-11-10', kcal: 2200 }], '2026-11-09') === 2400, 'intake = the step in force that day')
 }
 weight.wstate.entries = { '2026-11-01': { kg: '100', t: 5 } }
 ok(weight.weights.value[0].kg === 100 && typeof weight.smooth(weight.weights.value)[0].avg === 'number', 'a weight stored as text is read as a number')
