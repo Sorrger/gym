@@ -19,7 +19,7 @@ console.log('weeks:', (await p.locator('.weeks').innerText()).replace(/\s+/g, ' 
 await p.screenshot({ path: 'wq1.png', fullPage: false })
 await p.mouse.wheel(0, 900); await p.waitForTimeout(400); await p.screenshot({ path: 'wq2.png' })
 // Postępy → Ciało → weight card (its one place besides the Start tile), invisible pages?
-await p.goto('http://localhost:4173/#/tabs/progress'); await p.reload(); await p.waitForTimeout(1300)
+await p.goto('http://localhost:4173/?r=1#/tabs/progress'); await p.waitForTimeout(1500) // full load: a hash-only change inside the same tab can land back on its last page
 await p.locator('.ptabs button:visible', { hasText: 'Ciało' }).click(); await p.waitForTimeout(500)
 await p.locator('.wcard:not(.mcard):visible').click(); await p.waitForTimeout(1500)
 // Profil no longer repeats Waga / plan / history / numbers

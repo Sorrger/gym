@@ -13,7 +13,7 @@ await p.goto('http://localhost:4173/#/tabs/progress'); await p.reload(); await p
 await p.locator('.ptabs button:visible', { hasText: 'Ciało' }).click(); await p.waitForTimeout(400)
 ok((await p.locator('.mcard:visible').innerText()).includes('Dodaj obwody'), 'empty card on Ciało')
 await p.locator('.mcard:visible').click(); await p.waitForTimeout(1200)
-ok(p.url().endsWith('#/measures'), 'card opens the page', p.url())
+ok(p.url().endsWith('#/tabs/progress/measures') && await p.locator('ion-tab-bar:visible').count() > 0, 'card opens the page', p.url())
 await p.locator('.btns button:has-text("Dodaj obwody")').click(); await p.waitForTimeout(300)
 await p.locator('.btn:has-text("Zapisz")').click(); await p.waitForTimeout(200)
 ok((await p.locator('.ed-err').innerText()).includes('przynajmniej'), 'empty form refused')

@@ -3,7 +3,7 @@
     <div class="mini-bar" :class="{ on: scrolled }"><button class="mb-back press" @click="goBack" aria-label="Wróć"><ion-icon :icon="chevronBack" /></button><span>Waga</span></div>
     <ion-content :fullscreen="true" :scroll-events="true" @ionScroll="onScroll">
       <header class="big-head sub-page">
-        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> Profil</button>
+        <button class="back press" @click="goBack"><ion-icon :icon="chevronBack" /> Wróć</button>
         <h1 class="t-large">Waga</h1>
         <p class="sub">{{ list.length ? 'Ostatni pomiar ' + ago(last.date) : 'Zapisuj wagę rano, na czczo' }}</p>
       </header>
@@ -150,7 +150,7 @@ import { ask } from '../dialog'
 
 Chart.register(LineController, LineElement, PointElement, LinearScale, Filler, Tooltip)
 const ionRouter = useIonRouter()
-const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/profile', 'back', 'replace'))
+const goBack = () => (ionRouter.canGoBack() ? ionRouter.back() : ionRouter.navigate('/tabs/progress', 'back', 'replace'))
 const { scrolled, onScroll } = useScrolled()
 const dnum = s => Math.round(new Date(s + 'T12:00').getTime() / 864e5) // x axis = real days, so gaps show as gaps
 const dstr = n => fmtShort(iso(new Date(n * 864e5))) // n is a day number from dnum; read back in local time it is that same date

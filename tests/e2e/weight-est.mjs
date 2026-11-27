@@ -7,6 +7,7 @@ const p = await ctx.newPage(); const errs = []; p.on('pageerror', e => errs.push
 await load(p, seed())
 await p.evaluate(async () => { await new Promise(res => { const r = indexedDB.open('keyval-store'); r.onsuccess = () => { const tx = r.result.transaction('keyval', 'readwrite'); const W = {}; [[29,108],[27,108],[25,105.8],[24,106.5],[23,107.6],[22,106.5],[21,107.3],[7,106.1],[6,106],[5,105.8],[4,106.6],[3,106.2],[2,106.6],[1,105.5],[0,105.1]].forEach(([n,kg]) => W[new Date(Date.now()-n*864e5).toISOString().slice(0,10)] = { kg, t: 1 }); tx.objectStore('keyval').put(W, 'weights'); tx.oncomplete = res } }) })
 await p.goto('http://localhost:4173/#/weight'); await p.reload(); await p.waitForTimeout(1800)
+if (!p.url().includes('#/tabs/progress/weight') || !(await p.locator('ion-tab-bar:visible').count())) console.log('FAIL weight page should keep the tab bar', p.url())
 const st = (await p.locator('.stats4').innerText()).replace(/\s+/g, ' '), est = (await p.locator('.est').innerText()).replace(/\s+/g, ' ')
 console.log(st); console.log(est)
 // pace from averages (2 weeks vs the 2 weeks before), start = first week's average, estimates shown

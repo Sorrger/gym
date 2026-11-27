@@ -148,7 +148,7 @@ const wTrend = computed(() => paceToday(weightsU.value)?.kg ?? null)
 const weighedToday = computed(() => weights.value.some(p => p.date === iso(new Date())))
 async function quickWeight() {
   const r = await askWeight({ details: true })
-  if (r === 'details') router.push('/weight')
+  if (r === 'details') router.push('/tabs/progress/weight')
   else if (r === 'saved') state.flash = 'Waga zapisana'
 }
 const fmt = (v, d = 1) => (Math.round(v * 10 ** d) / 10 ** d).toFixed(d).replace('.', ',')

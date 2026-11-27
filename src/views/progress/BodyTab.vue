@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- body weight (logged on the Waga page) -->
-    <button v-if="prefs.weightOn" class="card wcard press" @click="router.push('/weight')">
+    <button v-if="prefs.weightOn" class="card wcard press" @click="router.push('/tabs/progress/weight')">
       <div class="wc-l">
         <small>Waga · średnia 7 dni</small>
         <b class="num">{{ wNow == null ? 'Dodaj pomiar' : fmt(wNow) + ' ' + wu() }}</b>
@@ -11,7 +11,7 @@
       <ion-icon :icon="chevronForward" class="pc-chev" />
     </button>
     <!-- circumferences (Obwody page) -->
-    <button class="card wcard mcard press" @click="router.push('/measures')">
+    <button class="card wcard mcard press" @click="router.push('/tabs/progress/measures')">
       <div class="wc-l">
         <small>Obwody</small>
         <template v-if="mTop.length">
